@@ -1,0 +1,90 @@
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Dependencies
+# frontend/pnpm-lock.yaml  # COMENTADO: Deberías subir el lockfile para builds reproducibles
+frontend/.pnpm-store/
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+
+# Production
+frontend/.env.local
+frontend/.env.production.local
+.env.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java / Maven / Spring Boot
+backend/target/
+backend/*.jar
+backend/*.war
+backend/*.ear
+# backend/.mvn/      # COMENTADO: Maven wrapper es necesario para CI/CD
+# backend/mvnw      # COMENTADO: Maven wrapper script
+# backend/mvnw.cmd  # COMENTADO: Maven wrapper script Windows
+*.class
+*.log
+.settings/
+.project
+.classpath
+
+# Docker
+.docker/
+*.dockerfile
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.temp/
+
+# Markdown files (except README.md)
+CHECKLIST_VERIFICACION.md
+CONTROL_PRESUPUESTO_Y_ESTADOS.md
+CORRECCION_ERROR_UNDEFINED.md
+CORRECCIONES_APLICADAS.md
+DATOS_REALES_IMPLEMENTADOS.md
+DONDE_CAMBIAR_ESTADOS.md
+ESTADO_CASOS_USO.md
+EXPLICACION_ESTADOS_Y_CORRECCIONES.md
+GUIA_VISUAL_SISTEMA.md
+IMPLEMENTACION_ESTADOS_CORRECTOS.md
+INFORME_ARQUITECTURA_4+1_ACADEMICO.md
+MAPEO_ESTADOS_BASE_DATOS.md
+RESPUESTA_COMPANIA_Y_LOGIN.md
+RESUMEN_CORRECCION_ESTADOS.md
+SISTEMA_LOGIN_RECOMENDACIONES.md
+
+# SQL files
+datos_prueba_multiples_companias.sql
+schema.sql
+
+# Internal folders
+.kiro/
+.pnpm-store/
+devcontainer/

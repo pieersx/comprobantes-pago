@@ -1,0 +1,25 @@
+{
+  "name": "Spring Boot Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vmware.vscode-boot-dev-pack",
+        "redhat.java",
+        "vscjava.vscode-java-pack",
+        "humao.rest-client",
+        "vscjava.vscode-java-upgrade",
+        "Oracle.sql-developer",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+
+  "forwardPorts": [8080, 1521, 5500, 3000],
+  "postCreateCommand": "java --version && mvn --version && node --version && npm --version",
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,18 @@
+{
+  "[oracle-sql]": {
+    "editor.defaultFormatter": "Oracle.sql-developer"
+    // "editor.formatOnSave": true
+  },
+  "sqldeveloper.format.general.keywordCase": "UPPER",
+  "sqldeveloper.format.general.identifierCase": "lower",
+  "sqldeveloper.format.alignment": {
+    "namedArgumentSeparator": true,
+    "assignmentOperator": true,
+    "rightAlignQueryKeywords": false
+  },
+  "sqldeveloper.format.indentation.identSpaces": 2,
+  "sqldeveloper.format.lineBreaks.onComma": "After",
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.compile.nullAnalysis.mode": "automatic",
+  "kiroAgent.configureMCP": "Disabled"
+}

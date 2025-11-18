@@ -1,0 +1,137 @@
+package com.proyectos.comprobantespago.controller;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.proyectos.comprobantespago.dto.ApiResponse;
+import com.proyectos.comprobantespago.dto.VtaCompPagoCabDTO;
+import com.proyectos.comprobantespago.service.VtaCompPagoCabService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Controlador REST para gestión de Comprobantes de Venta/Ingreso
+ */
+@RestController
+@RequestMapping("/comprobantes-venta")
+@RequiredArgsConstructor
+@Tag(name = "Comprobantes de Venta/Ingreso", description = "Gestión de comprobantes de venta e ingresos")
+@CrossOrigin(origins = "*")
+public class VtaCompPagoCabController {
+
+    private final VtaCompPagoCabService vtaCompPagoCabService;
+
+    @Operation(summary = "Crear nuevo comprobante de venta/ingreso con detalles")
+    @PostMapping
+    public ResponseEntity<ApiResponse<VtaCompPagoCabDTO>> crear(@Valid @RequestBody VtaCompPagoCabDTO dto) {
+        VtaCompPagoCabDTO nuevoComprobante = vtaCompPagoCabService.crear(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Comprobante de venta/ingreso creado exitosamente", nuevoComprobante));
+    }
+
+    @Operation(summary = "Obtener comprobante por ID")
+    @GetMapping("/{codCia}/{nroCp}")
+    public ResponseEntity<ApiResponse<VtaCompPagoCabDTO>> obtenerPorId(
+            @PathVariable Long codCia,
+            @PathVariable String nroCp) {
+        VtaCompPagoCabDTO comprobante = vtaCompPagoCabService.obtenerPorId(codCia, nroCp);
+        return ResponseEntity.ok(ApiResponse.success("Comprobante obtenido exitosamente", comprobante));
+    }
+
+    @Operation(summary = "Obtener todos los comprobantes de una compañía")
+    @GetMapping("/compania/{codCia}")
+    public ResponseEntity<ApiResponse<List<VtaCompPagoCabDTO>>> obtenerPorCompania(@PathVariable Long codCia) {
+        List<VtaCompPagoCabDTO> comprobantes = vtaCompPagoCabService.obtenerPorCompania(codCia);
+        return ResponseEntity.ok(ApiResponse.success(
+                String.format("Se encontraron %d comprobantes", comprobantes.size()), comprobantes));
+    }
+
+    @Operation(summary = "Obtener comprobantes por proyecto")
+    @GetMapping("/proyecto/{codCia}/{codPyto}")
+    public ResponseEntity<ApiResponse<List<VtaCompPagoCabDTO>>> obtenerPorProyecto(
+            @PathVariable Long codCia,
+            @PathVariable Long codPyto) {
+        List<VtaCompPagoCabDTO> comprobantes = vtaCompPagoCabService.obtenerPorProyecto(codCia, codPyto);
+        return ResponseEntity.ok(ApiResponse.success(
+                String.format("Se encontraron %d comprobantes para el proyecto", comprobantes.size()), comprobantes));
+    }
+
+    @Operation(summary = "Obtener comprobantes por cliente")
+    @GetMapping("/cliente/{codCia}/{codCliente}")
+    public ResponseEntity<ApiResponse<List<VtaCompPagoCabDTO>>> obtenerPorCliente(
+            @PathVariable Long codCia,
+            @PathVariable Long codCliente) {
+        List<VtaCompPagoCabDTO> comprobantes = vtaCompPagoCabService.obtenerPorCliente(codCia, codCliente);
+        return ResponseEntity.ok(ApiResponse.success(
+                String.format("Se encontraron %d comprobantes para el cliente", comprobantes.size()), comprobantes));
+    }
+
+    @Operation(summary = "Obtener comprobantes por rango de fechas")
+    @GetMapping("/rango-fechas/{codCia}")
+    public ResponseEntity<ApiResponse<List<VtaCompPagoCabDTO>>> obtenerPorRangoFechas(
+            @PathVariable Long codCia,
+            @Parameter(description = "Fecha inicio (formato: yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @Parameter(description = "Fecha fin (formato: yyyy-MM-dd)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
+        List<VtaCompPagoCabDTO> comprobantes = vtaCompPagoCabService.obtenerPorRangoFechas(codCia, fechaInicio,
+                fechaFin);
+        return ResponseEntity.ok(ApiResponse.success(
+                String.format("Se encontraron %d comprobantes en el rango de fechas", comprobantes.size()),
+                comprobantes));
+    }
+
+    @Operation(summary = "Actualizar comprobante de venta")
+    @PutMapping("/{codCia}/{nroCp}")
+    public ResponseEntity<ApiResponse<VtaCompPagoCabDTO>> actualizar(
+            @PathVariable Long codCia,
+            @PathVariable String nroCp,
+            @Valid @RequestBody VtaCompPagoCabDTO dto) {
+        VtaCompPagoCabDTO comprobanteActualizado = vtaCompPagoCabService.actualizar(codCia, nroCp, dto);
+        return ResponseEntity.ok(ApiResponse.success("Comprobante actualizado exitosamente", comprobanteActualizado));
+    }
+
+    @Operation(summary = "Calcular total de ingresos por proyecto")
+    @GetMapping("/total-ingresos/{codCia}/{codPyto}")
+    public ResponseEntity<ApiResponse<BigDecimal>> calcularTotalIngresosPorProyecto(
+            @PathVariable Long codCia,
+            @PathVariable Long codPyto) {
+        BigDecimal total = vtaCompPagoCabService.calcularTotalIngresosPorProyecto(codCia, codPyto);
+        return ResponseEntity.ok(ApiResponse.success("Total de ingresos calculado exitosamente", total));
+    }
+
+    @Operation(summary = "Eliminar (inactivar) comprobante de venta")
+    @DeleteMapping("/{codCia}/{nroCp}")
+    public ResponseEntity<ApiResponse<Void>> eliminar(
+            @PathVariable Long codCia,
+            @PathVariable String nroCp) {
+        vtaCompPagoCabService.eliminar(codCia, nroCp);
+        return ResponseEntity.ok(ApiResponse.success("Comprobante eliminado exitosamente", null));
+    }
+
+    @Operation(summary = "Anular comprobante de venta/ingreso")
+    @PutMapping("/{codCia}/{nroCp}/anular")
+    public ResponseEntity<ApiResponse<VtaCompPagoCabDTO>> anular(
+            @PathVariable Long codCia,
+            @PathVariable String nroCp) {
+        VtaCompPagoCabDTO comprobanteAnulado = vtaCompPagoCabService.anular(codCia, nroCp);
+        return ResponseEntity.ok(ApiResponse.success("Comprobante anulado exitosamente", comprobanteAnulado));
+    }
+}
