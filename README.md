@@ -6,11 +6,75 @@ Sistema moderno y completo para gestión de comprobantes de pago (ingresos/egres
 
 - 📊 **Dashboard Interactivo** - Visualización en tiempo real de KPIs y métricas
 - 💰 **Gestión de Comprobantes** - Control completo de ingresos y egresos
+- 📄 **PDFs Profesionales** - Generación automática de comprobantes en PDF ⭐ **NUEVO**
+- 🎨 **Sistema de Estados** - REG/PAG/ANU con badges visuales de colores ⭐ **NUEVO**
+- 💳 **Módulo de Abonos** - Registro completo de pagos con vouchers ⭐ **NUEVO**
+- 📎 **Gestión de Archivos** - Subida y descarga de FotoCP y FotoAbono ⭐ **NUEVO**
 - 📈 **Flujo de Caja** - Análisis y proyecciones financieras
 - 🏢 **Multi-tenant** - Soporte para múltiples empresas
 - 🎨 **UI Moderna** - Diseño responsive con shadcn/ui
 - 🔐 **Seguridad** - JWT Authentication y Spring Security
 - 📱 **Responsive** - Funciona en desktop, tablet y móvil
+
+## 🎉 Nuevas Funcionalidades (Nov 2025)
+
+### 📄 Generación de PDFs Profesionales
+- **Diseño corporativo** con encabezado CONSANDINA
+- **Badge de estado** con colores (REGISTRADO/PAGADO/ANULADO)
+- **Tabla de partidas** profesional con bordes
+- **Total destacado** en azul
+- **Descarga con un clic** desde el botón "Descargar PDF"
+- 👉 [**Ver Guía Rápida**](PRUEBA_RAPIDA_PDF.md)
+
+### 🎨 Sistema de Estados
+- **REGISTRADO** (REG) - Badge gris - Pago pendiente
+- **PAGADO** (PAG) - Badge verde - Pago completado
+- **ANULADO** (ANU) - Badge rojo - Comprobante anulado
+- Cambio automático al registrar pago
+
+### 💳 Módulo de Abonos (Pagos)
+- Registro de fecha de pago (FecAbono)
+- 7 medios de pago disponibles
+- Descripción del pago (DesAbono)
+- Subida de voucher bancario (FotoAbono)
+
+### 📎 Gestión de Archivos
+- **FotoCP**: Comprobante original (factura del proveedor)
+- **FotoAbono**: Voucher de pago (comprobante bancario)
+- Validación: PDF, JPG, PNG (máx 10MB)
+- Almacenamiento seguro en servidor
+
+## 📚 Documentación Completa
+
+### 🚀 **Inicio Rápido**
+- [**ÍNDICE.md**](INDICE.md) - Navegación completa de la documentación
+- [**PRUEBA_RAPIDA_PDF.md**](PRUEBA_RAPIDA_PDF.md) - Prueba el sistema en 3 pasos
+
+### 🎓 **Para el Profesor / Evaluador**
+- [**RESUMEN_EJECUTIVO_PROFESOR.md**](RESUMEN_EJECUTIVO_PROFESOR.md) - Resumen completo para evaluación
+
+### 👤 **Guías de Usuario**
+- [**COMO_USAR.md**](COMO_USAR.md) - Manual completo del sistema
+- [**GUIA_PDF_PROFESIONAL.md**](GUIA_PDF_PROFESIONAL.md) - Todo sobre PDFs
+- [**uploads/ejemplos/README-COMO-USAR-ARCHIVOS.md**](uploads/ejemplos/README-COMO-USAR-ARCHIVOS.md) - Guía de archivos
+
+### 🔧 **Guías Técnicas**
+- [**RESUMEN_IMPLEMENTACION_PDF.md**](RESUMEN_IMPLEMENTACION_PDF.md) - Documentación técnica de PDFs
+- [**RESUMEN_IMPLEMENTACION.md**](RESUMEN_IMPLEMENTACION.md) - Resumen general
+- [**GUIA_TESTING.md**](GUIA_TESTING.md) - Guía de pruebas
+
+## 🎯 Demo Rápida
+
+```bash
+# 1. Abrir navegador en:
+http://localhost:3000/comprobantes/egreso-7005-CP-007
+
+# 2. Hacer clic en:
+"Descargar PDF"
+
+# 3. Ver el PDF profesional descargado:
+Comprobante-CP-007-2025-11-25.pdf
+```
 
 ## 🚀 Stack Tecnológico 2025
 

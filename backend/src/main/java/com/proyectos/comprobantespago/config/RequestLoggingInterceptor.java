@@ -17,6 +17,7 @@ public class RequestLoggingInterceptor extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Log para comprobantes-pago
         if (request.getRequestURI().contains("/comprobantes-pago") && "POST".equals(request.getMethod())) {
             System.out.println("🔍 Request recibido:");
             System.out.println("  URI: " + request.getRequestURI());
@@ -28,6 +29,16 @@ public class RequestLoggingInterceptor extends OncePerRequestFilter {
             request.getHeaderNames().asIterator().forEachRemaining(headerName -> {
                 System.out.println("    " + headerName + ": " + request.getHeader(headerName));
             });
+        }
+
+        // Log para files (debugging upload)
+        if (request.getRequestURI().contains("/files")) {
+            System.out.println("📁 File Upload Request:");
+            System.out.println("  URI completo: " + request.getRequestURI());
+            System.out.println("  Context Path: " + request.getContextPath());
+            System.out.println("  Servlet Path: " + request.getServletPath());
+            System.out.println("  Method: " + request.getMethod());
+            System.out.println("  Content-Type: " + request.getContentType());
         }
 
         filterChain.doFilter(request, response);

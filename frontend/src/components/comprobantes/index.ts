@@ -10,3 +10,9 @@ export { PartidaSelector } from './PartidaSelector';
 export { PartidaTreeSelector } from './PartidaTreeSelector';
 export { PresupuestoAlert } from './PresupuestoAlert';
 export { TaxCalculator } from './TaxCalculator';
+
+// Componentes de gestión de abonos y estados
+export { AbonoInfo } from './AbonoInfo';
+export { EstadoBadge } from './EstadoBadge';
+export { FileUploader } from './FileUploader';
+export { RegistrarPagoModal } from './RegistrarPagoModal';

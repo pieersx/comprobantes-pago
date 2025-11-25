@@ -147,6 +147,23 @@ export const comprobantesIngresoService = {
       throw new Error(handleApiError(error));
     }
   },
+
+  // Actualizar FotoCP (factura)
+  actualizarFotoCP: async (
+    codCia: number,
+    nroCp: string,
+    fotoCP: string
+  ): Promise<VtaCompPagoCab> => {
+    try {
+      const response = await apiClient.put<ApiResponse<VtaCompPagoCab>>(
+        `/comprobantes-venta/${codCia}/${nroCp}/archivos`,
+        { fotoCp: fotoCP }
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
 };
 
 // ===================================
@@ -249,6 +266,24 @@ export const comprobantesEgresoService = {
     try {
       const response = await apiClient.patch<ApiResponse<CompPagoCab>>(
         `/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/anular`
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  // Actualizar FotoCP (factura del proveedor)
+  actualizarFotoCP: async (
+    codCia: number,
+    codProveedor: number,
+    nroCp: string,
+    fotoCP: string
+  ): Promise<CompPagoCab> => {
+    try {
+      const response = await apiClient.put<ApiResponse<CompPagoCab>>(
+        `/comp-pago-cab/${codCia}/${codProveedor}/${nroCp}/archivos`,
+        { fotoCp: fotoCP }
       );
       return response.data.data;
     } catch (error) {

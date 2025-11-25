@@ -5,6 +5,9 @@ import java.util.List;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -68,5 +71,31 @@ public class CompPagoCabController {
             @PathVariable Long codCia,
             @PathVariable String estado) {
         return comprobantePagoCabRepository.findByEstado(codCia, estado);
+    }
+
+    @Operation(summary = "Actualizar archivos adjuntos del comprobante de egreso", description = "Actualiza las rutas de los archivos adjuntos (comprobante y/o abono) de un comprobante de egreso existente.")
+    @PutMapping("/{codCia}/{codProveedor}/{nroCp}/archivos")
+    public ComprobantePagoCab actualizarArchivos(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp,
+            @RequestBody java.util.Map<String, String> archivos) {
+
+        ComprobantePagoCab comprobante = comprobantePagoCabRepository
+                .findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado"));
+
+        String fotoCp = archivos.get("fotoCp");
+        String fotoAbono = archivos.get("fotoAbono");
+
+        if (fotoCp != null) {
+            comprobante.setFotoCp(fotoCp);
+        }
+
+        if (fotoAbono != null) {
+            comprobante.setFotoAbono(fotoAbono);
+        }
+
+        return comprobantePagoCabRepository.save(comprobante);
     }
 }

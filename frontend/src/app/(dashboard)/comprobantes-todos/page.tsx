@@ -1,5 +1,6 @@
 'use client'
 
+import { EstadoBadge } from '@/components/comprobantes'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -181,6 +182,7 @@ export default function ComprobantesPage() {
                           {comp.tipo === 'ingreso' ? 'Ingreso' : 'Egreso'}
                         </Badge>
                         <Badge variant="outline">{comp.eCompPago}</Badge>
+                        <EstadoBadge estado={comp.codEstado || 'REG'} />
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
@@ -226,6 +228,7 @@ export default function ComprobantesPage() {
                       <h3 className="font-semibold">{ingreso.nroCp}</h3>
                       <Badge>Ingreso</Badge>
                       <Badge variant="outline">{ingreso.eCompPago}</Badge>
+                      <EstadoBadge estado={(ingreso.codEstado || 'REG') as 'REG' | 'PAG' | 'ANU'} />
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
@@ -270,6 +273,7 @@ export default function ComprobantesPage() {
                       <h3 className="font-semibold">{egreso.nroCp}</h3>
                       <Badge variant="destructive">Egreso</Badge>
                       <Badge variant="outline">{egreso.eCompPago}</Badge>
+                      <EstadoBadge estado={(egreso.codEstado || 'REG') as 'REG' | 'PAG' | 'ANU'} />
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">

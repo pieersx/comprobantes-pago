@@ -34,6 +34,7 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/actuator/**",
                                 "/auth/**",
+                                "/files/**",
                                 "/comprobantes/**",
                                 "/comprobantes-pago/**",
                                 "/comprobantes-venta/**",

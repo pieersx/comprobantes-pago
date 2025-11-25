@@ -1,0 +1,57 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> >>
+endobj
+4 0 obj
+<< /Length 400 >>
+stream
+BT
+/F1 18 Tf
+70 800 Td
+(Banco de Credito del Peru (BCP)) Tj
+/F1 12 Tf
+70 770 Td
+(Fecha de operacion: 18/07/2023   Hora: 10:32 AM) Tj
+70 750 Td
+(N\272 de operacion: 123456789) Tj
+70 730 Td
+(Cuenta de origen: 193-12345678-0-12 (CONSANDINA)) Tj
+70 710 Td
+(Cuenta de destino: 193-98765432-0-12 (SERVICIOS TECNICOS INTEGRALES)) Tj
+70 690 Td
+(Titular de destino: SERVICIOS TECNICOS INTEGRALES) Tj
+70 670 Td
+(Monto transferido: S/ 33,040.00) Tj
+70 650 Td
+(Moneda: Soles) Tj
+70 630 Td
+(Concepto: Pago de factura CP-006) Tj
+70 610 Td
+(Observaciones: Transferencia por servicios tecnicos) Tj
+70 590 Td
+(Autorizado por: Juan Carlos Perez) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000010 00000 n
+0000000079 00000 n
+0000000178 00000 n
+0000000377 00000 n
+0000000622 00000 n
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+726
+%%EOF

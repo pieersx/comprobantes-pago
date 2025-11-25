@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voucher de Transferencia</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #f3f4f6;
+      }
+      .voucher {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .bank-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .bank-name {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .bank-subtitle {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      .success-icon {
+        text-align: center;
+        margin: 20px 0;
+      }
+      .success-icon .circle {
+        width: 80px;
+        height: 80px;
+        background: #10b981;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 40px;
+      }
+      .status {
+        text-align: center;
+        margin: 20px 0;
+      }
+      .status-text {
+        font-size: 24px;
+        font-weight: bold;
+        color: #10b981;
+      }
+      .status-subtext {
+        color: #6b7280;
+        font-size: 14px;
+      }
+      .info-section {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f3f4f6;
+      }
+      .info-row:last-child {
+        border-bottom: none;
+      }
+      .label {
+        color: #6b7280;
+        font-size: 14px;
+      }
+      .value {
+        font-weight: bold;
+        font-size: 14px;
+        text-align: right;
+      }
+      .amount-box {
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .amount-label {
+        color: #92400e;
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+      .amount-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #92400e;
+      }
+      .reference {
+        background: #eff6ff;
+        border: 1px solid #3b82f6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .reference-label {
+        color: #1e40af;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+      .reference-code {
+        font-family: 'Courier New', monospace;
+        font-size: 18px;
+        font-weight: bold;
+        color: #1e40af;
+        letter-spacing: 2px;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e5e7eb;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .watermark {
+        text-align: center;
+        margin: 20px 0;
+        font-size: 12px;
+        color: #dc2626;
+        font-weight: bold;
+        padding: 10px;
+        background: #fee2e2;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="voucher">
+      <div class="bank-header">
+        <div class="bank-name">🏦 BANCO DE CRÉDITO</div>
+        <div class="bank-subtitle">
+          Banca por Internet - Comprobante de Operación
+        </div>
+      </div>
+
+      <div class="success-icon">
+        <div class="circle">✓</div>
+      </div>
+
+      <div class="status">
+        <div class="status-text">Transferencia Exitosa</div>
+        <div class="status-subtext">La operación se realizó correctamente</div>
+      </div>
+
+      <div class="amount-box">
+        <div class="amount-label">MONTO TRANSFERIDO</div>
+        <div class="amount-value">S/ 88,500.00</div>
+      </div>
+
+      <div class="info-section">
+        <div style="font-weight: bold; margin-bottom: 15px; color: #1f2937">
+          📤 DATOS DEL ORIGEN
+        </div>
+        <div class="info-row">
+          <div class="label">Cuenta Origen:</div>
+          <div class="value">*** *** *** 4521</div>
+        </div>
+        <div class="info-row">
+          <div class="label">Titular:</div>
+          <div class="value">EMPRESA ENERGÉTICA DEL PERÚ</div>
+        </div>
+        <div class="info-row">
+          <div class="label">RUC:</div>
+          <div class="value">20987654321</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div style="font-weight: bold; margin-bottom: 15px; color: #1f2937">
+          📥 DATOS DEL DESTINO
+        </div>
+        <div class="info-row">
+          <div class="label">Cuenta Destino:</div>
+          <div class="value">191-1234567-0-89</div>
+        </div>
+        <div class="info-row">
+          <div class="label">Beneficiario:</div>
+          <div class="value">CONSTRUCTORA EJEMPLO SAC</div>
+        </div>
+        <div class="info-row">
+          <div class="label">RUC:</div>
+          <div class="value">20123456789</div>
+        </div>
+        <div class="info-row">
+          <div class="label">Banco Destino:</div>
+          <div class="value">BCP</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <div style="font-weight: bold; margin-bottom: 15px; color: #1f2937">
+          ℹ️ INFORMACIÓN DE LA OPERACIÓN
+        </div>
+        <div class="info-row">
+          <div class="label">Fecha y Hora:</div>
+          <div class="value">25/11/2025 - 14:32:15</div>
+        </div>
+        <div class="info-row">
+          <div class="label">Tipo de Operación:</div>
+          <div class="value">Transferencia a Terceros</div>
+        </div>
+        <div class="info-row">
+          <div class="label">Concepto:</div>
+          <div class="value">Pago Factura CP-002</div>
+        </div>
+        <div class="info-row">
+          <div class="label">Comisión:</div>
+          <div class="value">S/ 0.00</div>
+        </div>
+      </div>
+
+      <div class="reference">
+        <div class="reference-label">NÚMERO DE OPERACIÓN</div>
+        <div class="reference-code">2025112500453821</div>
+      </div>
+
+      <div class="watermark">⚠️ DOCUMENTO DE EJEMPLO PARA TESTING ⚠️</div>
+
+      <div class="footer">
+        <strong>Importante:</strong> Este comprobante es de ejemplo para
+        testing.<br />
+        Guarde este comprobante como respaldo de su operación.<br />
+        Fecha de impresión: 25/11/2025 14:35:00
+      </div>
+    </div>
+  </body>
+</html>

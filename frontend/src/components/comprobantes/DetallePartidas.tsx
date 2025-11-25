@@ -116,6 +116,22 @@ export function DetallePartidas({
       // Agregar nueva partida
       if (!selectedPartida) return;
 
+      // VALIDACIÓN: Verificar si la partida ya existe
+      const partidaExistente = detalles.find(
+        (d) => d.codPartida === selectedPartida.codPartida
+      );
+
+      if (partidaExistente) {
+        // Mostrar error con toast
+        if (typeof window !== 'undefined') {
+          const { toast } = require('sonner');
+          toast.error('Partida duplicada', {
+            description: `La partida ${selectedPartida.codPartida} ya fue agregada a este comprobante`,
+          });
+        }
+        return;
+      }
+
       onAdd({
         codPartida: selectedPartida.codPartida,
         nombrePartida: selectedPartida.desPartida,

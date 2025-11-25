@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Factura Ejemplo - CP-002</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        border: 2px solid #333;
+      }
+      .header {
+        text-align: center;
+        border-bottom: 3px solid #000;
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+      }
+      .company {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2563eb;
+      }
+      .ruc {
+        font-size: 14px;
+        color: #666;
+      }
+      .invoice-type {
+        background: #2563eb;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: bold;
+        margin: 20px 0;
+      }
+      .section {
+        margin: 20px 0;
+      }
+      .section-title {
+        font-weight: bold;
+        font-size: 14px;
+        background: #f3f4f6;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .label {
+        font-weight: bold;
+        width: 200px;
+      }
+      .value {
+        flex: 1;
+        text-align: right;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      th {
+        background: #2563eb;
+        color: white;
+        padding: 10px;
+        text-align: left;
+      }
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .totals {
+        text-align: right;
+        margin-top: 20px;
+      }
+      .totals .row {
+        display: flex;
+        justify-content: flex-end;
+        padding: 5px 0;
+      }
+      .totals .label {
+        width: 200px;
+        font-weight: bold;
+      }
+      .totals .value {
+        width: 150px;
+        text-align: right;
+      }
+      .total-final {
+        background: #fef3c7;
+        padding: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        border: 2px solid #f59e0b;
+      }
+      .footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 2px solid #333;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+      .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        font-size: 100px;
+        color: rgba(220, 38, 38, 0.1);
+        font-weight: bold;
+        z-index: -1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="watermark">EJEMPLO</div>
+
+    <div class="header">
+      <div class="company">CONSTRUCTORA EJEMPLO S.A.C.</div>
+      <div class="ruc">RUC: 20123456789</div>
+      <div style="font-size: 12px; margin-top: 5px">
+        Av. Los Constructores 123, Lima - Perú<br />
+        Teléfono: (01) 234-5678 | Email: ventas@construccion.com
+      </div>
+    </div>
+
+    <div class="invoice-type">
+      FACTURA ELECTRÓNICA<br />
+      CP-002
+    </div>
+
+    <div class="section">
+      <div class="section-title">DATOS DEL CLIENTE</div>
+      <div class="info-row">
+        <div class="label">Señor(es):</div>
+        <div class="value">EMPRESA ENERGÉTICA DEL PERÚ S.A.</div>
+      </div>
+      <div class="info-row">
+        <div class="label">RUC:</div>
+        <div class="value">20987654321</div>
+      </div>
+      <div class="info-row">
+        <div class="label">Dirección:</div>
+        <div class="value">Av. Principal 456, Lima</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">INFORMACIÓN DE LA FACTURA</div>
+      <div class="info-row">
+        <div class="label">Fecha de Emisión:</div>
+        <div class="value">21 de Marzo, 2023</div>
+      </div>
+      <div class="info-row">
+        <div class="label">Moneda:</div>
+        <div class="value">Soles (PEN)</div>
+      </div>
+      <div class="info-row">
+        <div class="label">Forma de Pago:</div>
+        <div class="value">Crédito 30 días</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">DETALLE DE LA FACTURA</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Cantidad</th>
+            <th>Descripción</th>
+            <th>P. Unitario</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Mano de obra para proyecto construcción planta solar</td>
+            <td>S/ 50,000.00</td>
+            <td>S/ 50,000.00</td>
+          </tr>
+          <tr>
+            <td>-</td>
+            <td>Supervisión técnica especializada</td>
+            <td>S/ 15,000.00</td>
+            <td>S/ 15,000.00</td>
+          </tr>
+          <tr>
+            <td>-</td>
+            <td>Materiales y herramientas</td>
+            <td>S/ 10,000.00</td>
+            <td>S/ 10,000.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div class="row">
+        <div class="label">Sub Total:</div>
+        <div class="value">S/ 75,000.00</div>
+      </div>
+      <div class="row">
+        <div class="label">IGV (18%):</div>
+        <div class="value">S/ 13,500.00</div>
+      </div>
+      <div class="row total-final">
+        <div class="label">TOTAL A PAGAR:</div>
+        <div class="value">S/ 88,500.00</div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top: 40px">
+      <div class="section-title">DATOS BANCARIOS PARA PAGO</div>
+      <div class="info-row">
+        <div class="label">Banco:</div>
+        <div class="value">BCP - Banco de Crédito del Perú</div>
+      </div>
+      <div class="info-row">
+        <div class="label">Cuenta Corriente (Soles):</div>
+        <div class="value">191-1234567-0-89</div>
+      </div>
+      <div class="info-row">
+        <div class="label">Código Interbancario:</div>
+        <div class="value">002-191-001234567089-12</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>IMPORTANTE:</strong> Esta factura es de ejemplo para testing del
+      sistema.<br />
+      Representación impresa de la Factura Electrónica.<br />
+      Puede verificar este documento en www.sunat.gob.pe
+    </div>
+  </body>
+</html>

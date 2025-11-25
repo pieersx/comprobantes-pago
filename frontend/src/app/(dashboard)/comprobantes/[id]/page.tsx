@@ -1,5 +1,7 @@
 'use client';
 
+import { AbonoInfo, EstadoBadge } from '@/components/comprobantes';
+import { FileUploader } from '@/components/comprobantes/FileUploader';
 import { Badge } from '@/components/ui/badge';
 import {
     Breadcrumb,
@@ -32,11 +34,13 @@ import {
     comprobantesEgresoService,
     comprobantesIngresoService,
 } from '@/services/comprobantes.service';
+import { generarComprobantePDF } from '@/services/pdf-generator.service';
 import { useAppStore } from '@/store/useAppStore';
-import { Download, Edit, FileX } from 'lucide-react';
+import { Download, Edit, FileX, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast as sonnerToast } from 'sonner';
 
 /**
  * Página de detalle de un comprobante
@@ -54,6 +58,8 @@ export default function DetalleComprobantePage() {
   const [tipo, setTipo] = useState<'ingreso' | 'egreso'>('egreso');
   const [anularDialogOpen, setAnularDialogOpen] = useState(false);
   const [anulando, setAnulando] = useState(false);
+  const [subirFacturaDialogOpen, setSubirFacturaDialogOpen] = useState(false);
+  const [fotoCP, setFotoCP] = useState<string>('');
 
   const comprobanteId = params.id as string;
 
@@ -138,11 +144,121 @@ export default function DetalleComprobantePage() {
     }
   };
 
+  const handleGuardarFotoCP = async () => {
+    if (!fotoCP) {
+      sonnerToast.error('Debe seleccionar un archivo');
+      return;
+    }
+
+    try {
+      // Guardar FotoCP en el backend
+      if (tipo === 'egreso') {
+        await comprobantesEgresoService.actualizarFotoCP(
+          codCia,
+          comprobante.codProveedor,
+          comprobante.nroCp,
+          fotoCP
+        );
+      } else {
+        await comprobantesIngresoService.actualizarFotoCP(
+          codCia,
+          comprobante.nroCp,
+          fotoCP
+        );
+      }
+
+      sonnerToast.success('Factura subida correctamente');
+      setSubirFacturaDialogOpen(false);
+      setFotoCP('');
+
+      // Recargar comprobante
+      const parts = comprobanteId.split('-');
+      if (tipo === 'egreso') {
+        const codProveedor = parseInt(parts[1]);
+        const nroCp = parts.slice(2).join('-');
+        const data = await comprobantesEgresoService.getById(codCia, codProveedor, nroCp);
+        setComprobante(data);
+      } else {
+        const nroCp = parts.slice(1).join('-');
+        const data = await comprobantesIngresoService.getById(codCia, nroCp);
+        setComprobante(data);
+      }
+    } catch (error: any) {
+      console.error('Error al subir factura:', error);
+      sonnerToast.error(error.message || 'Error al subir la factura');
+    }
+  };
+
   const handleDescargarPDF = () => {
-    toast({
-      title: 'Funcionalidad en desarrollo',
-      description: 'La descarga de PDF estará disponible próximamente',
-    });
+    try {
+      if (!comprobante) return;
+
+      // Calcular subtotal e IGV desde los detalles si no vienen en el comprobante
+      let subtotal = comprobante.impSubTotMn || 0;
+      let igvTotal = comprobante.impIgvMn || 0;
+
+      if (comprobante.detalles && comprobante.detalles.length > 0) {
+        if (!subtotal) {
+          subtotal = comprobante.detalles.reduce((sum: number, d: any) => sum + (d.impNetoMn || 0), 0);
+        }
+        if (!igvTotal) {
+          igvTotal = comprobante.detalles.reduce((sum: number, d: any) => sum + (d.impIgvMn || 0), 0);
+        }
+      }
+
+      // Convertir detalles a formato de partidas para el PDF
+      const partidasParaPDF = comprobante.detalles?.map((detalle: any) => ({
+        numSec: detalle.sec,
+        codPartida: detalle.codPartida,
+        desPartida: detalle.descripcion,
+        impNetMn: detalle.impNetoMn,
+        impIgvMn: detalle.impIgvMn,
+        impTotMn: detalle.impTotalMn,
+      })) || [];
+
+      console.log('Datos del comprobante para PDF:', {
+        nroCp: comprobante.nroCp,
+        codPyto: comprobante.codPyto,
+        codProveedor: comprobante.codProveedor,
+        codCliente: comprobante.codCliente,
+        detalles: comprobante.detalles,
+        partidasParaPDF,
+        impSubTotMn: subtotal,
+        impIgvMn: igvTotal,
+        impTotalMn: comprobante.impTotalMn,
+      });
+
+      generarComprobantePDF({
+        nroCp: comprobante.nroCp,
+        fecCp: comprobante.fecCp,
+        desCp: comprobante.desCp,
+        codEstado: comprobante.codEstado || 'REG',
+        codProveedor: comprobante.codProveedor,
+        codCliente: comprobante.codCliente,
+        desProveedor: comprobante.desProveedor,
+        desCliente: comprobante.desCliente,
+        codProyecto: comprobante.codPyto,
+        desProyecto: comprobante.desPyto,
+        codMoneda: comprobante.tMoneda,
+        partidas: partidasParaPDF,
+        impSubTotMn: subtotal,
+        impIgvMn: igvTotal,
+        monTotal: comprobante.impTotalMn || 0,
+        tipo: tipo,
+      });
+
+      toast({
+        title: 'PDF generado',
+        description: 'El PDF se ha descargado correctamente',
+      });
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo generar el PDF',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
@@ -211,6 +327,12 @@ export default function DetalleComprobantePage() {
             <Download className="mr-2 h-4 w-4" />
             Descargar PDF
           </Button>
+          {tipo === 'egreso' && comprobante.codEstado !== 'ANU' && (
+            <Button variant="outline" onClick={() => setSubirFacturaDialogOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Subir Factura
+            </Button>
+          )}
           {comprobante.codEstado !== 'ANU' && comprobante.codEstado !== 'PAG' && (
             <Button variant="outline" asChild>
               <Link href={`/comprobantes/${comprobanteId}/editar`}>
@@ -241,9 +363,9 @@ export default function DetalleComprobantePage() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Estado</p>
-              <Badge variant={estadoVariant} className="mt-1">
-                {comprobante.codEstado}
-              </Badge>
+              <div className="mt-1">
+                <EstadoBadge estado={comprobante.codEstado || 'REG'} />
+              </div>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Fecha de Emisión</p>
@@ -360,6 +482,29 @@ export default function DetalleComprobantePage() {
         </CardContent>
       </Card>
 
+      {/* Gestión de Abonos */}
+      <AbonoInfo
+        tipo={tipo}
+        codCia={codCia}
+        codProveedor={tipo === 'egreso' ? comprobante.codProveedor : undefined}
+        nroCP={comprobante.nroCp}
+        estado={comprobante.codEstado || 'REG'}
+        onEstadoChange={async () => {
+          // Recargar comprobante para actualizar el estado
+          if (tipo === 'egreso') {
+            const data = await comprobantesEgresoService.getById(
+              codCia,
+              comprobante.codProveedor,
+              comprobante.nroCp
+            );
+            setComprobante(data);
+          } else {
+            const data = await comprobantesIngresoService.getById(codCia, comprobante.nroCp);
+            setComprobante(data);
+          }
+        }}
+      />
+
       {/* Historial de Estados */}
       <Card>
         <CardHeader>
@@ -386,6 +531,44 @@ export default function DetalleComprobantePage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Dialog para subir factura (FotoCP) */}
+      <Dialog open={subirFacturaDialogOpen} onOpenChange={setSubirFacturaDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Subir Factura del Proveedor</DialogTitle>
+            <DialogDescription>
+              Cargue el PDF o imagen de la factura recibida del proveedor para el comprobante <strong>{comprobante?.nroCp}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <FileUploader
+              label="Factura del Proveedor (PDF o Imagen)"
+              tipo={tipo}
+              onUploadSuccess={(path) => setFotoCP(path)}
+              currentFile={fotoCP || comprobante?.fotoCP}
+              accept=".pdf,.jpg,.jpeg,.png"
+              maxSizeMB={10}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSubirFacturaDialogOpen(false);
+                setFotoCP('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleGuardarFotoCP} disabled={!fotoCP}>
+              Guardar Factura
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de confirmación para anular */}
       <Dialog open={anularDialogOpen} onOpenChange={setAnularDialogOpen}>

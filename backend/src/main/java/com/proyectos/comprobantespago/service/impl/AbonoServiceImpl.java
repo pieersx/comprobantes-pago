@@ -1,0 +1,144 @@
+package com.proyectos.comprobantespago.service.impl;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.proyectos.comprobantespago.dto.AbonoDTO;
+import com.proyectos.comprobantespago.entity.ComprobantePagoCab;
+import com.proyectos.comprobantespago.entity.VtaCompPagoCab;
+import com.proyectos.comprobantespago.enums.EstadoComprobante;
+import com.proyectos.comprobantespago.exception.ResourceNotFoundException;
+import com.proyectos.comprobantespago.repository.ComprobantePagoCabRepository;
+import com.proyectos.comprobantespago.repository.VtaCompPagoCabRepository;
+import com.proyectos.comprobantespago.service.AbonoService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AbonoServiceImpl implements AbonoService {
+
+    private final ComprobantePagoCabRepository comprobantePagoCabRepository;
+    private final VtaCompPagoCabRepository vtaCompPagoCabRepository;
+
+    private static final String TAB_ESTADO = "004"; // Tabla de estados
+
+    @Override
+    @Transactional
+    public void registrarAbonoEgreso(Long codCia, Long codProveedor, String nroCP, AbonoDTO abonoDTO) {
+        log.info("Registrando abono para egreso: codCia={}, codProveedor={}, nroCP={}",
+                codCia, codProveedor, nroCP);
+
+        ComprobantePagoCab comprobante = comprobantePagoCabRepository
+                .findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de egreso no encontrado: " + nroCP));
+
+        // Actualizar campos de abono
+        comprobante.setFecAbono(abonoDTO.getFechaAbono());
+        comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
+        comprobante.setFotoAbono(abonoDTO.getFotoAbono() != null ? abonoDTO.getFotoAbono() : "");
+
+        // Cambiar estado a PAGADO
+        comprobante.setTabEstado(TAB_ESTADO);
+        comprobante.setCodEstado(EstadoComprobante.PAGADO.getCodigo());
+
+        comprobantePagoCabRepository.save(comprobante);
+        log.info("Abono registrado exitosamente para egreso: {}", nroCP);
+    }
+
+    @Override
+    @Transactional
+    public void registrarAbonoIngreso(Long codCia, String nroCP, AbonoDTO abonoDTO) {
+        log.info("Registrando abono para ingreso: codCia={}, nroCP={}", codCia, nroCP);
+
+        VtaCompPagoCab comprobante = vtaCompPagoCabRepository
+                .findByCodCiaAndNroCp(codCia, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de ingreso no encontrado: " + nroCP));
+
+        // Actualizar campos de abono
+        comprobante.setFecAbono(abonoDTO.getFechaAbono());
+        comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
+        comprobante.setFotoAbono(abonoDTO.getFotoAbono() != null ? abonoDTO.getFotoAbono() : "");
+
+        // Cambiar estado a PAGADO
+        comprobante.setTabEstado(TAB_ESTADO);
+        comprobante.setCodEstado(EstadoComprobante.PAGADO.getCodigo());
+
+        vtaCompPagoCabRepository.save(comprobante);
+        log.info("Abono registrado exitosamente para ingreso: {}", nroCP);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarEstadoEgreso(Long codCia, Long codProveedor, String nroCP, EstadoComprobante nuevoEstado) {
+        log.info("Cambiando estado de egreso {} a {}", nroCP, nuevoEstado);
+
+        ComprobantePagoCab comprobante = comprobantePagoCabRepository
+                .findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de egreso no encontrado: " + nroCP));
+
+        comprobante.setTabEstado(TAB_ESTADO);
+        comprobante.setCodEstado(nuevoEstado.getCodigo());
+
+        comprobantePagoCabRepository.save(comprobante);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarEstadoIngreso(Long codCia, String nroCP, EstadoComprobante nuevoEstado) {
+        log.info("Cambiando estado de ingreso {} a {}", nroCP, nuevoEstado);
+
+        VtaCompPagoCab comprobante = vtaCompPagoCabRepository
+                .findByCodCiaAndNroCp(codCia, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de ingreso no encontrado: " + nroCP));
+
+        comprobante.setTabEstado(TAB_ESTADO);
+        comprobante.setCodEstado(nuevoEstado.getCodigo());
+
+        vtaCompPagoCabRepository.save(comprobante);
+    }
+
+    @Override
+    public AbonoDTO getAbonoEgreso(Long codCia, Long codProveedor, String nroCP) {
+        ComprobantePagoCab comprobante = comprobantePagoCabRepository
+                .findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de egreso no encontrado: " + nroCP));
+
+        // Si no tiene fecha de abono, no hay abono registrado
+        if (comprobante.getFecAbono() == null) {
+            return null;
+        }
+
+        return AbonoDTO.builder()
+                .fechaAbono(comprobante.getFecAbono())
+                .descripcionMedioPago(comprobante.getDesAbono())
+                .fotoAbono(comprobante.getFotoAbono())
+                .build();
+    }
+
+    @Override
+    public AbonoDTO getAbonoIngreso(Long codCia, String nroCP) {
+        VtaCompPagoCab comprobante = vtaCompPagoCabRepository
+                .findByCodCiaAndNroCp(codCia, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de ingreso no encontrado: " + nroCP));
+
+        // Si no tiene fecha de abono, no hay abono registrado
+        if (comprobante.getFecAbono() == null) {
+            return null;
+        }
+
+        return AbonoDTO.builder()
+                .fechaAbono(comprobante.getFecAbono())
+                .descripcionMedioPago(comprobante.getDesAbono())
+                .fotoAbono(comprobante.getFotoAbono())
+                .build();
+    }
+}
