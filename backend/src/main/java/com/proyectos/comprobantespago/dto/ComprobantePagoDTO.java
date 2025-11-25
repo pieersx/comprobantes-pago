@@ -151,8 +151,13 @@ public class ComprobantePagoDTO {
     private String descripcionTipoComprobante;
     private String descripcionMoneda;
 
+    // Campos adicionales para cálculo de impuestos
+    // Feature: comprobantes-mejoras
+    // Requirements: 1.2, 1.4, 2.1, 2.2, 2.3
+    private BigDecimal porcentajeImpuesto;
+    private Boolean igvEditable;
+
     // Detalle
-    @NotEmpty(message = "Debe incluir al menos un detalle")
     @NotEmpty(message = "Debe incluir al menos un detalle")
     private List<@Valid ComprobantePagoDetalleDTO> detalles;
 }

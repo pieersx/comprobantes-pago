@@ -10,6 +10,9 @@ export interface ComprobanteUnificado {
   impTotalMn: number;
   estado: string;
   tipo: 'INGRESO' | 'EGRESO';
+  tCompPago?: string; // Tipo de comprobante: FAC, BOL, REC, OTR
+  fotoCp?: string; // Ruta del archivo del comprobante
+  fotoAbono?: string; // Ruta del archivo del abono
 }
 
 class ComprobantesUnifiedService {
@@ -30,6 +33,9 @@ class ComprobantesUnifiedService {
         impTotalMn: ing.impTotalMn || 0,
         estado: ing.codEstado || '',
         tipo: 'INGRESO' as const,
+        tCompPago: ing.tCompPago,
+        fotoCp: ing.fotoCp,
+        fotoAbono: ing.fotoAbono,
       }));
 
       const egresosUnificados: ComprobanteUnificado[] = egresos.map((egr) => ({
@@ -42,6 +48,9 @@ class ComprobantesUnifiedService {
         impTotalMn: egr.impTotalMn || 0,
         estado: egr.codEstado || '',
         tipo: 'EGRESO' as const,
+        tCompPago: egr.tCompPago,
+        fotoCp: egr.fotoCp,
+        fotoAbono: egr.fotoAbono,
       }));
 
       return [...ingresosUnificados, ...egresosUnificados].sort(

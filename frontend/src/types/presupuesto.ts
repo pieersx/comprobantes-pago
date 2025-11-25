@@ -50,6 +50,7 @@ export interface ResumenPresupuestoProyecto {
   codCia: number;
   codPyto: number;
   nombPyto: string;
+  nombreProyecto?: string;
   costoTotal: number;
   totalPresupuestoIngresos: number;
   totalEjecutadoIngresos: number;

@@ -58,7 +58,7 @@ export default function EgresosPage() {
             Gestiona todos los comprobantes de egreso
           </p>
         </div>
-        <Button>
+        <Button onClick={() => window.location.href = '/egresos/nuevo'}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Egreso
         </Button>
@@ -146,10 +146,12 @@ export default function EgresosPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nro. Comprobante</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Proveedor</TableHead>
                   <TableHead>Proyecto</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Monto</TableHead>
+                  <TableHead>Archivos</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -159,6 +161,17 @@ export default function EgresosPage() {
                   filteredEgresos.map((egreso) => (
                     <TableRow key={egreso.nroCP}>
                       <TableCell className="font-medium">{egreso.nroCP || 'N/A'}</TableCell>
+                      <TableCell>
+                        {egreso.tCompPago === 'FAC' ? (
+                          <Badge variant="outline">📄 Factura</Badge>
+                        ) : egreso.tCompPago === 'BOL' ? (
+                          <Badge variant="outline">🧾 Boleta</Badge>
+                        ) : egreso.tCompPago === 'REC' ? (
+                          <Badge variant="outline">📋 Recibo</Badge>
+                        ) : (
+                          <Badge variant="outline">📝 Otro</Badge>
+                        )}
+                      </TableCell>
                       <TableCell>{egreso.proveedor || 'Sin proveedor'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{egreso.proyecto || 'Sin proyecto'}</TableCell>
                       <TableCell>
@@ -168,19 +181,36 @@ export default function EgresosPage() {
                         S/ {(egreso.impTotalMn || 0).toLocaleString('es-PE')}
                       </TableCell>
                       <TableCell>
-                        {egreso.estado === 'PAG' ? (
+                        <div className="flex items-center gap-1">
+                          {egreso.fotoCp && (
+                            <Badge variant="secondary" className="text-xs">
+                              📎 CP
+                            </Badge>
+                          )}
+                          {egreso.fotoAbono && (
+                            <Badge variant="secondary" className="text-xs">
+                              💰 Abono
+                            </Badge>
+                          )}
+                          {!egreso.fotoCp && !egreso.fotoAbono && (
+                            <span className="text-xs text-muted-foreground">Sin archivos</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {egreso.estado === 'PAG' || egreso.estado === '002' ? (
                           <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                             <span className="flex items-center gap-1">
                               ✓ Pagado
                             </span>
                           </Badge>
-                        ) : egreso.estado === 'REG' ? (
+                        ) : egreso.estado === 'REG' || egreso.estado === '001' ? (
                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
                             <span className="flex items-center gap-1">
                               📝 Registrado
                             </span>
                           </Badge>
-                        ) : egreso.estado === 'ANU' ? (
+                        ) : egreso.estado === 'ANU' || egreso.estado === '003' ? (
                           <Badge variant="destructive">
                             <span className="flex items-center gap-1">
                               ✕ Anulado

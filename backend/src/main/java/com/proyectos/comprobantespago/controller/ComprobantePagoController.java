@@ -148,11 +148,9 @@ public class ComprobantePagoController {
     }
 
     @PatchMapping("/{codCia}/{codProveedor}/{nroCp}/anular")
-    @Operation(
-        summary = "Anular comprobante de pago",
-        description = "Cambia el estado del comprobante a ANU (Anulado) y restaura el presupuesto disponible. " +
-                      "Si el comprobante está en estado PAG (Pagado), requiere confirmación explícita."
-    )
+    @Operation(summary = "Anular comprobante de pago", description = "Cambia el estado del comprobante a ANU (Anulado) y restaura el presupuesto disponible. "
+            +
+            "Si el comprobante está en estado PAG (Pagado), requiere confirmación explícita.")
     public ResponseEntity<ApiResponse<ComprobantePagoDTO>> anular(
             @PathVariable Long codCia,
             @PathVariable Long codProveedor,
@@ -166,5 +164,82 @@ public class ComprobantePagoController {
         ComprobantePagoDTO comprobanteAnulado = comprobantePagoService.findById(codCia, codProveedor, nroCp);
 
         return ResponseEntity.ok(ApiResponse.success("Comprobante anulado exitosamente", comprobanteAnulado));
+    }
+
+    @GetMapping("/calcular-impuesto")
+    @Operation(summary = "Calcular impuesto según tipo de comprobante", description = "Calcula automáticamente el impuesto (IGV o retención) según el tipo de comprobante. "
+            +
+            "Los valores calculados pueden ser editados manualmente por el usuario.")
+    public ResponseEntity<ApiResponse<com.proyectos.comprobantespago.dto.CalculoImpuestoResponse>> calcularImpuesto(
+            @RequestParam @Parameter(description = "Monto base sin impuestos", required = true) BigDecimal montoBase,
+            @RequestParam @Parameter(description = "Tipo de comprobante (FAC, BOL, REC, OTR)", required = true) String tipoComprobante) {
+
+        com.proyectos.comprobantespago.dto.CalculoImpuestoResponse calculo = comprobantePagoService
+                .calcularImpuestoPorTipo(montoBase, tipoComprobante);
+
+        return ResponseEntity.ok(ApiResponse.success("Impuesto calculado exitosamente", calculo));
+    }
+
+    @PatchMapping("/{codCia}/{codProveedor}/{nroCp}/abono")
+    @Operation(summary = "Registrar abono en comprobante", description = "Registra un abono (pago parcial o total) en un comprobante. "
+            +
+            "Actualiza automáticamente el estado a PARCIALMENTE_PAGADO o TOTALMENTE_PAGADO según corresponda.")
+    public ResponseEntity<ApiResponse<ComprobantePagoDTO>> registrarAbono(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp,
+            @RequestBody @Valid com.proyectos.comprobantespago.dto.AbonoDTO abonoDTO) {
+
+        ComprobantePagoDTO comprobante = comprobantePagoService.registrarAbono(codCia, codProveedor, nroCp, abonoDTO);
+
+        return ResponseEntity.ok(ApiResponse.success("Abono registrado exitosamente", comprobante));
+    }
+
+    // ==================== Endpoints específicos para mejoras ====================
+    // Feature: comprobantes-mejoras
+    // Requirements: 1.1, 8.1, 8.2, 8.3, 8.4
+
+    @PostMapping("/egreso")
+    @Operation(summary = "Crear comprobante de egreso", description = "Crea un nuevo comprobante de egreso (COMP_PAGOCAB). "
+            +
+            "Asociado a un proveedor.")
+    public ResponseEntity<ApiResponse<ComprobantePagoDTO>> crearComprobanteEgreso(
+            @Valid @RequestBody ComprobantePagoDTO dto) {
+
+        ComprobantePagoDTO created = comprobantePagoService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Comprobante de egreso creado exitosamente", created));
+    }
+
+    @PostMapping("/ingreso")
+    @Operation(summary = "Crear comprobante de ingreso", description = "Crea un nuevo comprobante de ingreso (VTACOMP_PAGOCAB). "
+            +
+            "Asociado a un cliente. Nota: Actualmente usa el mismo servicio, se diferenciará en implementación futura.")
+    public ResponseEntity<ApiResponse<ComprobantePagoDTO>> crearComprobanteIngreso(
+            @Valid @RequestBody ComprobantePagoDTO dto) {
+
+        // TODO: Implementar servicio específico para ingresos que use VTACOMP_PAGOCAB
+        ComprobantePagoDTO created = comprobantePagoService.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Comprobante de ingreso creado exitosamente", created));
+    }
+
+    @PatchMapping("/{codCia}/{codProveedor}/{nroCp}/archivos")
+    @Operation(summary = "Actualizar archivos adjuntos del comprobante", description = "Actualiza las rutas de los archivos adjuntos (comprobante y/o abono) de un comprobante existente. "
+            +
+            "Permite actualizar fotoCp y fotoAbono independientemente.")
+    public ResponseEntity<ApiResponse<ComprobantePagoDTO>> updateFiles(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp,
+            @RequestBody Map<String, String> archivos) {
+
+        String fotoCp = archivos.get("fotoCp");
+        String fotoAbono = archivos.get("fotoAbono");
+
+        ComprobantePagoDTO actualizado = comprobantePagoService.updateFiles(codCia, codProveedor, nroCp, fotoCp,
+                fotoAbono);
+
+        return ResponseEntity.ok(ApiResponse.success("Archivos actualizados correctamente", actualizado));
     }
 }

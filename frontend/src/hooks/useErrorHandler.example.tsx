@@ -15,7 +15,7 @@ export function ExampleComponent() {
   const handleValidationError = async () => {
     try {
       // Intento de crear un comprobante con datos inválidos
-      await comprobantesService.createEgreso({
+      await comprobantesService.createComprobanteEgreso({
         codCia: 1,
         nroCp: '', // Campo vacío - error de validación
         codPyto: 1,
@@ -31,7 +31,8 @@ export function ExampleComponent() {
   const handleNotFoundError = async () => {
     try {
       // Intento de obtener un comprobante que no existe
-      await comprobantesService.getEgresoById(1, 999, '99999');
+      // await comprobantesService.getComprobanteById('1', '999', '99999');
+      throw new Error('Not found'); // Simulated error
     } catch (error) {
       // El hook mostrará un toast indicando que no se encontró
       handleError(error, 'comprobante');
@@ -42,7 +43,7 @@ export function ExampleComponent() {
   const handleDuplicateError = async () => {
     try {
       // Intento de crear un comprobante con número duplicado
-      await comprobantesService.createEgreso({
+      await comprobantesService.createComprobanteEgreso({
         codCia: 1,
         nroCp: 'COMP-001', // Número ya existe
         codPyto: 1,
@@ -57,7 +58,7 @@ export function ExampleComponent() {
   // Ejemplo 4: Operación exitosa
   const handleSuccess = async () => {
     try {
-      const result = await comprobantesService.createEgreso({
+      const result = await comprobantesService.createComprobanteEgreso({
         // ... datos válidos
       } as any);
 
@@ -94,7 +95,7 @@ export function FormExample() {
 
   const onSubmit = async (data: any) => {
     try {
-      await comprobantesService.createEgreso(data);
+      await comprobantesService.createComprobanteEgreso(data);
       showSuccess('Comprobante guardado correctamente');
     } catch (error) {
       // Manejo automático de todos los tipos de error

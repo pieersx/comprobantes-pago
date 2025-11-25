@@ -14,6 +14,8 @@ import Link from 'next/link';
 /**
  * Página para crear un nuevo comprobante de egreso
  * Renderiza el formulario ComprobanteForm en modo creación
+ * Feature: comprobantes-mejoras
+ * Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 4.1, 8.2
  */
 export default function NuevoEgresoPage() {
   return (

@@ -54,8 +54,8 @@ export default function DetalleProyectoPage() {
   }
 
   // Calcular porcentaje de ejecución
-  const porcentajeEjecucion = proyecto.costoTotal > 0
-    ? ((proyecto.costoTotal - (proyecto.costoTotal || 0)) / proyecto.costoTotal) * 100
+  const porcentajeEjecucion = (proyecto.costoTotal ?? 0) > 0
+    ? (((proyecto.costoTotal ?? 0) - ((proyecto.costoTotal ?? 0) || 0)) / (proyecto.costoTotal ?? 0)) * 100
     : 0;
 
   return (
@@ -155,7 +155,7 @@ export default function DetalleProyectoPage() {
                 <span>Jefe de Proyecto</span>
               </div>
               <p className="font-medium">
-                {proyecto.nombreJefeProyecto || `Empleado ${proyecto.emplJefeProy}`}
+                {proyecto.nombreJefeProyecto || `Empleado ${proyecto.empljefeproy}`}
               </p>
             </div>
 

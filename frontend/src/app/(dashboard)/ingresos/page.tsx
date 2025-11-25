@@ -58,7 +58,7 @@ export default function IngresosPage() {
             Gestiona todos los comprobantes de ingreso
           </p>
         </div>
-        <Button>
+        <Button onClick={() => window.location.href = '/ingresos/nuevo'}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Ingreso
         </Button>
@@ -146,10 +146,12 @@ export default function IngresosPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nro. Comprobante</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Proyecto</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Monto</TableHead>
+                  <TableHead>Archivos</TableHead>
                   <TableHead>Estado</TableHead>
                 </TableRow>
               </TableHeader>
@@ -158,6 +160,17 @@ export default function IngresosPage() {
                   filteredIngresos.map((ingreso) => (
                     <TableRow key={ingreso.nroCP} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-medium">{ingreso.nroCP || 'N/A'}</TableCell>
+                      <TableCell>
+                        {ingreso.tCompPago === 'FAC' ? (
+                          <Badge variant="outline">📄 Factura</Badge>
+                        ) : ingreso.tCompPago === 'BOL' ? (
+                          <Badge variant="outline">🧾 Boleta</Badge>
+                        ) : ingreso.tCompPago === 'REC' ? (
+                          <Badge variant="outline">📋 Recibo</Badge>
+                        ) : (
+                          <Badge variant="outline">📝 Otro</Badge>
+                        )}
+                      </TableCell>
                       <TableCell>{ingreso.proveedor || 'Sin cliente'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{ingreso.proyecto || 'Sin proyecto'}</TableCell>
                       <TableCell>
@@ -167,19 +180,36 @@ export default function IngresosPage() {
                         S/ {(ingreso.impTotalMn || 0).toLocaleString('es-PE')}
                       </TableCell>
                       <TableCell>
-                        {ingreso.estado === 'PAG' ? (
+                        <div className="flex items-center gap-1">
+                          {ingreso.fotoCp && (
+                            <Badge variant="secondary" className="text-xs">
+                              📎 CP
+                            </Badge>
+                          )}
+                          {ingreso.fotoAbono && (
+                            <Badge variant="secondary" className="text-xs">
+                              💰 Cobro
+                            </Badge>
+                          )}
+                          {!ingreso.fotoCp && !ingreso.fotoAbono && (
+                            <span className="text-xs text-muted-foreground">Sin archivos</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {ingreso.estado === 'PAG' || ingreso.estado === '002' ? (
                           <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                             <span className="flex items-center gap-1">
                               ✓ Cobrado
                             </span>
                           </Badge>
-                        ) : ingreso.estado === 'REG' ? (
+                        ) : ingreso.estado === 'REG' || ingreso.estado === '001' ? (
                           <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
                             <span className="flex items-center gap-1">
                               📝 Registrado
                             </span>
                           </Badge>
-                        ) : ingreso.estado === 'ANU' ? (
+                        ) : ingreso.estado === 'ANU' || ingreso.estado === '003' ? (
                           <Badge variant="destructive">
                             <span className="flex items-center gap-1">
                               ✕ Anulado
@@ -195,7 +225,7 @@ export default function IngresosPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={8} className="h-24 text-center">
                       No se encontraron ingresos.
                     </TableCell>
                   </TableRow>

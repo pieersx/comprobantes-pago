@@ -82,9 +82,10 @@ SISTEMA_LOGIN_RECOMENDACIONES.md
 
 # SQL files
 datos_prueba_multiples_companias.sql
-schema.sql
 
 # Internal folders
 .kiro/
 .pnpm-store/
 devcontainer/
+
+notas.txt

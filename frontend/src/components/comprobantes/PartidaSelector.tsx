@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -47,7 +48,7 @@ export function PartidaSelector({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Cargar partidas del proyecto
+  // Cargar partidas del proyecto - TODOS LOS NIVELES (1, 2, 3)
   useEffect(() => {
     const cargarPartidas = async () => {
       if (!codPyto) {
@@ -61,14 +62,16 @@ export function PartidaSelector({
       try {
         // Obtener compañía del localStorage o contexto
         const codCia = 1; // TODO: Obtener de useAppStore o contexto
-        console.log(`🔄 Cargando partidas para proyecto ${codPyto}, tipo ${tipo}...`);
-        const data = await partidasService.getPartidasByProyecto(codCia, codPyto, tipo);
-        console.log(`✅ Partidas cargadas:`, data);
+        console.log(`🔄 Cargando TODAS las partidas (niveles 1, 2, 3) para proyecto ${codPyto}, tipo ${tipo}...`);
+
+        // Nuevo requerimiento: Cargar TODAS las partidas (niveles 1, 2, 3)
+        // El usuario puede seleccionar cualquier nivel
+        const data = await partidasService.getTodasPartidasPorProyecto(codCia, codPyto, tipo);
+        console.log(`✅ TODAS las partidas cargadas (${data.length} partidas):`, data);
         setPartidas(data);
       } catch (err) {
-        setErrorMsg('El endpoint de partidas no está disponible. Por favor contacte al administrador del sistema.');
+        setErrorMsg('Error cargando partidas. Por favor contacte al administrador del sistema.');
         console.error('❌ Error cargando partidas:', err);
-        console.warn('💡 El backend necesita implementar el endpoint: GET /api/v1/partidas/proyecto/{codCia}/{codPyto}?tipo={tipo}');
       } finally {
         setLoading(false);
       }
@@ -103,6 +106,19 @@ export function PartidaSelector({
     }
   };
 
+  const getNivelBadgeVariant = (nivel?: number): 'default' | 'secondary' | 'outline' => {
+    switch (nivel) {
+      case 1:
+        return 'default'; // Nivel 1: Badge azul (default)
+      case 2:
+        return 'secondary'; // Nivel 2: Badge gris
+      case 3:
+        return 'outline'; // Nivel 3: Badge con outline
+      default:
+        return 'secondary';
+    }
+  };
+
   // Obtener la partida seleccionada para mostrar en el trigger
   const partidaSeleccionada = partidas.find((p) => p.codPartida === value);
 
@@ -119,9 +135,14 @@ export function PartidaSelector({
         <SelectTrigger id="partida-selector" className={error ? 'border-destructive' : ''}>
           <SelectValue placeholder={loading ? 'Cargando partidas...' : 'Seleccione una partida'}>
             {partidaSeleccionada && (
-              <span className="font-medium">
-                {partidaSeleccionada.codPartida} - {partidaSeleccionada.desPartida}
-              </span>
+              <div className="flex items-center gap-2">
+                <Badge variant={getNivelBadgeVariant(partidaSeleccionada.nivel)} className="text-xs px-2 py-0.5">
+                  N{partidaSeleccionada.nivel || '?'}
+                </Badge>
+                <span className="font-medium">
+                  {partidaSeleccionada.codPartida} - {partidaSeleccionada.desPartida}
+                </span>
+              </div>
             )}
           </SelectValue>
         </SelectTrigger>
@@ -136,25 +157,43 @@ export function PartidaSelector({
             partidas.map((partida) => {
               const sinPresupuesto = partida.presupuestoDisponible <= 0 && tipo === 'E';
               const partidaValue = String(partida.codPartida);
+              // Solo permitir seleccionar partidas de nivel 3
+              const esSeleccionable = partida.nivel === 3;
 
               return (
                 <SelectItem
                   key={partida.codPartida}
                   value={partidaValue}
+                  disabled={!esSeleccionable}
                 >
                   <div className="flex flex-col gap-1">
-                    <div className="font-medium">
-                      {partida.codPartida} - {partida.desPartida}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className={getNivelAlertaColor(partida.nivelAlerta)}>
-                        Disponible: {formatearMonto(partida.presupuestoDisponible)}
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getNivelBadgeVariant(partida.nivel)} className="text-xs px-2 py-0.5">
+                        Nivel {partida.nivel || '?'}
+                      </Badge>
+                      <span className={`font-medium ${!esSeleccionable ? 'text-muted-foreground' : ''}`}>
+                        {partida.codPartida} - {partida.desPartida}
                       </span>
-                      <span className="text-muted-foreground">
-                        ({partida.porcentajeEjecucion.toFixed(1)}% ejecutado)
-                      </span>
+                      {!esSeleccionable && (
+                        <span className="text-xs text-muted-foreground">(No seleccionable)</span>
+                      )}
                     </div>
-                    {sinPresupuesto && (
+                    {partida.hierarchyPath && (
+                      <div className="text-xs text-muted-foreground pl-1">
+                        📁 {partida.hierarchyPath}
+                      </div>
+                    )}
+                    {esSeleccionable && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={getNivelAlertaColor(partida.nivelAlerta)}>
+                          Disponible: {formatearMonto(partida.presupuestoDisponible)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({partida.porcentajeEjecucion.toFixed(1)}% ejecutado)
+                        </span>
+                      </div>
+                    )}
+                    {esSeleccionable && sinPresupuesto && (
                       <span className="text-xs text-destructive font-medium">
                         Sin presupuesto disponible
                       </span>

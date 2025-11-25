@@ -134,4 +134,21 @@ public class VtaCompPagoCabController {
         VtaCompPagoCabDTO comprobanteAnulado = vtaCompPagoCabService.anular(codCia, nroCp);
         return ResponseEntity.ok(ApiResponse.success("Comprobante anulado exitosamente", comprobanteAnulado));
     }
+
+    @Operation(summary = "Actualizar archivos adjuntos del comprobante de ingreso", description = "Actualiza las rutas de los archivos adjuntos (comprobante y/o abono) de un comprobante de ingreso existente. "
+            +
+            "Permite actualizar fotoCp y fotoAbono independientemente.")
+    @PutMapping("/{codCia}/{nroCp}/archivos")
+    public ResponseEntity<ApiResponse<VtaCompPagoCabDTO>> updateFiles(
+            @PathVariable Long codCia,
+            @PathVariable String nroCp,
+            @RequestBody java.util.Map<String, String> archivos) {
+
+        String fotoCp = archivos.get("fotoCp");
+        String fotoAbono = archivos.get("fotoAbono");
+
+        VtaCompPagoCabDTO actualizado = vtaCompPagoCabService.updateFiles(codCia, nroCp, fotoCp, fotoAbono);
+
+        return ResponseEntity.ok(ApiResponse.success("Archivos actualizados correctamente", actualizado));
+    }
 }

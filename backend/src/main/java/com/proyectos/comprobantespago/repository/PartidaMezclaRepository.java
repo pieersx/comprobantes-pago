@@ -60,4 +60,12 @@ public interface PartidaMezclaRepository extends JpaRepository<PartidaMezcla, Pa
             @Param("codCia") Long codCia,
             @Param("ingEgr") String ingEgr,
             @Param("padCodPartida") Long padCodPartida);
+
+    /**
+     * Buscar mezclas por padre específico
+     * Feature: comprobantes-mejoras
+     * Requirements: 5.1, 5.2
+     */
+    List<PartidaMezcla> findByCodCiaAndIngEgrAndPadCodPartidaAndVigente(
+            Long codCia, String ingEgr, Long padCodPartida, String vigente);
 }

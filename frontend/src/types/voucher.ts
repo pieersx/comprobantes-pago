@@ -72,14 +72,30 @@ export interface Proyecto {
   codPyto: number;
   nombPyto: string;
   empljefeproy?: number;
+  nombreJefeProyecto?: string;
   codCliente?: number;
+  nombreCliente?: string;
   fecReg?: string;
   valRefer?: number;
   costoTotal?: number;
+  costoDirecto?: number;
+  costoIndirecto?: number;
+  costoGgen?: number;
+  costoFinan?: number;
+  impUtilidad?: number;
+  costoTotSinIgv?: number;
+  impIgv?: number;
   tabEstado?: string;
   codEstado?: string;
   vigente?: string;
   observac?: string;
+  annoIni?: number;
+  annoFin?: number;
+  ciaContrata?: number;
+  flgEmpConsorcio?: string;
+  codFase?: number;
+  codNivel?: number;
+  estPyto?: number;
 }
 
 export interface Partida {
@@ -92,4 +108,7 @@ export interface Partida {
   flgCc?: string;
   nivel?: number;
   vigente: string;
+  tUniMed?: string;
+  eUniMed?: string;
+  semilla?: number;
 }

@@ -171,7 +171,24 @@ export function ComprobanteForm({
           );
           return;
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Manejo específico de errores de validación
+        if (error?.response?.data?.message) {
+          const errorMsg = error.response.data.message;
+
+          // Detectar errores específicos de niveles de partidas
+          if (errorMsg.includes('último nivel') || errorMsg.includes('nivel 2') || errorMsg.includes('nivel 3')) {
+            handleError(new Error(`❌ Error de nivel de partida: ${errorMsg}`), 'Validación de partidas');
+            return;
+          }
+
+          // Detectar errores de partidas duplicadas
+          if (errorMsg.includes('duplicada') || errorMsg.includes('repetir partidas')) {
+            handleError(new Error(`❌ Partida duplicada: ${errorMsg}`), 'Validación de partidas');
+            return;
+          }
+        }
+
         handleError(error, 'validar presupuesto');
         return;
       }
@@ -213,7 +230,7 @@ export function ComprobanteForm({
           codPyto: Number(formState.codPyto),
           nroPago: 1,
           tCompPago: '003', // Tabla de tipos de comprobante
-          eCompPago: 'FAC', // Elemento: Factura
+          eCompPago: formState.tCompPago || 'FAC', // Elemento: Factura, Boleta o Recibo
           fecCp: fechaISO,
           tMoneda: monedaSeleccionada?.codTab || '001', // Tabla de monedas
           eMoneda: formState.tMoneda || 'PEN', // Elemento de moneda (PEN, USD, etc.)
@@ -226,6 +243,7 @@ export function ComprobanteForm({
           fotoAbono: 'SIN_FOTO',
           fecAbono: fechaISO,
           desAbono: `PAGO ${formState.nroCp}`,
+          porcentajeImpuesto: formState.tCompPago === 'REC' ? formState.porcentajeImpuesto : undefined,
           semilla: 1,
           tabEstado: '001', // Tabla de estados
           codEstado: '001', // Estado inicial
@@ -286,7 +304,7 @@ export function ComprobanteForm({
           codPyto: Number(formState.codPyto),
           nroPago: 1,
           tCompPago: '003', // Tabla de tipos de comprobante
-          eCompPago: 'FAC', // Elemento: Factura
+          eCompPago: formState.tCompPago || 'FAC', // Elemento: Factura, Boleta o Recibo
           fecCp: fechaISO,
           tMoneda: monedaSeleccionada?.codTab || '001', // Tabla de monedas
           eMoneda: formState.tMoneda || 'PEN', // Elemento de moneda (PEN, USD, etc.)
@@ -299,6 +317,7 @@ export function ComprobanteForm({
           fotoAbono: 'SIN_FOTO',
           fecAbono: fechaISO,
           desAbono: `PAGO ${formState.nroCp}`,
+          porcentajeImpuesto: formState.tCompPago === 'REC' ? formState.porcentajeImpuesto : undefined,
           semilla: 1,
           tabEstado: '001', // Tabla de estados
           codEstado: '001', // Estado inicial
@@ -334,7 +353,39 @@ export function ComprobanteForm({
       } else {
         router.push('/comprobantes');
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Manejo específico de errores de validación del backend
+      if (error?.response?.data?.message) {
+        const errorMsg = error.response.data.message;
+
+        // Detectar errores específicos de niveles de partidas
+        if (errorMsg.includes('último nivel') || errorMsg.includes('nivel 2') || errorMsg.includes('nivel 3')) {
+          handleError(
+            new Error(`❌ Error de nivel de partida: ${errorMsg}\n\nRecuerda:\n• Ingresos: solo nivel 2\n• Egresos: solo nivel 3`),
+            'Validación de partidas'
+          );
+          return;
+        }
+
+        // Detectar errores de partidas duplicadas
+        if (errorMsg.includes('duplicada') || errorMsg.includes('repetir partidas')) {
+          handleError(
+            new Error(`❌ Partida duplicada: ${errorMsg}\n\nNo se pueden repetir partidas en el mismo comprobante.`),
+            'Validación de partidas'
+          );
+          return;
+        }
+
+        // Detectar errores de total negativo
+        if (errorMsg.includes('negativo') || errorMsg.includes('total') && errorMsg.includes('recibo')) {
+          handleError(
+            new Error(`❌ Error de total: ${errorMsg}`),
+            'Validación de montos'
+          );
+          return;
+        }
+      }
+
       handleError(error, 'guardar comprobante');
     } finally {
       setLoading(false);
@@ -402,6 +453,79 @@ export function ComprobanteForm({
                 className="bg-muted"
               />
             </div>
+
+            {/* NUEVO: Tipo de Comprobante */}
+            <div className="space-y-2">
+              <Label htmlFor="tCompPago" className="text-base font-semibold">
+                Tipo de Comprobante *
+              </Label>
+              <Select
+                value={formState.tCompPago || ''}
+                onValueChange={(value) => updateField('tCompPago', value)}
+              >
+                <SelectTrigger id="tCompPago" className="w-full">
+                  <SelectValue placeholder="Seleccione el tipo de comprobante" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FAC">
+                    <div className="flex flex-col">
+                      <span className="font-semibold">Factura</span>
+                      <span className="text-xs text-muted-foreground">IGV 18%</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="BOL">
+                    <div className="flex flex-col">
+                      <span className="font-semibold">Boleta</span>
+                      <span className="text-xs text-muted-foreground">IGV 18%</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="REC">
+                    <div className="flex flex-col">
+                      <span className="font-semibold">Recibo por Honorarios</span>
+                      <span className="text-xs text-muted-foreground">Retención 8%</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                El tipo de comprobante determina el cálculo de impuestos
+              </p>
+              {formState.tCompPago && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm font-medium text-blue-900">
+                    {formState.tCompPago === 'FAC' && '✓ Factura: IGV fijo del 18% (no editable)'}
+                    {formState.tCompPago === 'BOL' && '✓ Boleta: IGV fijo del 18% (no editable)'}
+                    {formState.tCompPago === 'REC' && '✓ Recibo por Honorarios: Ingrese el porcentaje de retención manualmente'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Campo de Porcentaje de Impuesto (solo para Recibo por Honorarios) */}
+            {formState.tCompPago === 'REC' && (
+              <div className="space-y-2">
+                <Label htmlFor="porcentajeImpuesto" className="text-base font-semibold">
+                  Porcentaje de Retención *
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="porcentajeImpuesto"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={formState.porcentajeImpuesto || 8.0}
+                    onChange={(e) => updateField('porcentajeImpuesto', parseFloat(e.target.value) || 0)}
+                    placeholder="Ej: 8.00"
+                    className="w-32"
+                  />
+                  <span className="text-lg font-semibold">%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Ingrese el porcentaje de retención. Por defecto es 8% pero puede variar.
+                </p>
+              </div>
+            )}
 
             {/* Proyecto */}
             <div className="space-y-2">
@@ -602,6 +726,8 @@ export function ComprobanteForm({
             onAdd={agregarPartida}
             onUpdate={editarPartida}
             onRemove={eliminarPartida}
+            porcentajeImpuesto={formState.porcentajeImpuesto || 18.0}
+            tipoComprobante={formState.tCompPago || 'FAC'}
           />
           {hasError('detalles') && (
             <p className="text-sm text-destructive mt-2">{getError('detalles')}</p>

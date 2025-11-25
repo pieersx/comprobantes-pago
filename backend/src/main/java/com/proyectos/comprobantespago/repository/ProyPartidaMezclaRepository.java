@@ -65,4 +65,30 @@ public interface ProyPartidaMezclaRepository
          */
         List<ProyPartidaMezcla> findByCodCiaAndCodPytoAndIngEgrAndCodPartida(
                         Long codCia, Long codPyto, String ingEgr, Long codPartida);
+
+        /**
+         * Obtener solo partidas de NIVEL 3 de un proyecto
+         * Según especificaciones: Solo nivel 3 se usa en comprobantes
+         */
+        @Query("SELECT ppm FROM ProyPartidaMezcla ppm WHERE ppm.codCia = :codCia " +
+                        "AND ppm.codPyto = :codPyto AND ppm.nroVersion = :nroVersion " +
+                        "AND ppm.ingEgr = :ingEgr AND ppm.nivel = 3 " +
+                        "ORDER BY ppm.orden")
+        List<ProyPartidaMezcla> findPartidasNivel3(
+                        @Param("codCia") Long codCia,
+                        @Param("codPyto") Long codPyto,
+                        @Param("nroVersion") Integer nroVersion,
+                        @Param("ingEgr") String ingEgr);
+
+        /**
+         * Calcular presupuesto total de nivel 3 para un proyecto
+         */
+        @Query("SELECT SUM(ppm.costoTot) FROM ProyPartidaMezcla ppm WHERE ppm.codCia = :codCia " +
+                        "AND ppm.codPyto = :codPyto AND ppm.nroVersion = :nroVersion " +
+                        "AND ppm.ingEgr = :ingEgr AND ppm.nivel = 3")
+        BigDecimal calcularPresupuestoTotalNivel3(
+                        @Param("codCia") Long codCia,
+                        @Param("codPyto") Long codPyto,
+                        @Param("nroVersion") Integer nroVersion,
+                        @Param("ingEgr") String ingEgr);
 }

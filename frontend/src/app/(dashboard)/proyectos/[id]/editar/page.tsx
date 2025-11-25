@@ -60,7 +60,7 @@ export default function EditarProyectoPage() {
         codPyto: proyecto.codPyto,
         nombPyto: proyecto.nombPyto || "",
         codCliente: proyecto.codCliente?.toString() || "",
-        emplJefeProy: proyecto.emplJefeProy?.toString() || "",
+        emplJefeProy: proyecto.empljefeproy?.toString() || "",
         ciaContrata: proyecto.ciaContrata || proyecto.codCia,
         fecReg: proyecto.fecReg ? new Date(proyecto.fecReg).toISOString().split('T')[0] : "",
         annoIni: proyecto.annoIni || new Date().getFullYear(),

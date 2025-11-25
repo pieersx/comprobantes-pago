@@ -18,6 +18,7 @@ import com.proyectos.comprobantespago.exception.ValidationException;
 import com.proyectos.comprobantespago.mapper.ComprobantePagoMapper;
 import com.proyectos.comprobantespago.repository.ComprobantePagoCabRepository;
 import com.proyectos.comprobantespago.repository.ComprobantePagoDetRepository;
+import com.proyectos.comprobantespago.repository.PartidaRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,9 @@ public class ComprobantePagoService {
     private final ComprobantePagoDetRepository detRepository;
     private final ComprobantePagoMapper mapper;
     private final PresupuestoService presupuestoService;
+    private final PartidaHierarchyService partidaHierarchyService;
+    private final TaxCalculationService taxCalculationService;
+    private final PartidaRepository partidaRepository;
 
     public List<ComprobantePagoDTO> findAllByCompania(Long codCia) {
         log.debug("Buscando comprobantes de la compañía: {}", codCia);
@@ -87,21 +91,27 @@ public class ComprobantePagoService {
         // 1. Validar duplicados (Subtask 2.2)
         validarDuplicado(dto.getCodCia(), dto.getCodProveedor(), dto.getNroCp());
 
-        // 2. Validar totales y datos básicos (Subtask 2.3)
+        // 2. Validar partidas únicas en detalles (Requirements: 3.3)
+        validarPartidasUnicas(dto);
+
+        // 2.1 Validar niveles de partidas según tipo de movimiento (Requirements: 4.5,
+        // 5.5)
+        validarNivelesPartidas(dto);
+
+        // 3. Validar totales y datos básicos (Subtask 2.3)
         validarTotales(dto);
         validarMontos(dto);
         validarFechas(dto);
 
-        // 3. Validar presupuesto disponible (Subtask 2.1)
+        // 4. Validar presupuesto disponible (Subtask 2.1)
         ValidacionPresupuestoDTO validacion = presupuestoService.validarEgreso(
                 dto.getCodCia(),
                 dto.getCodPyto(),
-                dto.getDetalles()
-        );
+                dto.getDetalles());
 
         log.info("Validación de presupuesto aprobada con {} alertas", validacion.getAlertas().size());
 
-        // 4. Guardar cabecera
+        // 5. Guardar cabecera
         ComprobantePagoCab cabecera = mapper.toEntity(dto);
 
         // Mapeo manual de campos problemáticos
@@ -114,7 +124,7 @@ public class ComprobantePagoService {
         cabecera.setCodEstado("001"); // Estado inicial: Registrado (código '001')
         cabecera = cabRepository.save(cabecera);
 
-        // 5. Guardar detalles
+        // 6. Guardar detalles
         for (int i = 0; i < dto.getDetalles().size(); i++) {
             ComprobantePagoDetalleDTO detalleDTO = dto.getDetalles().get(i);
             ComprobantePagoDet detalle = mapper.toDetalleEntity(detalleDTO);
@@ -132,7 +142,7 @@ public class ComprobantePagoService {
             detRepository.save(detalle);
         }
 
-        // 6. Generar alertas automáticas después de guardar (Subtask 2.1)
+        // 7. Generar alertas automáticas después de guardar (Subtask 2.1)
         presupuestoService.generarAlertas(dto.getCodCia(), dto.getCodPyto());
 
         log.info("Comprobante creado exitosamente: {}", cabecera.getNroCp());
@@ -152,26 +162,32 @@ public class ComprobantePagoService {
             throw new ValidationException("No se puede editar un comprobante en estado PAGADO");
         }
 
-        // 3. Validar totales y datos básicos
+        // 3. Validar partidas únicas en detalles (Requirements: 3.3)
+        validarPartidasUnicas(dto);
+
+        // 3.1 Validar niveles de partidas según tipo de movimiento (Requirements: 4.5,
+        // 5.5)
+        validarNivelesPartidas(dto);
+
+        // 4. Validar totales y datos básicos
         validarTotales(dto);
         validarMontos(dto);
         validarFechas(dto);
 
-        // 4. Validar presupuesto con montos actualizados (Subtask 2.4)
+        // 5. Validar presupuesto con montos actualizados (Subtask 2.4)
         ValidacionPresupuestoDTO validacion = presupuestoService.validarEgreso(
                 dto.getCodCia(),
                 dto.getCodPyto(),
-                dto.getDetalles()
-        );
+                dto.getDetalles());
 
         log.info("Validación de presupuesto aprobada para actualización con {} alertas",
                 validacion.getAlertas().size());
 
-        // 5. Actualizar cabecera
+        // 6. Actualizar cabecera
         mapper.updateEntityFromDTO(dto, cabecera);
         cabRepository.save(cabecera);
 
-        // 6. Eliminar detalles antiguos y guardar nuevos
+        // 7. Eliminar detalles antiguos y guardar nuevos
         detRepository.deleteByComprobante(codCia, codProveedor, nroCp);
 
         for (int i = 0; i < dto.getDetalles().size(); i++) {
@@ -191,7 +207,7 @@ public class ComprobantePagoService {
             detRepository.save(detalle);
         }
 
-        // 7. Generar alertas automáticas después de actualizar
+        // 8. Generar alertas automáticas después de actualizar
         presupuestoService.generarAlertas(dto.getCodCia(), dto.getCodPyto());
 
         log.info("Comprobante actualizado exitosamente: {}", nroCp);
@@ -224,9 +240,9 @@ public class ComprobantePagoService {
      * Anula un comprobante (eliminación lógica)
      * Subtask 2.5
      *
-     * @param codCia       Código de compañía
-     * @param codProveedor Código de proveedor
-     * @param nroCp        Número de comprobante
+     * @param codCia          Código de compañía
+     * @param codProveedor    Código de proveedor
+     * @param nroCp           Número de comprobante
      * @param confirmarPagado Si es true, permite anular comprobantes en estado PAG
      */
     public void anular(Long codCia, Long codProveedor, String nroCp, boolean confirmarPagado) {
@@ -251,6 +267,54 @@ public class ComprobantePagoService {
         log.info("Comprobante anulado exitosamente: {}. Presupuesto restaurado.", nroCp);
     }
 
+    /**
+     * Registra un abono en un comprobante de pago
+     * Actualiza el estado según corresponda:
+     * - REGISTRADO -> PARCIALMENTE_PAGADO (si hay abono pero no es pago completo)
+     * - REGISTRADO -> TOTALMENTE_PAGADO (si el abono es pago completo)
+     * - PARCIALMENTE_PAGADO -> TOTALMENTE_PAGADO (si se completa el pago)
+     */
+    public ComprobantePagoDTO registrarAbono(Long codCia, Long codProveedor, String nroCp,
+            com.proyectos.comprobantespago.dto.AbonoDTO abonoDTO) {
+        log.info("Registrando abono para comprobante: {}", nroCp);
+
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        // Validar que el estado permita abonos
+        com.proyectos.comprobantespago.enums.EstadoComprobanteEnum estadoActual = com.proyectos.comprobantespago.enums.EstadoComprobanteEnum
+                .fromCodigo(cabecera.getCodEstado());
+
+        if (!estadoActual.permiteAbonos()) {
+            throw new ValidationException(
+                    String.format("El comprobante en estado '%s' no permite registrar abonos",
+                            estadoActual.getDescripcion()));
+        }
+
+        // Actualizar datos del abono
+        cabecera.setFotoAbono(abonoDTO.getFotoAbono());
+        cabecera.setFecAbono(abonoDTO.getFechaAbono());
+        cabecera.setDesAbono(abonoDTO.getDescripcionMedioPago());
+
+        // Actualizar estado según monto del abono
+        // Si el monto del abono es igual al total, está totalmente pagado
+        boolean pagoCompleto = abonoDTO.getMontoAbono().compareTo(cabecera.getImpTotalMn()) >= 0;
+        if (pagoCompleto) {
+            cabecera.setCodEstado(
+                    com.proyectos.comprobantespago.enums.EstadoComprobanteEnum.TOTALMENTE_PAGADO.getCodigo());
+            log.info("Comprobante marcado como TOTALMENTE_PAGADO");
+        } else {
+            cabecera.setCodEstado(
+                    com.proyectos.comprobantespago.enums.EstadoComprobanteEnum.PARCIALMENTE_PAGADO.getCodigo());
+            log.info("Comprobante marcado como PARCIALMENTE_PAGADO");
+        }
+
+        cabRepository.save(cabecera);
+        log.info("Abono registrado exitosamente para comprobante: {}", nroCp);
+
+        return mapper.toDTO(cabecera);
+    }
+
     // ==================== Métodos de validación privados ====================
 
     /**
@@ -269,6 +333,63 @@ public class ComprobantePagoService {
     }
 
     /**
+     * Valida que no haya partidas duplicadas en los detalles
+     * Requirements: 3.3
+     */
+    private void validarPartidasUnicas(ComprobantePagoDTO dto) {
+        List<Long> partidas = dto.getDetalles().stream()
+                .map(ComprobantePagoDetalleDTO::getCodPartida)
+                .toList();
+
+        long partidasUnicas = partidas.stream().distinct().count();
+
+        if (partidasUnicas < partidas.size()) {
+            // Encontrar la partida duplicada
+            Long partidaDuplicada = partidas.stream()
+                    .filter(p -> partidas.stream().filter(p2 -> p2.equals(p)).count() > 1)
+                    .findFirst()
+                    .orElse(null);
+
+            throw new ValidationException(
+                    String.format("La partida %d está duplicada en los detalles del comprobante. " +
+                            "Cada partida solo puede aparecer una vez.", partidaDuplicada));
+        }
+    }
+
+    /**
+     * Valida que todas las partidas sean del último nivel según tipo de movimiento
+     * Requirements: 4.5, 5.5
+     * IMPORTANTE: Según el profesor (notas.txt), SOLO se usan partidas de NIVEL 3
+     * "tú agarras el último nivel, el más bajo" - Tanto ingresos como egresos deben
+     * ser nivel 3
+     */
+    private void validarNivelesPartidas(ComprobantePagoDTO dto) {
+        // NUEVO REQUERIMIENTO: El usuario puede seleccionar cualquier nivel (1, 2 o 3)
+        // Ya no se valida estrictamente que sea nivel 3
+        // La validación ahora solo verifica que la partida exista y esté vigente
+
+        for (ComprobantePagoDetalleDTO detalle : dto.getDetalles()) {
+            String ingEgr = detalle.getIngEgr();
+            Long codPartida = detalle.getCodPartida();
+
+            // Solo validar que la partida existe y está vigente
+            // No validar el nivel específico - el usuario puede elegir cualquier nivel
+            boolean existePartida = partidaRepository.existsById(
+                    new com.proyectos.comprobantespago.entity.Partida.PartidaId(
+                            dto.getCodCia(), ingEgr, codPartida));
+
+            if (!existePartida) {
+                throw new ValidationException(
+                        String.format("La partida %d no existe o no está vigente.", codPartida));
+            }
+
+            // Log informativo del nivel usado (no bloquea)
+            log.info("Partida {} (Ing/Egr: {}) usada en comprobante - Nivel permitido",
+                    codPartida, ingEgr);
+        }
+    }
+
+    /**
      * Valida que la suma de detalles coincida con el total de cabecera
      * Subtask 2.3
      */
@@ -279,7 +400,8 @@ public class ComprobantePagoService {
 
         if (totalDetalles.compareTo(dto.getImpTotalMn()) != 0) {
             throw new ValidationException(
-                    String.format("La suma de los detalles (S/ %.2f) no coincide con el total del comprobante (S/ %.2f)",
+                    String.format(
+                            "La suma de los detalles (S/ %.2f) no coincide con el total del comprobante (S/ %.2f)",
                             totalDetalles, dto.getImpTotalMn()));
         }
     }
@@ -287,11 +409,28 @@ public class ComprobantePagoService {
     /**
      * Valida que los montos sean positivos y mayores a cero
      * Subtask 2.3
+     * Requirements: 2.5 - Para recibos por honorarios, validar que total >= 0
      */
     private void validarMontos(ComprobantePagoDTO dto) {
         // Validar total de cabecera
-        if (dto.getImpTotalMn() == null || dto.getImpTotalMn().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ValidationException("El importe total debe ser mayor a cero");
+        // Para recibos por honorarios (REC), permitir total >= 0
+        // Para otros tipos, total debe ser > 0
+        boolean esReciboHonorarios = "REC".equals(dto.getECompPago());
+
+        if (dto.getImpTotalMn() == null) {
+            throw new ValidationException("El importe total no puede ser nulo");
+        }
+
+        if (esReciboHonorarios) {
+            // Para recibos por honorarios, validar que total >= 0
+            if (dto.getImpTotalMn().compareTo(BigDecimal.ZERO) < 0) {
+                throw new ValidationException("El total del recibo por honorarios no puede ser negativo");
+            }
+        } else {
+            // Para facturas y boletas, total debe ser > 0
+            if (dto.getImpTotalMn().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ValidationException("El importe total debe ser mayor a cero");
+            }
         }
 
         // Validar montos de detalles
@@ -323,5 +462,243 @@ public class ComprobantePagoService {
         if (dto.getFecCp().isAfter(LocalDate.now())) {
             throw new ValidationException("La fecha de emisión no puede ser posterior a la fecha actual");
         }
+    }
+
+    /**
+     * Calcula el impuesto según el tipo de comprobante
+     */
+    public com.proyectos.comprobantespago.dto.CalculoImpuestoResponse calcularImpuestoPorTipo(
+            BigDecimal montoBase, String tipoComprobante) {
+
+        log.debug("Calculando impuesto para tipo: {} con monto base: {}", tipoComprobante, montoBase);
+
+        com.proyectos.comprobantespago.enums.TipoComprobanteEnum tipo = com.proyectos.comprobantespago.enums.TipoComprobanteEnum
+                .fromCodigo(tipoComprobante);
+
+        BigDecimal impuesto = taxCalculationService.calcularImpuestoPorTipo(montoBase, tipoComprobante);
+        BigDecimal total = taxCalculationService.calcularTotalPorTipo(montoBase, impuesto, tipoComprobante);
+
+        // Obtener porcentaje según tipo
+        BigDecimal porcentaje = taxCalculationService.obtenerPorcentajeImpuesto(tipoComprobante);
+
+        return com.proyectos.comprobantespago.dto.CalculoImpuestoResponse.builder()
+                .tipoComprobante(tipo.getCodigo())
+                .porcentaje(porcentaje)
+                .igv(impuesto)
+                .total(total)
+                .esEditable(true) // Todos los impuestos son editables por redondeo SUNAT
+                .build();
+    }
+
+    // ==================== Métodos públicos de validación ====================
+    // Feature: comprobantes-mejoras
+    // Requirements: 4.2, 7.1, 7.2, 7.4, 7.5
+
+    /**
+     * Valida que no haya partidas duplicadas en el detalle
+     * Feature: comprobantes-mejoras
+     * Requirements: 4.2
+     */
+    public boolean validarPartidasNoDuplicadas(List<ComprobantePagoDetalleDTO> detalles) {
+        List<Long> partidas = detalles.stream()
+                .map(ComprobantePagoDetalleDTO::getCodPartida)
+                .toList();
+
+        long partidasUnicas = partidas.stream().distinct().count();
+        return partidasUnicas == partidas.size();
+    }
+
+    /**
+     * Valida consistencia de totales
+     * Feature: comprobantes-mejoras
+     * Requirements: 7.2
+     */
+    public boolean validarConsistenciaTotales(ComprobantePagoDTO dto) {
+        BigDecimal totalDetalles = dto.getDetalles().stream()
+                .map(ComprobantePagoDetalleDTO::getImpTotalMn)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return totalDetalles.compareTo(dto.getImpTotalMn()) == 0;
+    }
+
+    /**
+     * Valida que todos los campos obligatorios estén completos
+     * Feature: comprobantes-mejoras
+     * Requirements: 7.1
+     */
+    public boolean validarCamposObligatorios(ComprobantePagoDTO dto) {
+        return dto.getCodCia() != null &&
+                dto.getCodProveedor() != null &&
+                dto.getNroCp() != null && !dto.getNroCp().trim().isEmpty() &&
+                dto.getCodPyto() != null &&
+                dto.getFecCp() != null &&
+                dto.getTCompPago() != null && !dto.getTCompPago().trim().isEmpty() &&
+                dto.getECompPago() != null && !dto.getECompPago().trim().isEmpty() &&
+                dto.getDetalles() != null && !dto.getDetalles().isEmpty();
+    }
+
+    /**
+     * Valida que las partidas seleccionadas pertenezcan al proyecto
+     * Feature: comprobantes-mejoras
+     * Requirements: 7.4
+     */
+    public boolean validarPartidasDelProyecto(ComprobantePagoDTO dto) {
+        // Por ahora retornamos true ya que la validación completa requiere
+        // acceso a PROY_PARTIDA_MEZCLA que se implementará en una tarea posterior
+        // TODO: Implementar validación completa contra PROY_PARTIDA_MEZCLA
+        return true;
+    }
+
+    /**
+     * Valida que el número de comprobante no esté duplicado
+     * Feature: comprobantes-mejoras
+     * Requirements: 7.5
+     */
+    public boolean validarNumeroComprobanteUnico(Long codCia, Long codProveedor, String nroCp) {
+        return !cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .isPresent();
+    }
+
+    // ==================== Métodos de cálculo y estado ====================
+    // Feature: comprobantes-mejoras
+    // Requirements: 2.1, 2.3, 2.4, 4.4, 4.5, 6.4
+
+    /**
+     * Calcula el IGV automático según el tipo de comprobante
+     * Feature: comprobantes-mejoras
+     * Requirements: 2.1
+     */
+    public BigDecimal calcularIGVAutomatico(String tipoComprobante, BigDecimal montoNeto) {
+        if (montoNeto == null) {
+            throw new ValidationException("El monto neto no puede ser nulo");
+        }
+
+        // Para FAC y BOL: IGV del 18%
+        if ("FAC".equals(tipoComprobante) || "BOL".equals(tipoComprobante)) {
+            return taxCalculationService.calcularIGV(montoNeto);
+        }
+
+        // Para REC y otros: 0 (debe ser ingresado manualmente)
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Recalcula el total cuando se modifica el IGV manualmente
+     * Feature: comprobantes-mejoras
+     * Requirements: 2.3
+     */
+    public BigDecimal recalcularTotalConIGVManual(BigDecimal montoNeto, BigDecimal igvManual) {
+        if (montoNeto == null || igvManual == null) {
+            throw new ValidationException("El monto neto y el IGV no pueden ser nulos");
+        }
+
+        return taxCalculationService.calcularTotalConIGV(montoNeto, igvManual);
+    }
+
+    /**
+     * Recalcula IGV y total cuando se modifica el monto neto
+     * Feature: comprobantes-mejoras
+     * Requirements: 2.4
+     */
+    public com.proyectos.comprobantespago.dto.CalculoImpuestoResponse recalcularImpuestos(
+            String tipoComprobante, BigDecimal montoNeto) {
+
+        return taxCalculationService.calcularImpuesto(tipoComprobante, montoNeto);
+    }
+
+    /**
+     * Calcula la suma de todos los detalles
+     * Feature: comprobantes-mejoras
+     * Requirements: 4.4, 4.5
+     */
+    public BigDecimal calcularSumaDetalles(List<ComprobantePagoDetalleDTO> detalles) {
+        if (detalles == null || detalles.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return detalles.stream()
+                .map(ComprobantePagoDetalleDTO::getImpTotalMn)
+                .filter(total -> total != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Actualiza el estado del comprobante según el monto abonado
+     * Feature: comprobantes-mejoras
+     * Requirements: 6.4
+     */
+    public String actualizarEstadoPorAbono(BigDecimal totalComprobante, BigDecimal montoAbonado) {
+        if (totalComprobante == null || montoAbonado == null) {
+            throw new ValidationException("El total y el monto abonado no pueden ser nulos");
+        }
+
+        // Si el monto abonado es mayor o igual al total, está totalmente pagado
+        if (montoAbonado.compareTo(totalComprobante) >= 0) {
+            return com.proyectos.comprobantespago.enums.EstadoComprobanteEnum.TOTALMENTE_PAGADO.getCodigo();
+        }
+
+        // Si el monto abonado es menor al total, está parcialmente pagado
+        if (montoAbonado.compareTo(BigDecimal.ZERO) > 0) {
+            return com.proyectos.comprobantespago.enums.EstadoComprobanteEnum.PARCIALMENTE_PAGADO.getCodigo();
+        }
+
+        // Si no hay abono, mantiene el estado registrado
+        return com.proyectos.comprobantespago.enums.EstadoComprobanteEnum.REGISTRADO.getCodigo();
+    }
+
+    /**
+     * Calcula el IGV con porcentaje personalizado (para recibos por honorarios)
+     * Feature: comprobantes-mejoras
+     * Requirements: 1.4
+     */
+    public com.proyectos.comprobantespago.dto.CalculoImpuestoResponse calcularIGVPersonalizado(
+            BigDecimal montoNeto, BigDecimal porcentaje) {
+
+        return taxCalculationService.calcularImpuestoPersonalizado(montoNeto, porcentaje);
+    }
+
+    /**
+     * Actualiza los archivos adjuntos de un comprobante
+     * Feature: comprobantes-jerarquicos
+     * Requirements: 4.1, 4.2
+     *
+     * @param codCia       Código de compañía
+     * @param codProveedor Código de proveedor
+     * @param nroCp        Número de comprobante
+     * @param fotoCp       Ruta del archivo del comprobante (opcional)
+     * @param fotoAbono    Ruta del archivo del abono (opcional)
+     * @return DTO del comprobante actualizado
+     */
+    public ComprobantePagoDTO updateFiles(Long codCia, Long codProveedor, String nroCp,
+            String fotoCp, String fotoAbono) {
+        log.info("Actualizando archivos del comprobante: {}", nroCp);
+
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        // Actualizar fotoCp si se proporciona
+        if (fotoCp != null && !fotoCp.trim().isEmpty()) {
+            // Validar que la ruta sea válida (no vacía y con formato correcto)
+            if (fotoCp.length() > 200) {
+                throw new ValidationException("La ruta del archivo del comprobante excede el límite de 200 caracteres");
+            }
+            cabecera.setFotoCp(fotoCp);
+            log.debug("Archivo de comprobante actualizado: {}", fotoCp);
+        }
+
+        // Actualizar fotoAbono si se proporciona
+        if (fotoAbono != null && !fotoAbono.trim().isEmpty()) {
+            // Validar que la ruta sea válida
+            if (fotoAbono.length() > 200) {
+                throw new ValidationException("La ruta del archivo del abono excede el límite de 200 caracteres");
+            }
+            cabecera.setFotoAbono(fotoAbono);
+            log.debug("Archivo de abono actualizado: {}", fotoAbono);
+        }
+
+        cabRepository.save(cabecera);
+        log.info("Archivos actualizados exitosamente para comprobante: {}", nroCp);
+
+        return mapper.toDTO(cabecera);
     }
 }

@@ -33,6 +33,8 @@ interface DetallePartidasProps {
   onUpdate: (sec: number, partida: Partial<DetallePartidaForm>) => void;
   onRemove: (sec: number) => void;
   readonly?: boolean;
+  porcentajeImpuesto?: number; // Porcentaje de impuesto del comprobante
+  tipoComprobante?: string; // Tipo de comprobante (FAC, BOL, REC)
 }
 
 /**
@@ -55,6 +57,8 @@ export function DetallePartidas({
   onUpdate,
   onRemove,
   readonly = false,
+  porcentajeImpuesto = 18.0,
+  tipoComprobante = 'FAC',
 }: DetallePartidasProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPartida, setEditingPartida] = useState<DetallePartidaForm | null>(null);
@@ -308,6 +312,7 @@ export function DetallePartidas({
               <MontoCalculator
                 impNetoMn={montos.impNetoMn}
                 onCalculate={setMontos}
+                porcentajeImpuesto={porcentajeImpuesto}
               />
             )}
           </div>

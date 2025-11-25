@@ -77,6 +77,15 @@ export interface ComprobanteFormState {
   tMoneda: string;
   tipCambio: number;
   tCompPago?: string;
+  porcentajeImpuesto?: number; // Porcentaje manual para recibos por honorarios
+
+  // Archivos adjuntos
+  fotoCp?: string;
+  fotoAbono?: string;
+
+  // Información de abono/pago
+  fecAbono?: string;
+  desAbono?: string;
 
   // Detalle de partidas
   detalles: DetallePartidaForm[];
@@ -207,13 +216,49 @@ export function useComprobanteForm(
   );
 
   /**
+   * Valida que no haya partidas duplicadas
+   * Feature: comprobantes-mejoras
+   * Requirements: 4.2
+   */
+  const validarPartidasDuplicadas = useCallback((): boolean => {
+    const partidasVistas = new Set<number>();
+
+    for (const detalle of formState.detalles) {
+      if (partidasVistas.has(detalle.codPartida)) {
+        return false; // Hay duplicados
+      }
+      partidasVistas.add(detalle.codPartida);
+    }
+
+    return true; // No hay duplicados
+  }, [formState.detalles]);
+
+  /**
+   * Valida la consistencia de totales
+   * Feature: comprobantes-mejoras
+   * Requirements: 7.2
+   */
+  const validarConsistenciaTotales = useCallback((): boolean => {
+    const sumaDetalles = formState.detalles.reduce(
+      (sum: number, d: DetallePartidaForm) => sum + d.impTotalMn,
+      0
+    );
+
+    // Permitir una diferencia de 0.01 por redondeo
+    const diferencia = Math.abs(formState.impTotalMn - sumaDetalles);
+    return diferencia < 0.01;
+  }, [formState.detalles, formState.impTotalMn]);
+
+  /**
    * Valida los campos obligatorios del formulario
    * Retorna un objeto con los errores encontrados
+   * Feature: comprobantes-mejoras
+   * Requirements: 7.1, 4.2, 7.2
    */
   const validarFormulario = useCallback((): ValidationErrors => {
     const errores: ValidationErrors = {};
 
-    // Validar campos generales
+    // Validar campos generales (Requirement 7.1)
     if (!formState.codCia || formState.codCia === 0) {
       errores.codCia = 'La compañía es obligatoria';
     }
@@ -262,6 +307,16 @@ export function useComprobanteForm(
       errores.detalles = 'Debe agregar al menos una partida';
     }
 
+    // Validar partidas duplicadas (Requirement 4.2)
+    if (!validarPartidasDuplicadas()) {
+      errores.partidasDuplicadas = 'No se pueden agregar partidas duplicadas al mismo comprobante';
+    }
+
+    // Validar consistencia de totales (Requirement 7.2)
+    if (!validarConsistenciaTotales()) {
+      errores.totalesInconsistentes = 'El total del comprobante no coincide con la suma de los detalles';
+    }
+
     // Validar montos de partidas (Requirement 7.3)
     formState.detalles.forEach((detalle: DetallePartidaForm, index: number) => {
       if (detalle.impNetoMn <= 0) {
@@ -282,7 +337,7 @@ export function useComprobanteForm(
     }));
 
     return errores;
-  }, [formState, tipo]);
+  }, [formState, tipo, validarPartidasDuplicadas, validarConsistenciaTotales]);
 
   /**
    * Verifica si el formulario es válido
@@ -380,6 +435,8 @@ export function useComprobanteForm(
     // Validación
     validarFormulario,
     esValido,
+    validarPartidasDuplicadas,
+    validarConsistenciaTotales,
 
     // Gestión de errores
     getError,

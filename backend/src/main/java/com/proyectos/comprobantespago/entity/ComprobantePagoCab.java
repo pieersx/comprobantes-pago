@@ -143,23 +143,19 @@ public class ComprobantePagoCab implements Serializable {
     @Column(name = "IMPTOTALMN", nullable = false, precision = 10, scale = 2)
     private BigDecimal impTotalMn;
 
-    @Size(max = 60)
-    @NotBlank
-    @Column(name = "FOTOCP", nullable = false, length = 60)
+    @Size(max = 200)
+    @Column(name = "FOTOCP", length = 200)
     private String fotoCp;
 
-    @Size(max = 60)
-    @NotBlank
-    @Column(name = "FOTOABONO", nullable = false, length = 60)
+    @Size(max = 200)
+    @Column(name = "FOTOABONO", length = 200)
     private String fotoAbono;
 
-    @NotNull
-    @Column(name = "FECABONO", nullable = false)
+    @Column(name = "FECABONO")
     private LocalDate fecAbono;
 
-    @Size(max = 1000)
-    @NotBlank
-    @Column(name = "DESABONO", nullable = false, length = 1000)
+    @Size(max = 500)
+    @Column(name = "DESABONO", length = 500)
     private String desAbono;
 
     @NotNull

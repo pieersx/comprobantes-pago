@@ -28,6 +28,7 @@ export interface CashFlowData {
 }
 
 export interface ProjectOverview {
+  codCia?: number;
   codPyto: number;
   nombPyto: string;
   costoTotal: number;

@@ -32,6 +32,8 @@ public class VtaCompPagoCabService {
     private final ProyectoRepository proyectoRepository;
     private final PartidaRepository partidaRepository;
     private final PresupuestoService presupuestoService;
+    private final PartidaHierarchyService partidaHierarchyService;
+    private final TaxCalculationService taxCalculationService;
 
     /**
      * Crear nuevo comprobante de venta/ingreso con detalles
@@ -43,6 +45,12 @@ public class VtaCompPagoCabService {
         if (vtaCompPagoCabRepository.existsById(new VtaCompPagoCab.VtaCompPagoCabId(dto.getCodCia(), dto.getNroCp()))) {
             throw new RuntimeException("Ya existe un comprobante con el número: " + dto.getNroCp());
         }
+
+        // Validar partidas únicas (Requirements: 1.3, 5.2, 5.3)
+        validarPartidasUnicas(dto);
+
+        // Validar niveles de partidas según tipo de movimiento (Requirements: 1.3, 5.2, 5.3)
+        validarNivelesPartidas(dto);
 
         // Validar que exista el cliente
         if (!clienteRepository.existsById(new com.proyectos.comprobantespago.entity.Cliente.ClienteId(dto.getCodCia(), dto.getCodCliente()))) {
@@ -185,6 +193,12 @@ public class VtaCompPagoCabService {
 
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
             .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+
+        // Validar partidas únicas (Requirements: 1.3, 5.2, 5.3)
+        validarPartidasUnicas(dto);
+
+        // Validar niveles de partidas según tipo de movimiento (Requirements: 1.3, 5.2, 5.3)
+        validarNivelesPartidas(dto);
 
         // Actualizar datos de cabecera
         cabecera.setCodCliente(dto.getCodCliente());
@@ -358,6 +372,128 @@ public class VtaCompPagoCabService {
 
         log.debug("IGV y totales calculados - Neto: {}, IGV: {}, Total: {}",
             totalNeto, totalIgv, totalGeneral);
+    }
+
+    /**
+     * Actualiza los archivos adjuntos de un comprobante de ingreso
+     * Feature: comprobantes-jerarquicos
+     * Requirements: 4.1, 4.2
+     *
+     * @param codCia Código de compañía
+     * @param nroCp Número de comprobante
+     * @param fotoCp Ruta del archivo del comprobante (opcional)
+     * @param fotoAbono Ruta del archivo del abono (opcional)
+     * @return DTO del comprobante actualizado
+     */
+    public VtaCompPagoCabDTO updateFiles(Long codCia, String nroCp, String fotoCp, String fotoAbono) {
+        log.info("Actualizando archivos del comprobante de ingreso: {}", nroCp);
+
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+
+        // Actualizar fotoCp si se proporciona
+        if (fotoCp != null && !fotoCp.trim().isEmpty()) {
+            // Validar que la ruta sea válida (no vacía y con formato correcto)
+            if (fotoCp.length() > 200) {
+                throw new RuntimeException("La ruta del archivo del comprobante excede el límite de 200 caracteres");
+            }
+            cabecera.setFotoCp(fotoCp);
+            log.debug("Archivo de comprobante actualizado: {}", fotoCp);
+        }
+
+        // Actualizar fotoAbono si se proporciona
+        if (fotoAbono != null && !fotoAbono.trim().isEmpty()) {
+            // Validar que la ruta sea válida
+            if (fotoAbono.length() > 200) {
+                throw new RuntimeException("La ruta del archivo del abono excede el límite de 200 caracteres");
+            }
+            cabecera.setFotoAbono(fotoAbono);
+            log.debug("Archivo de abono actualizado: {}", fotoAbono);
+        }
+
+        vtaCompPagoCabRepository.save(cabecera);
+        log.info("Archivos actualizados exitosamente para comprobante de ingreso: {}", nroCp);
+
+        return obtenerPorId(codCia, nroCp);
+    }
+
+    // ==================== Métodos de validación privados ====================
+
+    /**
+     * Valida que no haya partidas duplicadas en los detalles
+     * Requirements: 1.3, 5.2, 5.3
+     */
+    private void validarPartidasUnicas(VtaCompPagoCabDTO dto) {
+        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+            return;
+        }
+
+        List<Long> partidas = dto.getDetalles().stream()
+                .map(VtaCompPagoDetDTO::getCodPartida)
+                .toList();
+
+        long partidasUnicas = partidas.stream().distinct().count();
+
+        if (partidasUnicas < partidas.size()) {
+            // Encontrar la partida duplicada
+            Long partidaDuplicada = partidas.stream()
+                    .filter(p -> partidas.stream().filter(p2 -> p2.equals(p)).count() > 1)
+                    .findFirst()
+                    .orElse(null);
+
+            throw new RuntimeException(
+                    String.format("La partida %d está duplicada en los detalles del comprobante. " +
+                            "Cada partida solo puede aparecer una vez.", partidaDuplicada));
+        }
+    }
+
+    /**
+     * Valida que todas las partidas sean del último nivel según tipo de movimiento
+     * Requirements: 1.3, 5.2, 5.3
+     * - Ingresos: solo nivel 2
+     * - Egresos: solo nivel 3
+     */
+    private void validarNivelesPartidas(VtaCompPagoCabDTO dto) {
+        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+            return;
+        }
+
+        for (VtaCompPagoDetDTO detalle : dto.getDetalles()) {
+            String ingEgr = detalle.getIngEgr();
+            Long codPartida = detalle.getCodPartida();
+
+            // Validar que la partida sea del último nivel
+            boolean esNivelValido = partidaHierarchyService.validatePartidaForComprobante(
+                    dto.getCodCia(), ingEgr, codPartida);
+
+            if (!esNivelValido) {
+                String tipoDesc = "I".equals(ingEgr) ? "ingreso (nivel 2)" : "egreso (nivel 3)";
+                throw new RuntimeException(
+                        String.format("Solo se pueden usar partidas del último nivel para %s. " +
+                                "La partida %d no cumple con este requisito.", tipoDesc, codPartida));
+            }
+        }
+    }
+
+    /**
+     * Valida que la suma de detalles coincida con el total de cabecera
+     * Requirements: 5.3, 5.4
+     */
+    private void validarTotales(VtaCompPagoCabDTO dto) {
+        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+            return;
+        }
+
+        BigDecimal totalDetalles = dto.getDetalles().stream()
+                .map(VtaCompPagoDetDTO::getImpTotalMn)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalDetalles.compareTo(dto.getImpTotalMn()) != 0) {
+            throw new RuntimeException(
+                    String.format(
+                            "La suma de los detalles (S/ %.2f) no coincide con el total del comprobante (S/ %.2f)",
+                            totalDetalles, dto.getImpTotalMn()));
+        }
     }
 
     // Métodos de conversión

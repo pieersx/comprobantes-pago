@@ -50,8 +50,10 @@ export function AlertasWidget() {
 
             alertasMock.push({
               id: `alert-${proyecto.codPyto}`,
+              tipo: nivel === 'rojo' ? 'error' : nivel === 'naranja' ? 'warning' : 'info',
               codPyto: proyecto.codPyto,
               nombreProyecto: proyecto.nombPyto,
+              codPartida: index + 1,
               nombrePartida: `Partida ${index + 1}`,
               nivel: nivel,
               mensaje: nivel === 'rojo'
@@ -60,9 +62,10 @@ export function AlertasWidget() {
                 ? 'Cerca del límite presupuestal'
                 : 'Uso normal del presupuesto',
               porcentajeEjecucion: nivel === 'rojo' ? 105 : nivel === 'naranja' ? 85 : 65,
-              presupuestoTotal: proyecto.costoTotal || 100000,
+              presupuestoOriginal: proyecto.costoTotal || 100000,
               presupuestoEjecutado: (proyecto.costoTotal || 100000) * (nivel === 'rojo' ? 1.05 : nivel === 'naranja' ? 0.85 : 0.65),
               presupuestoDisponible: (proyecto.costoTotal || 100000) * (nivel === 'rojo' ? -0.05 : nivel === 'naranja' ? 0.15 : 0.35),
+              fechaGeneracion: new Date().toISOString(),
             });
           });
         }

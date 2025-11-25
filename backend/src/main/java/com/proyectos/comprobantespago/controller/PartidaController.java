@@ -18,8 +18,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.proyectos.comprobantespago.dto.PartidaDTO;
+import com.proyectos.comprobantespago.dto.PartidaTreeNode;
 import com.proyectos.comprobantespago.entity.Partida;
 import com.proyectos.comprobantespago.repository.PartidaRepository;
+import com.proyectos.comprobantespago.service.PartidaHierarchyService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Controlador REST para la gestión de Partidas
@@ -28,10 +34,15 @@ import com.proyectos.comprobantespago.repository.PartidaRepository;
 @RestController
 @RequestMapping("/partidas")
 @CrossOrigin(origins = "*")
+@Tag(name = "Partidas", description = "Gestión de partidas presupuestales")
+@Tag(name = "Partidas", description = "Gestión de partidas presupuestales")
 public class PartidaController {
 
     @Autowired
     private PartidaRepository partidaRepository;
+
+    @Autowired
+    private PartidaHierarchyService partidaHierarchyService;
 
     /**
      * GET /partidas
@@ -172,5 +183,115 @@ public class PartidaController {
         partida.setVigente(dto.getVigente());
 
         return partida;
+    }
+
+    /**
+     * GET /partidas/nivel3
+     * Obtiene solo las partidas de nivel 3 (último nivel) válidas para comprobantes
+     * Según especificaciones del profesor: solo nivel 3 se usa en comprobantes
+     */
+    @GetMapping("/nivel3")
+    @Operation(summary = "Obtener partidas de nivel 3", description = "Retorna solo las partidas de nivel 3 con información de jerarquía completa. "
+            +
+            "Estas son las únicas partidas válidas para usar en comprobantes.")
+    public ResponseEntity<List<PartidaDTO>> obtenerPartidasNivel3(
+            @RequestParam @Parameter(description = "Código de la compañía") Long codCia,
+            @RequestParam(required = false) @Parameter(description = "Código del proyecto (opcional)") Long codPyto,
+            @RequestParam @Parameter(description = "Tipo: I=Ingreso, E=Egreso") String ingEgr) {
+
+        List<PartidaDTO> partidas = partidaHierarchyService.getLevel3PartidasByProyecto(codCia, codPyto, ingEgr);
+        return ResponseEntity.ok(partidas);
+    }
+
+    /**
+     * GET /partidas/ultimo-nivel/{codCia}/{ingEgr}
+     * Obtiene solo las partidas del último nivel válidas para comprobantes
+     * - Ingresos: nivel 2
+     * - Egresos: nivel 3
+     */
+    @GetMapping("/ultimo-nivel/{codCia}/{ingEgr}")
+    @Operation(summary = "Obtener partidas del último nivel", description = "Retorna solo las partidas del último nivel según el tipo. "
+            +
+            "Ingresos: nivel 2, Egresos: nivel 3. " +
+            "Estas son las únicas partidas válidas para usar en comprobantes.")
+    public ResponseEntity<List<PartidaDTO>> obtenerPartidasUltimoNivel(
+            @PathVariable @Parameter(description = "Código de la compañía") Long codCia,
+            @PathVariable @Parameter(description = "Tipo: I=Ingreso, E=Egreso") String ingEgr,
+            @RequestParam(required = false) @Parameter(description = "Código del proyecto (opcional)") Long codProyecto) {
+
+        List<PartidaDTO> partidas = partidaHierarchyService.getLeafPartidas(codCia, ingEgr, codProyecto);
+        return ResponseEntity.ok(partidas);
+    }
+
+    /**
+     * GET /partidas/arbol/{codCia}/{ingEgr}
+     * Obtiene el árbol jerárquico completo de partidas
+     */
+    @GetMapping("/arbol/{codCia}/{ingEgr}")
+    @Operation(summary = "Obtener árbol jerárquico de partidas", description = "Retorna la estructura completa de partidas en formato de árbol con niveles anidados")
+    public ResponseEntity<List<PartidaTreeNode>> obtenerArbolPartidas(
+            @PathVariable @Parameter(description = "Código de la compañía") Long codCia,
+            @PathVariable @Parameter(description = "Tipo: I=Ingreso, E=Egreso") String ingEgr) {
+
+        List<PartidaTreeNode> arbol = partidaHierarchyService.buildPartidaTree(codCia, ingEgr);
+        return ResponseEntity.ok(arbol);
+    }
+
+    /**
+     * GET /partidas/ruta/{codCia}/{ingEgr}/{codPartida}
+     * Obtiene la ruta completa de una partida (breadcrumb)
+     */
+    @GetMapping("/ruta/{codCia}/{ingEgr}/{codPartida}")
+    @Operation(summary = "Obtener ruta de una partida", description = "Retorna la ruta completa desde la raíz hasta la partida especificada. "
+            +
+            "Ejemplo: 'Ingresos > Ventas > Servicios Técnicos'")
+    public ResponseEntity<String> obtenerRutaPartida(
+            @PathVariable @Parameter(description = "Código de la compañía") Long codCia,
+            @PathVariable @Parameter(description = "Tipo: I=Ingreso, E=Egreso") String ingEgr,
+            @PathVariable @Parameter(description = "Código de la partida") Long codPartida) {
+
+        String ruta = partidaHierarchyService.getFullPath(codCia, ingEgr, codPartida);
+        return ResponseEntity.ok(ruta);
+    }
+
+    /**
+     * GET /partidas/proyecto/{codCia}/{codPyto}/{ingEgr}/nivel3
+     * Obtiene SOLO las partidas de NIVEL 3 asignadas a un proyecto específico
+     * Según el profesor: Solo nivel 3 se usa en comprobantes
+     * Esta información viene de PROY_PARTIDA_MEZCLA
+     */
+    @GetMapping("/proyecto/{codCia}/{codPyto}/{ingEgr}/nivel3")
+    @Operation(summary = "Obtener partidas de nivel 3 por proyecto", description = "Retorna SOLO las partidas de NIVEL 3 (último nivel) asignadas a un proyecto específico. "
+            +
+            "Estas son las únicas partidas válidas para usar en comprobantes de pago. " +
+            "Los datos vienen de PROY_PARTIDA_MEZCLA según la estructura presupuestal del proyecto.")
+    public ResponseEntity<List<PartidaDTO>> obtenerPartidasNivel3PorProyecto(
+            @PathVariable @Parameter(description = "Código de la compañía") Long codCia,
+            @PathVariable @Parameter(description = "Código del proyecto") Long codPyto,
+            @PathVariable @Parameter(description = "Tipo: I=Ingreso, E=Egreso") String ingEgr) {
+
+        List<PartidaDTO> partidas = partidaHierarchyService.getLevel3PartidasByProyecto(codCia, codPyto, ingEgr);
+        return ResponseEntity.ok(partidas);
+    }
+
+    /**
+     * GET /partidas/proyecto/{codCia}/{codPyto}/{ingEgr}/todos-niveles
+     * Obtiene TODAS las partidas (niveles 1, 2 y 3) asignadas a un proyecto
+     * específico
+     * Nuevo requerimiento: El usuario puede seleccionar cualquier nivel de partida
+     * Esta información viene de PROY_PARTIDA_MEZCLA
+     */
+    @GetMapping("/proyecto/{codCia}/{codPyto}/{ingEgr}/todos-niveles")
+    @Operation(summary = "Obtener todas las partidas (todos los niveles) por proyecto", description = "Retorna TODAS las partidas asignadas a un proyecto (niveles 1, 2 y 3). "
+            +
+            "El usuario puede seleccionar cualquier nivel de partida para usar en comprobantes. " +
+            "Los datos vienen de PROY_PARTIDA_MEZCLA según la estructura presupuestal del proyecto.")
+    public ResponseEntity<List<PartidaDTO>> obtenerTodasPartidasPorProyecto(
+            @PathVariable @Parameter(description = "Código de la compañía") Long codCia,
+            @PathVariable @Parameter(description = "Código del proyecto") Long codPyto,
+            @PathVariable @Parameter(description = "Tipo: I=Ingreso, E=Egreso") String ingEgr) {
+
+        List<PartidaDTO> partidas = partidaHierarchyService.getAllPartidasByProyecto(codCia, codPyto, ingEgr);
+        return ResponseEntity.ok(partidas);
     }
 }

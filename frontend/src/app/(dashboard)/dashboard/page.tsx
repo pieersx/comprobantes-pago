@@ -31,12 +31,12 @@ export default function DashboardPage() {
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats', codCia],
-    queryFn: () => dashboardService.getStats(codCia),
+    queryFn: () => dashboardService.getStats(codCia?.toString()),
   });
 
   const { data: cashflow } = useQuery({
     queryKey: ['dashboard-cashflow', codCia],
-    queryFn: () => dashboardService.getCashFlowData(codCia),
+    queryFn: () => dashboardService.getCashFlowData(codCia?.toString()),
   });
 
   // Auto-refresh every 5 minutes

@@ -431,3 +431,128 @@ export const proveedoresService = {
     }
   },
 };
+
+// ===================================
+// SERVICIOS MEJORADOS DE COMPROBANTES
+// Feature: comprobantes-mejoras
+// Requirements: 1.1, 8.1, 8.2
+// ===================================
+
+import type {
+    Abono,
+    CreateComprobanteRequest
+} from '@/types/comprobante';
+
+export const comprobantesService = {
+  /**
+   * Crear comprobante de egreso
+   * Feature: comprobantes-mejoras
+   * Requirements: 8.2
+   *
+   * POST /api/v1/comprobantes/egreso
+   */
+  createComprobanteEgreso: async (data: CreateComprobanteRequest): Promise<CompPagoCab> => {
+    try {
+      console.log('📤 Enviando comprobante de egreso:', JSON.stringify(data, null, 2));
+      const response = await apiClient.post<ApiResponse<CompPagoCab>>(
+        '/comprobantes/egreso',
+        data
+      );
+      console.log('✅ Comprobante de egreso creado:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Error al crear comprobante de egreso:', error);
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Crear comprobante de ingreso
+   * Feature: comprobantes-mejoras
+   * Requirements: 8.1
+   *
+   * POST /api/v1/comprobantes/ingreso
+   */
+  createComprobanteIngreso: async (data: CreateComprobanteRequest): Promise<VtaCompPagoCab> => {
+    try {
+      console.log('📤 Enviando comprobante de ingreso:', JSON.stringify(data, null, 2));
+      const response = await apiClient.post<ApiResponse<VtaCompPagoCab>>(
+        '/comprobantes/ingreso',
+        data
+      );
+      console.log('✅ Comprobante de ingreso creado:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('❌ Error al crear comprobante de ingreso:', error);
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Actualizar comprobante
+   * Feature: comprobantes-mejoras
+   * Requirements: 1.5
+   *
+   * PUT /api/v1/comprobantes/{id}
+   */
+  updateComprobante: async (
+    id: string,
+    data: Partial<CompPagoCab | VtaCompPagoCab>
+  ): Promise<CompPagoCab | VtaCompPagoCab> => {
+    try {
+      console.log(`📤 Actualizando comprobante ${id}:`, JSON.stringify(data, null, 2));
+      const response = await apiClient.put<ApiResponse<CompPagoCab | VtaCompPagoCab>>(
+        `/comprobantes/${id}`,
+        data
+      );
+      console.log('✅ Comprobante actualizado:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error(`❌ Error al actualizar comprobante ${id}:`, error);
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Registrar abono en comprobante
+   * Feature: comprobantes-mejoras
+   * Requirements: 6.1, 6.2, 6.3, 6.4
+   *
+   * POST /api/v1/comprobantes/{id}/abono
+   */
+  registrarAbono: async (
+    id: string,
+    abono: Abono
+  ): Promise<CompPagoCab | VtaCompPagoCab> => {
+    try {
+      console.log(`📤 Registrando abono para comprobante ${id}:`, JSON.stringify(abono, null, 2));
+      const response = await apiClient.post<ApiResponse<CompPagoCab | VtaCompPagoCab>>(
+        `/comprobantes/${id}/abono`,
+        abono
+      );
+      console.log('✅ Abono registrado:', response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error(`❌ Error al registrar abono para comprobante ${id}:`, error);
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtener tipos de comprobante disponibles
+   * Feature: comprobantes-mejoras
+   * Requirements: 1.1
+   *
+   * GET /api/v1/elementos/tipos-comprobante
+   */
+  getTiposComprobante: async (): Promise<Elemento[]> => {
+    try {
+      const response = await apiClient.get<ApiResponse<Elemento[]>>(
+        '/elementos/tipos-comprobante'
+      );
+      return response.data.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+};

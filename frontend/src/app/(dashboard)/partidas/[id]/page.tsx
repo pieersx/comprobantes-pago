@@ -155,7 +155,7 @@ export default function DetallePartidaPage() {
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Centro de Costo</p>
               <p className="font-medium">
-                {partida.flgCC === "S" ? "Sí" : "No"}
+                {partida.flgCc === "S" ? "Sí" : "No"}
               </p>
             </div>
 
