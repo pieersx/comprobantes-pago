@@ -43,7 +43,7 @@ BEGIN
     IF v_count_cliente = 0 THEN
         -- Verificar si existe la persona 12
         BEGIN
-            INSERT INTO PERSONA VALUES (1, 12, '2', 'CLIENTE PROYECTO GRUPO06', 'CLI-G06', 'Cliente Grupo 06', 'CLIG06', '1');
+            INSERT INTO PERSONA VALUES (1, 12, '2', 'CLIENTE PROYECTO', 'CLI-G06', 'Cliente', 'CLIG06', '1');
         EXCEPTION WHEN OTHERS THEN NULL; -- Si ya existe, ignorar
         END;
         BEGIN
@@ -60,7 +60,7 @@ BEGIN
     IF v_count_empleado = 0 THEN
         -- Insertar persona y empleado básico
         BEGIN
-            INSERT INTO PERSONA VALUES (1, 1, '1', 'JEFE PROYECTO GRUPO06', 'JEFE-G06', 'Jefe Grupo 06', 'JEFEG06', '1');
+            INSERT INTO PERSONA VALUES (1, 1, '1', 'JEFE PROYECTO', 'JEFE-G06', 'Jefe', 'JEFEG06', '1');
         EXCEPTION WHEN OTHERS THEN NULL;
         END;
         BEGIN
@@ -88,7 +88,7 @@ BEGIN
                 CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
                 CodEstado, Observac, Vigente
             ) VALUES (
-                1, 1, 'PROYECTO HIDROELECTRICO GRUPO06', 1, -999, 1, -999, 12, '-', '-',
+                1, 1, 'PROYECTO HIDROELECTRICO', 1, -999, 1, -999, 12, '-', '-',
                 TO_DATE('2023-01-15', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 1, TO_DATE('2024-06-30', 'YYYY-MM-DD'),
                 25000000.00, -999, -999, -999, -999, 25000000.00, 4500000.00, 29500000.00, -999, '-', '-', '-',
                 TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1', 'Proyecto 1', '1'
@@ -108,7 +108,7 @@ BEGIN
                 CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
                 CodEstado, Observac, Vigente
             ) VALUES (
-                1, 2, 'PLANTA ENERGETICA GRUPO06', 1, -999, 1, -999, 12, '-', '-',
+                1, 2, 'PLANTA ENERGETICA', 1, -999, 1, -999, 12, '-', '-',
                 TO_DATE('2023-03-20', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 2, TO_DATE('2024-05-15', 'YYYY-MM-DD'),
                 18000000.00, -999, -999, -999, -999, 18000000.00, 3240000.00, 21240000.00, -999, '-', '-', '-',
                 TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1', 'Proyecto 2', '1'
@@ -128,7 +128,7 @@ BEGIN
                 CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
                 CodEstado, Observac, Vigente
             ) VALUES (
-                1, 3, 'RED ELECTRICA GRUPO06', 1, -999, 1, -999, 12, '-', '-',
+                1, 3, 'RED ELECTRICA', 1, -999, 1, -999, 12, '-', '-',
                 TO_DATE('2023-02-10', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 2, TO_DATE('2024-04-30', 'YYYY-MM-DD'),
                 12000000.00, -999, -999, -999, -999, 12000000.00, 2160000.00, 14160000.00, -999, '-', '-', '-',
                 TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2025, 0, NULL, '-1', '1', 'Proyecto 3', '1'
