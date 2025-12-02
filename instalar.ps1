@@ -4,16 +4,16 @@ Write-Host "=== INSTALANDO ===" -ForegroundColor Cyan
 # Instalar pnpm (mas rapido que npm)
 npm install -g pnpm
 
-# Backend
-cd backend; mvn clean package -DskipTests -q; cd ..
+# Frontend - instalar dependencias
+Write-Host "Instalando dependencias del Frontend..." -ForegroundColor Yellow
+cd frontend; pnpm install; cd ..
 
-# Frontend
-cd frontend; pnpm install; pnpm build; cd ..
-
-# Scripts
-"cd backend; java -jar target/comprobantes-pago-1.0.0.jar" | Out-File backend.ps1
-"cd frontend; pnpm start" | Out-File frontend.ps1
+# Scripts de ejecucion (modo desarrollo)
+"cd backend; mvn spring-boot:run" | Out-File backend.ps1
+"cd frontend; pnpm dev" | Out-File frontend.ps1
 
 Write-Host "=== LISTO ===" -ForegroundColor Green
-Write-Host "Ejecutar: .\backend.ps1 y .\frontend.ps1"
-Write-Host "Web: http://localhost:4584 | API: http://localhost:6969/api/v1"
+Write-Host ""
+Write-Host "Para ejecutar:" -ForegroundColor Yellow
+Write-Host "  Terminal 1: .\backend.ps1   (API: http://localhost:6969/api/v1)"
+Write-Host "  Terminal 2: .\frontend.ps1  (Web: http://localhost:4584)"

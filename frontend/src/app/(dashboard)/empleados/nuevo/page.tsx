@@ -3,7 +3,7 @@
 import { EmpleadoForm } from "@/components/empleados/EmpleadoForm";
 import { Button } from "@/components/ui/button";
 import { empleadosService } from "@/services/empleados.service";
-import { EmpleadoCreate } from "@/types/empleado";
+import { EmpleadoCreate, EmpleadoUpdate } from "@/types/empleado";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -26,8 +26,8 @@ export default function NuevoEmpleadoPage() {
     },
   });
 
-  const handleSubmit = async (data: EmpleadoCreate) => {
-    await createMutation.mutateAsync(data);
+  const handleSubmit = async (data: EmpleadoCreate | EmpleadoUpdate) => {
+    await createMutation.mutateAsync(data as EmpleadoCreate);
   };
 
   return (
