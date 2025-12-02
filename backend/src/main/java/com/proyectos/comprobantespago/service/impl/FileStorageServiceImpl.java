@@ -1,18 +1,5 @@
 package com.proyectos.comprobantespago.service.impl;
 
-import com.proyectos.comprobantespago.config.FileStorageProperties;
-import com.proyectos.comprobantespago.exception.FileNotFoundException;
-import com.proyectos.comprobantespago.exception.FileStorageException;
-import com.proyectos.comprobantespago.exception.FileSizeExceededException;
-import com.proyectos.comprobantespago.exception.InvalidFileFormatException;
-import com.proyectos.comprobantespago.service.FileStorageService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -21,6 +8,20 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.proyectos.comprobantespago.config.FileStorageProperties;
+import com.proyectos.comprobantespago.exception.FileNotFoundException;
+import com.proyectos.comprobantespago.exception.FileSizeExceededException;
+import com.proyectos.comprobantespago.exception.FileStorageException;
+import com.proyectos.comprobantespago.exception.InvalidFileFormatException;
+import com.proyectos.comprobantespago.service.FileStorageService;
 
 /**
  * Implementación del servicio de almacenamiento de archivos
@@ -48,11 +49,12 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String storeComprobanteFile(MultipartFile file, Integer codCia,
-                                      Integer year, Integer month, String tipo) {
+            Integer year, Integer month, String tipo) {
         // Validar archivo
         validateFile(file);
 
-        // Crear estructura de directorios: uploads/{codCia}/{year}/{month}/comprobantes/
+        // Crear estructura de directorios:
+        // uploads/{codCia}/{year}/{month}/comprobantes/
         Path targetLocation = fileStorageLocation
                 .resolve(String.valueOf(codCia))
                 .resolve(String.valueOf(year))
@@ -64,7 +66,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String storeAbonoFile(MultipartFile file, Integer codCia,
-                                Integer year, Integer month) {
+            Integer year, Integer month) {
         // Validar archivo
         validateFile(file);
 
@@ -104,17 +106,15 @@ public class FileStorageServiceImpl implements FileStorageService {
         // Validar tamaño del archivo (10MB máximo)
         if (file.getSize() > fileStorageProperties.getMaxSize()) {
             throw new FileSizeExceededException(
-                "El archivo excede el tamaño máximo de 10MB",
-                fileStorageProperties.getMaxSize()
-            );
+                    "El archivo excede el tamaño máximo de 10MB",
+                    fileStorageProperties.getMaxSize());
         }
 
         // Validar tipo de archivo
         String contentType = file.getContentType();
         if (contentType == null || !isAllowedContentType(contentType)) {
             throw new InvalidFileFormatException(
-                "Solo se permiten archivos PDF, JPG, JPEG o PNG. Tipo recibido: " + contentType
-            );
+                    "Solo se permiten archivos PDF, JPG, JPEG o PNG. Tipo recibido: " + contentType);
         }
     }
 
@@ -136,10 +136,12 @@ public class FileStorageServiceImpl implements FileStorageService {
             // Crear directorios si no existen
             Files.createDirectories(targetLocation);
 
-            // Generar nombre único para el archivo
+            // Generar nombre único para el archivo (UUID corto de 8 caracteres para caber
+            // en VARCHAR2(60))
             String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
             String fileExtension = getFileExtension(originalFilename);
-            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
+            String shortUuid = UUID.randomUUID().toString().substring(0, 8);
+            String uniqueFilename = shortUuid + fileExtension;
 
             // Copiar archivo
             Path destinationFile = targetLocation.resolve(uniqueFilename);

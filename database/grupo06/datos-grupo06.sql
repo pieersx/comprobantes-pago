@@ -1,9 +1,157 @@
 -- ============================================================================
+-- LIMPIEZA DE TABLAS (TRUNCATE)
+-- ============================================================================
+TRUNCATE TABLE DPROY_PARTIDA_MEZCLA;
+TRUNCATE TABLE PROY_PARTIDA_MEZCLA;
+TRUNCATE TABLE PROY_PARTIDA;
+TRUNCATE TABLE PARTIDA_MEZCLA;
+TRUNCATE TABLE VTACOMP_PAGODET;
+TRUNCATE TABLE VTACOMP_PAGOCAB;
+
+TRUNCATE TABLE COMP_PAGODET;
+TRUNCATE TABLE COMP_PAGOCAB;
+
+TRUNCATE TABLE FLUJOCAJA_DET;
+TRUNCATE TABLE FLUJOCAJA;
+TRUNCATE TABLE PARTIDA;
+
+-- ============================================================================
+-- VERIFICAR Y CREAR PROYECTOS SI NO EXISTEN
+-- ============================================================================
+-- Este bloque inserta los proyectos necesarios si no fueron creados
+-- por datos-profesor.sql o si la base de datos fue reiniciada
+-- ============================================================================
+
+-- Verificar si existen los proyectos requeridos
+DECLARE
+    v_count_proyecto NUMBER;
+    v_count_cia NUMBER;
+    v_count_cliente NUMBER;
+    v_count_empleado NUMBER;
+BEGIN
+    -- Verificar si existe la CIA
+    SELECT COUNT(*) INTO v_count_cia FROM CIA WHERE CodCia = 1;
+    IF v_count_cia = 0 THEN
+        INSERT INTO CIA VALUES (1, 'MAGNA CONSTRUCTORES S.A.C.', 'MAGNA', '1');
+        DBMS_OUTPUT.PUT_LINE('CIA insertada correctamente');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('CIA ya existe');
+    END IF;
+
+    -- Verificar si existe el cliente 12 (necesario para VTACOMP_PAGOCAB)
+    SELECT COUNT(*) INTO v_count_cliente FROM CLIENTE WHERE CodCia = 1 AND CodCliente = 12;
+    IF v_count_cliente = 0 THEN
+        -- Verificar si existe la persona 12
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 12, '2', 'CLIENTE PROYECTO GRUPO06', 'CLI-G06', 'Cliente Grupo 06', 'CLIG06', '1');
+        EXCEPTION WHEN OTHERS THEN NULL; -- Si ya existe, ignorar
+        END;
+        BEGIN
+            INSERT INTO CLIENTE VALUES (1, 12, '20123456789', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Cliente 12 insertado o verificado');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Cliente 12 ya existe');
+    END IF;
+
+    -- Verificar si existe el empleado 1 (necesario para EmplJefeProy)
+    SELECT COUNT(*) INTO v_count_empleado FROM EMPLEADO WHERE CodCia = 1 AND CodEmpleado = 1;
+    IF v_count_empleado = 0 THEN
+        -- Insertar persona y empleado básico
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 1, '1', 'JEFE PROYECTO GRUPO06', 'JEFE-G06', 'Jefe Grupo 06', 'JEFEG06', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO EMPLEADO VALUES (1, 1, 'Direccion', '999999999', 'N/A', NULL, TO_DATE('1990-01-01','YYYY-MM-DD'), '12345678', NULL, NULL, NULL, '1', NULL, NULL, 'jefe@email.com', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Empleado 1 insertado o verificado');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Empleado 1 ya existe');
+    END IF;
+
+    -- Verificar si existen los proyectos 1, 2, 3
+    SELECT COUNT(*) INTO v_count_proyecto FROM PROYECTO WHERE CodCia = 1 AND CodPyto IN (1, 2, 3);
+
+    IF v_count_proyecto < 3 THEN
+        DBMS_OUTPUT.PUT_LINE('Insertando proyectos faltantes...');
+
+        -- Proyecto 1
+        BEGIN
+            INSERT INTO PROYECTO (
+                CodCIA, CodPyto, NombPyto, EmplJefeProy, CodCia1, CiaContrata, CodCC, CodCliente,
+                FlgEmpConsorcio, CodSNIP, FecReg, CodFase, CodNivel, CodFuncion, CodSituacion,
+                NumInfor, NumInforEntrg, EstPyto, FecEstado, ValRefer, CostoDirecto, CostoGGen,
+                CostoFinan, ImpUtilidad, CostoTotSinIGV, ImpIGV, CostoTotal, CostoPenalid, CodDpto,
+                CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
+                CodEstado, Observac, Vigente
+            ) VALUES (
+                1, 1, 'PROYECTO HIDROELECTRICO GRUPO06', 1, -999, 1, -999, 12, '-', '-',
+                TO_DATE('2023-01-15', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 1, TO_DATE('2024-06-30', 'YYYY-MM-DD'),
+                25000000.00, -999, -999, -999, -999, 25000000.00, 4500000.00, 29500000.00, -999, '-', '-', '-',
+                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1', 'Proyecto 1', '1'
+            );
+            DBMS_OUTPUT.PUT_LINE('Proyecto 1 insertado');
+        EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
+            DBMS_OUTPUT.PUT_LINE('Proyecto 1 ya existe');
+        END;
+
+        -- Proyecto 2
+        BEGIN
+            INSERT INTO PROYECTO (
+                CodCIA, CodPyto, NombPyto, EmplJefeProy, CodCia1, CiaContrata, CodCC, CodCliente,
+                FlgEmpConsorcio, CodSNIP, FecReg, CodFase, CodNivel, CodFuncion, CodSituacion,
+                NumInfor, NumInforEntrg, EstPyto, FecEstado, ValRefer, CostoDirecto, CostoGGen,
+                CostoFinan, ImpUtilidad, CostoTotSinIGV, ImpIGV, CostoTotal, CostoPenalid, CodDpto,
+                CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
+                CodEstado, Observac, Vigente
+            ) VALUES (
+                1, 2, 'PLANTA ENERGETICA GRUPO06', 1, -999, 1, -999, 12, '-', '-',
+                TO_DATE('2023-03-20', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 2, TO_DATE('2024-05-15', 'YYYY-MM-DD'),
+                18000000.00, -999, -999, -999, -999, 18000000.00, 3240000.00, 21240000.00, -999, '-', '-', '-',
+                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1', 'Proyecto 2', '1'
+            );
+            DBMS_OUTPUT.PUT_LINE('Proyecto 2 insertado');
+        EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
+            DBMS_OUTPUT.PUT_LINE('Proyecto 2 ya existe');
+        END;
+
+        -- Proyecto 3
+        BEGIN
+            INSERT INTO PROYECTO (
+                CodCIA, CodPyto, NombPyto, EmplJefeProy, CodCia1, CiaContrata, CodCC, CodCliente,
+                FlgEmpConsorcio, CodSNIP, FecReg, CodFase, CodNivel, CodFuncion, CodSituacion,
+                NumInfor, NumInforEntrg, EstPyto, FecEstado, ValRefer, CostoDirecto, CostoGGen,
+                CostoFinan, ImpUtilidad, CostoTotSinIGV, ImpIGV, CostoTotal, CostoPenalid, CodDpto,
+                CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
+                CodEstado, Observac, Vigente
+            ) VALUES (
+                1, 3, 'RED ELECTRICA GRUPO06', 1, -999, 1, -999, 12, '-', '-',
+                TO_DATE('2023-02-10', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 2, TO_DATE('2024-04-30', 'YYYY-MM-DD'),
+                12000000.00, -999, -999, -999, -999, 12000000.00, 2160000.00, 14160000.00, -999, '-', '-', '-',
+                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2025, 0, NULL, '-1', '1', 'Proyecto 3', '1'
+            );
+            DBMS_OUTPUT.PUT_LINE('Proyecto 3 insertado');
+        EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
+            DBMS_OUTPUT.PUT_LINE('Proyecto 3 ya existe');
+        END;
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Todos los proyectos (1, 2, 3) ya existen');
+    END IF;
+
+    COMMIT;
+END;
+/
+
+
+-- ============================================================================
 -- PARTIDAS DE INGRESO (I) - ESTRUCTURA JERÁRQUICA
 -- ============================================================================
 
 -- NIVEL 1: INGRESOS (Categoría principal - NO usar en comprobantes)
-INSERT INTO PARTIDA VALUES (1, 'I', 1000, 'ING-000', 'INGRESOS REALES', 'N', 1, '002', 'UND', 1000, 1);
+INSERT INTO PARTIDA VALUES (1, 'I', 1000, 'ING-000', 'INGRESOS', 'N', 1, '002', 'UND', 1000, 1);
 
 -- NIVEL 2: INGRESOS POR VENTA (Subcategoría - NO usar en comprobantes)
 INSERT INTO PARTIDA VALUES (1, 'I', 1100, 'ING-100', 'INGRESOS POR VENTA', 'N', 2, '002', 'UND', 1100, 1);
@@ -32,7 +180,7 @@ INSERT INTO PARTIDA VALUES (1, 'I', 1302, 'ING-302', 'ALQUILERES', 'N', 3, '002'
 -- ============================================================================
 
 -- NIVEL 1: EGRESOS (Categoría principal - NO usar en comprobantes)
-INSERT INTO PARTIDA VALUES (1, 'E', 2000, 'EGR-000', 'EGRESOS REALES', 'N', 1, '002', 'UND', 2000, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2000, 'EGR-000', 'EGRESOS', 'N', 1, '002', 'UND', 2000, 1);
 
 -- NIVEL 2: COSTOS DIRECTOS (Subcategoría - NO usar en comprobantes)
 INSERT INTO PARTIDA VALUES (1, 'E', 2100, 'EGR-100', 'COSTOS DIRECTOS', 'N', 2, '002', 'UND', 2100, 1);
@@ -41,20 +189,6 @@ INSERT INTO PARTIDA VALUES (1, 'E', 2100, 'EGR-100', 'COSTOS DIRECTOS', 'N', 2, 
 INSERT INTO PARTIDA VALUES (1, 'E', 2101, 'EGR-101', 'MATERIALES DE CONSTRUCCION', 'N', 3, '002', 'UND', 2101, 1);
 INSERT INTO PARTIDA VALUES (1, 'E', 2102, 'EGR-102', 'MANO DE OBRA', 'N', 3, '002', 'UND', 2102, 1);
 INSERT INTO PARTIDA VALUES (1, 'E', 2103, 'EGR-103', 'EQUIPOS Y MAQUINARIA', 'N', 3, '002', 'UND', 2103, 1);
---PARA EMPLEADO
-INSERT INTO PARTIDA VALUES (
-    1,              -- CodCIA
-    'E',            -- IngEgr
-    2104,           -- CodPartida
-    'EGR-104',      -- CodPartidas
-    'HONORARIOS',
-    'N',            -- UsableCompr (igual que tus otros nivel 3)
-    3,              -- Nivel
-    '002',          -- CodUnidad
-    'UND',          -- Unidad
-    2104,           -- Semilla (igual que CodPartida)
-    1               -- Vigente
-);
 
 -- NIVEL 2: GASTOS ADMINISTRATIVOS (Subcategoría - NO usar en comprobantes)
 INSERT INTO PARTIDA VALUES (1, 'E', 2200, 'EGR-200', 'GASTOS ADMINISTRATIVOS', 'N', 2, '002', 'UND', 2200, 1);
@@ -84,7 +218,6 @@ INSERT INTO PROY_PARTIDA VALUES (1, 1, 1, 'I', 1102, 'ING-102', 'N', 3, '002', '
 -- Proyecto1 (Hidroeléctrico) - EGRESOS Nivel 3
 INSERT INTO PROY_PARTIDA VALUES (1, 1, 1, 'E', 2101, 'EGR-101', 'N', 3, '002', '001', '001', 1);
 INSERT INTO PROY_PARTIDA VALUES (1, 1, 1, 'E', 2102, 'EGR-102', 'N', 3, '002', '001', '001', 1);
-INSERT INTO PROY_PARTIDA VALUES (1, 1, 1, 'E', 2104, 'EGR-104', 'N', 3, '002', '001', '001', 1);
 INSERT INTO PROY_PARTIDA VALUES (1, 1, 1, 'E', 2301, 'EGR-301', 'N', 3, '002', '001', '001', 1);
 
 -- Proyecto 102 (Planta Energética) - INGRESOS Nivel 3
@@ -119,8 +252,7 @@ INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 1, 'I', 1, 1102, 2, 1100, '002', 'UND
 -- Proyecto1 (Hidroeléctrico) - EGRESOS (Nivel 3)
 INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 1, 'E', 1, 2101, 1, 2100, '002', 'UND', 3, 1, 500.00, 600, 300000.00);
 INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 1, 'E', 1, 2102, 2, 2100, '002', 'UND', 3, 2, 300.00, 400, 120000.00);
-INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 1, 'E', 1, 2104, 3, 2100, '002', 'UND', 3, 3, 1050.00, 2, 2100.00);
-INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 1, 'E', 1, 2301, 4, 2300, '002', 'UND', 3, 4, 800.00, 250, 200000.00);
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 1, 'E', 1, 2301, 3, 2300, '002', 'UND', 3, 3, 800.00, 250, 200000.00);
 
 -- Proyecto 102 (Planta Energética) - INGRESOS (Nivel 3)
 INSERT INTO PROY_PARTIDA_MEZCLA VALUES (1, 2, 'I', 1, 1102, 1, 1100, '002', 'UND', 3, 1, 800.00, 300, 240000.00);
@@ -984,7 +1116,7 @@ INSERT INTO COMP_PAGODET VALUES (1,17,'G012',1,'E',2301,800,144, 944,1);
 --ENERO 2024
 INSERT INTO VTACOMP_PAGOCAB VALUES (
   1, 'E013',1,12,
-  1,'003', '001', 
+  1,'003', '001',
   TO_DATE('16/01/24','DD/MM/RR'), '003', '001', 1,
   11150, 11150, 2007, 13157,
   'SIN FOTO', 'SIN FOTO', TO_DATE('16/01/24','DD/MM/RR'),'PAGO E013',
@@ -1379,7 +1511,7 @@ INSERT INTO VTACOMP_PAGODET (
 --COMPRAS / EGRESOS 2024
 -- ===========================
 
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1419,7 +1551,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 -- ================== FEBRERO 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1458,7 +1590,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 -- ================== MARZO 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1491,7 +1623,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== ABRIL 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1525,7 +1657,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== MAYO 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1559,7 +1691,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== JUNIO 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1593,7 +1725,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== JULIO 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1627,7 +1759,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== AGOSTO 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1661,7 +1793,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== SEPTIEMBRE 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1695,7 +1827,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== OCTUBRE 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1729,7 +1861,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== NOVIEMBRE 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1763,7 +1895,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 
 -- ================== DICIEMBRE 2024 ==================
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1797,7 +1929,7 @@ INSERT INTO COMP_PAGODET VALUES (
 );
 COMMIT;
 /* ================== ENERO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1826,7 +1958,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== FEBRERO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1855,7 +1987,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== MARZO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1884,7 +2016,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== ABRIL 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1913,7 +2045,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== MAYO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1942,7 +2074,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== JUNIO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -1971,7 +2103,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== JULIO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -2000,7 +2132,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== AGOSTO 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -2029,7 +2161,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== SEPTIEMBRE 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -2058,7 +2190,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== OCTUBRE 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -2087,7 +2219,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== NOVIEMBRE 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -2116,7 +2248,7 @@ INSERT INTO COMP_PAGODET (
 );
 
 /* ================== DICIEMBRE 2024 ================== */
-INSERT INTO COMP_PAGOCAB ( 
+INSERT INTO COMP_PAGOCAB (
   CODCIA, CODPROVEEDOR, NROCP, CODPYTO,
   NROPAGO, TCOMPPAGO, ECOMPPAGO, FECCP,
   TMONEDA, EMONEDA, TIPCAMBIO,
@@ -3155,23 +3287,6 @@ INSERT INTO COMP_PAGODET VALUES (
   1, 17, 'G035', 1, 'E',
   2301,
   5000, 900, 5900, 1
-);
-
---EMPLEADO
-INSERT INTO COMP_PAGOEMPLEADO_DET (
-    CodCIA, CodEmpleado, NroCP, Sec, IngEgr, CodPartida, 
-    ImpNetoMN, ImpIGVMN, ImpTotalMN, Semilla
-) VALUES (
-    1, 1, 'CPE-001-2023-001', 1, 'E', 2104,
-    12000, 2160, 14160, 1
-);
-
-INSERT INTO COMP_PAGOEMPLEADO_DET (
-    CodCIA, CodEmpleado, NroCP, Sec, IngEgr, CodPartida, 
-    ImpNetoMN, ImpIGVMN, ImpTotalMN, Semilla
-) VALUES (
-    1, 1, 'CPE-001-2023-001', 2, 'E', 2104,
-    3000, 540, 3540, 1
 );
 
 COMMIT;

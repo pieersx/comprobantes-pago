@@ -29,389 +29,389 @@ DROP TABLE PARTIDA                CASCADE CONSTRAINTS PURGE;
 COMMIT;
 
 
------CREACION DE TABLAS
+-----CREACION DE TABLAS 
 
-CREATE TABLE PARTIDA(
+CREATE TABLE PARTIDA( 
 
-                CodCia NUMBER(6) NOT NULL,
+                CodCia NUMBER(6) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                CodPartidas VARCHAR2(12) NOT NULL,
+                CodPartidas VARCHAR2(12) NOT NULL, 
 
-                DesPartida VARCHAR2(30) NOT NULL,
+                DesPartida VARCHAR2(30) NOT NULL, 
 
-                FlgCC VARCHAR2(1) NOT NULL,
+                FlgCC VARCHAR2(1) NOT NULL, 
 
-                Nivel NUMBER(2) NOT NULL,
+                Nivel NUMBER(2) NOT NULL, 
 
-                TUniMed VARCHAR2(3) NOT NULL,
+                TUniMed VARCHAR2(3) NOT NULL, 
 
-                EUniMed VARCHAR2(3) NOT NULL,
+                EUniMed VARCHAR2(3) NOT NULL, 
 
-                Semilla NUMBER(5) NOT NULL,
+                Semilla NUMBER(5) NOT NULL, 
 
-                Vigente VARCHAR2(1) NOT NULL,
+                Vigente VARCHAR2(1) NOT NULL, 
 
-                CONSTRAINT PARTIDA_PK PRIMARY KEY (CodCia,IngEgr,CodPartida)
+                CONSTRAINT PARTIDA_PK PRIMARY KEY (CodCia,IngEgr,CodPartida) 
 
-);
+); 
 
+ 
 
+CREATE TABLE PARTIDA_MEZCLA( 
 
-CREATE TABLE PARTIDA_MEZCLA(
+                CodCia NUMBER(6) NOT NULL, 
 
-                CodCia NUMBER(6) NOT NULL,
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                Corr NUMBER(6) NOT NULL, 
 
-                Corr NUMBER(6) NOT NULL,
+                PadCodPartida NUMBER(6) NOT NULL, 
 
-                PadCodPartida NUMBER(6) NOT NULL,
+                TUniMed VARCHAR2(3) NOT NULL, 
 
-                TUniMed VARCHAR2(3) NOT NULL,
+                EUniMed VARCHAR2(3) NOT NULL, 
 
-                EUniMed VARCHAR2(3) NOT NULL,
+                CostoUnit NUMBER(9,2) NOT NULL, 
 
-                CostoUnit NUMBER(9,2) NOT NULL,
+                Nivel NUMBER(5) NOT NULL, 
 
-                Nivel NUMBER(5) NOT NULL,
+                Orden NUMBER(5) NOT NULL, 
 
-                Orden NUMBER(5) NOT NULL,
+                Vigente VARCHAR2(1) NOT NULL, 
 
-                Vigente VARCHAR2(1) NOT NULL,
+                CONSTRAINT PARTIDA_MEZCLA_PK PRIMARY KEY (CodCia,IngEgr,CodPartida,Corr) 
 
-                CONSTRAINT PARTIDA_MEZCLA_PK PRIMARY KEY (CodCia,IngEgr,CodPartida,Corr)
+); 
 
-);
+ 
 
+CREATE TABLE PROY_PARTIDA_MEZCLA( 
 
+                CodCia NUMBER(6) NOT NULL, 
 
-CREATE TABLE PROY_PARTIDA_MEZCLA(
+                CodPyto NUMBER(6) NOT NULL, 
 
-                CodCia NUMBER(6) NOT NULL,
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-                CodPyto NUMBER(6) NOT NULL,
+                NroVersion NUMBER(1) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                NroVersion NUMBER(1) NOT NULL,
+                Corr NUMBER(6) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                PadCodPartida NUMBER(6) NOT NULL, --Cambio de VARCHAR A NUMBER(6) 
 
-                Corr NUMBER(6) NOT NULL,
+                TUniMed VARCHAR2(3) NOT NULL, 
 
-                PadCodPartida NUMBER(6) NOT NULL, --Cambio de VARCHAR A NUMBER(6)
+                EUniMed VARCHAR2(3) NOT NULL, 
 
-                TUniMed VARCHAR2(3) NOT NULL,
+                Nivel NUMBER(5) NOT NULL, 
 
-                EUniMed VARCHAR2(3) NOT NULL,
+                Orden NUMBER(5) NOT NULL, 
 
-                Nivel NUMBER(5) NOT NULL,
+                CostoUnit NUMBER(9,2) NOT NULL, 
 
-                Orden NUMBER(5) NOT NULL,
+                Cant NUMBER(7,3) NOT NULL, 
 
-                CostoUnit NUMBER(9,2) NOT NULL,
+                CostoTot NUMBER(10,2) NOT NULL, 
 
-                Cant NUMBER(7,3) NOT NULL,
+                CONSTRAINT PROY_PARTIDA_MEZCLA_PK PRIMARY KEY (CodCia,CodPyto,NroVersion, 
 
-                CostoTot NUMBER(10,2) NOT NULL,
+                IngEgr,CodPartida,Corr) 
 
-                CONSTRAINT PROY_PARTIDA_MEZCLA_PK PRIMARY KEY (CodCia,CodPyto,NroVersion,
+); 
 
-                IngEgr,CodPartida,Corr)
+CREATE TABLE PROY_PARTIDA( 
 
-);
+                CodCia NUMBER(6) NOT NULL, 
 
-CREATE TABLE PROY_PARTIDA(
+                CodPyto NUMBER(6) NOT NULL, 
 
-                CodCia NUMBER(6) NOT NULL,
+                NroVersion NUMBER(1) NOT NULL, 
 
-                CodPyto NUMBER(6) NOT NULL,
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-                NroVersion NUMBER(1) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                CodPartidas VARCHAR2(12) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                FlgCC VARCHAR2(1) NOT NULL, 
 
-                CodPartidas VARCHAR2(12) NOT NULL,
+                Nivel NUMBER(2) NOT NULL, 
 
-                FlgCC VARCHAR2(1) NOT NULL,
+                UniMed VARCHAR2(5) NOT NULL, 
 
-                Nivel NUMBER(2) NOT NULL,
+                TabEstado VARCHAR2(3) NOT NULL, 
 
-                UniMed VARCHAR2(5) NOT NULL,
+                CodEstado VARCHAR2(3) NOT NULL, 
 
-                TabEstado VARCHAR2(3) NOT NULL,
+                Vigente VARCHAR2(1) NOT NULL, 
 
-                CodEstado VARCHAR2(3) NOT NULL,
+                CONSTRAINT PROY_PARTIDA_PK PRIMARY KEY (CodCia,CodPyto,NroVersion,IngEgr,CodPartida) 
 
-                Vigente VARCHAR2(1) NOT NULL,
+); 
 
-                CONSTRAINT PROY_PARTIDA_PK PRIMARY KEY (CodCia,CodPyto,NroVersion,IngEgr,CodPartida)
 
-);
+CREATE TABLE COMP_PAGODET ( 
 
+                CodCIA NUMBER(6) NOT NULL, 
 
-CREATE TABLE COMP_PAGODET (
+                CodProveedor NUMBER(6) NOT NULL, 
 
-                CodCIA NUMBER(6) NOT NULL,
+                NroCP VARCHAR2(20) NOT NULL, 
 
-                CodProveedor NUMBER(6) NOT NULL,
+                Sec NUMBER(4) NOT NULL, 
 
-                NroCP VARCHAR2(20) NOT NULL,
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-                Sec NUMBER(4) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                ImpNetoMN NUMBER(9,2) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                ImpIGVMN NUMBER(9,2) NOT NULL, 
 
-                ImpNetoMN NUMBER(9,2) NOT NULL,
+                ImpTotalMn NUMBER(9,2) NOT NULL, 
 
-                ImpIGVMN NUMBER(9,2) NOT NULL,
+                Semilla NUMBER(5) NOT NULL, 
 
-                ImpTotalMn NUMBER(9,2) NOT NULL,
+                CONSTRAINT COMP_PAGODET_PK PRIMARY KEY (CodCIA,CodProveedor,NroCP,Sec) 
 
-                Semilla NUMBER(5) NOT NULL,
+); 
 
-                CONSTRAINT COMP_PAGODET_PK PRIMARY KEY (CodCIA,CodProveedor,NroCP,Sec)
+CREATE TABLE VTACOMP_PAGOCAB ( 
 
-);
+                CodCIA NUMBER(6) NOT NULL, 
 
-CREATE TABLE VTACOMP_PAGOCAB (
+                NroCP VARCHAR2(20) NOT NULL, 
 
-                CodCIA NUMBER(6) NOT NULL,
+                CodPyto NUMBER(6) NOT NULL, 
 
-                NroCP VARCHAR2(20) NOT NULL,
+                CodCliente NUMBER(6) NOT NULL, 
 
-                CodPyto NUMBER(6) NOT NULL,
+                NroPago NUMBER(3) NOT NULL, 
 
-                CodCliente NUMBER(6) NOT NULL,
+                TCompPago VARCHAR2(3) NOT NULL, 
 
-                NroPago NUMBER(3) NOT NULL,
+                ECompPago VARCHAR2(3) NOT NULL, 
 
-                TCompPago VARCHAR2(3) NOT NULL,
+                FecCP DATE NOT NULL, 
 
-                ECompPago VARCHAR2(3) NOT NULL,
+                TMoneda VARCHAR2(3) NOT NULL, 
 
-                FecCP DATE NOT NULL,
+                EMoneda VARCHAR2(3) NOT NULL, 
 
-                TMoneda VARCHAR2(3) NOT NULL,
+                TipCambio NUMBER(7,4) NOT NULL, 
 
-                EMoneda VARCHAR2(3) NOT NULL,
+                ImpMO NUMBER(9,2) NOT NULL, 
 
-                TipCambio NUMBER(7,4) NOT NULL,
+                ImpNetoMN NUMBER(9,2) NOT NULL, 
 
-                ImpMO NUMBER(9,2) NOT NULL,
+                ImpIGVMN NUMBER(9,2) NOT NULL, 
 
-                ImpNetoMN NUMBER(9,2) NOT NULL,
+                ImpTotalMN NUMBER(10,2) NOT NULL, 
 
-                ImpIGVMN NUMBER(9,2) NOT NULL,
+                FotoCP VARCHAR2(60), 
 
-                ImpTotalMN NUMBER(10,2) NOT NULL,
+                FotoAbono VARCHAR2(60), 
 
-                FotoCP VARCHAR2(60) NOT NULL,
+                FecAbono DATE, 
 
-                FotoAbono VARCHAR2(60) NOT NULL,
+                DesAbono VARCHAR2(1000), 
 
-                FecAbono DATE NOT NULL,
+                Semilla NUMBER(5) NOT NULL, 
 
-                DesAbono VARCHAR2(1000) NOT NULL,
+                TabEstado VARCHAR2(3) NOT NULL, 
 
-                Semilla NUMBER(5) NOT NULL,
+                CodEstado VARCHAR2(3) NOT NULL, 
 
-                TabEstado VARCHAR2(3) NOT NULL,
+                CONSTRAINT VTACOMP_PAGOCAB_PK PRIMARY KEY (CodCIA,NroCP) 
 
-                CodEstado VARCHAR2(3) NOT NULL,
+); 
 
-                CONSTRAINT VTACOMP_PAGOCAB_PK PRIMARY KEY (CodCIA,NroCP)
+ 
 
-);
+CREATE TABLE VTACOMP_PAGODET ( 
 
+                CodCIA NUMBER(6) NOT NULL, 
 
+                NroCP VARCHAR2(20) NOT NULL, 
 
-CREATE TABLE VTACOMP_PAGODET (
+                Sec NUMBER(4) NOT NULL, 
 
-                CodCIA NUMBER(6) NOT NULL,
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-                NroCP VARCHAR2(20) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                Sec NUMBER(4) NOT NULL,
+                ImpNetoMN NUMBER(9,2) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                ImpIGVMN NUMBER(9,2) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                ImpTotalMn NUMBER(9,2) NOT NULL, 
 
-                ImpNetoMN NUMBER(9,2) NOT NULL,
+                Semilla NUMBER(5) NOT NULL, 
 
-                ImpIGVMN NUMBER(9,2) NOT NULL,
+                CONSTRAINT VTACOMP_PAGODET_PK PRIMARY KEY (CodCIA,NroCP,Sec) 
 
-                ImpTotalMn NUMBER(9,2) NOT NULL,
+); 
+ 
 
-                Semilla NUMBER(5) NOT NULL,
+CREATE TABLE DPROY_PARTIDA_MEZCLA ( 
 
-                CONSTRAINT VTACOMP_PAGODET_PK PRIMARY KEY (CodCIA,NroCP,Sec)
+                CodCia NUMBER(6) NOT NULL, 
 
-);
+                CodPyto NUMBER(6) NOT NULL, 
 
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-CREATE TABLE DPROY_PARTIDA_MEZCLA (
+                NroVersion NUMBER(1) NOT NULL, 
 
-                CodCia NUMBER(6) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                CodPyto NUMBER(6) NOT NULL,
+                Corr NUMBER(6) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                Sec NUMBER(4) NOT NULL, 
 
-                NroVersion NUMBER(1) NOT NULL,
+                TDesembolso VARCHAR2(3) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                EDesembolso VARCHAR2(3) NOT NULL, 
 
-                Corr NUMBER(6) NOT NULL,
+                NroPago NUMBER(2) NOT NULL, 
 
-                Sec NUMBER(4) NOT NULL,
+                TCompPago VARCHAR2(3) NOT NULL, 
 
-                TDesembolso VARCHAR2(3) NOT NULL,
+                ECompPago VARCHAR2(3) NOT NULL, 
 
-                EDesembolso VARCHAR2(3) NOT NULL,
+                FecDesembolso DATE NOT NULL, 
 
-                NroPago NUMBER(2) NOT NULL,
+                ImpDesembNeto NUMBER(9,2) NOT NULL, 
 
-                TCompPago VARCHAR2(3) NOT NULL,
+                ImpDesembIGV NUMBER(8,2) NOT NULL, 
 
-                ECompPago VARCHAR2(3) NOT NULL,
+                ImpDesembTot NUMBER(9,2) NOT NULL, 
 
-                FecDesembolso DATE NOT NULL,
+                Semilla NUMBER(5) NOT NULL, 
 
-                ImpDesembNeto NUMBER(9,2) NOT NULL,
+                CONSTRAINT DPROY_PARTIDA_MEZCLA_PK PRIMARY KEY (CodCia,CodPyto,IngEgr,NroVersion,CodPartida,Corr,Sec) 
 
-                ImpDesembIGV NUMBER(8,2) NOT NULL,
+);  
 
-                ImpDesembTot NUMBER(9,2) NOT NULL,
+CREATE TABLE FLUJOCAJA( 
 
-                Semilla NUMBER(5) NOT NULL,
+                CodCia NUMBER(6) NOT NULL, 
 
-                CONSTRAINT DPROY_PARTIDA_MEZCLA_PK PRIMARY KEY (CodCia,CodPyto,IngEgr,NroVersion,CodPartida,Corr,Sec)
+                CodPyto NUMBER(6) NOT NULL, 
 
-);
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-CREATE TABLE FLUJOCAJA(
+                Tipo VARCHAR2(1) NOT NULL, 
 
-                CodCia NUMBER(6) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                CodPyto NUMBER(6) NOT NULL,
+                Nivel NUMBER(1) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                Orden NUMBER(5) NOT NULL, 
 
-                Tipo VARCHAR2(1) NOT NULL,
+                DesConcepto VARCHAR2(30) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                DesConceptoCorto VARCHAR2(10) NOT NULL, 
 
-                Nivel NUMBER(1) NOT NULL,
+                Semilla NUMBER(5) NOT NULL, 
 
-                Orden NUMBER(5) NOT NULL,
+                Raiz NUMBER(5) NOT NULL, 
 
-                DesConcepto VARCHAR2(30) NOT NULL,
+                TabEstado VARCHAR2(3) NOT NULL, 
 
-                DesConceptoCorto VARCHAR2(10) NOT NULL,
+                CodEstado VARCHAR2(3) NOT NULL, 
 
-                Semilla NUMBER(5) NOT NULL,
+                Vigente VARCHAR2(1) NOT NULL, 
 
-                Raiz NUMBER(5) NOT NULL,
+                CONSTRAINT FLUJOCAJA_PK PRIMARY KEY (CodCia,CodPyto,IngEgr,Tipo,CodPartida) 
 
-                TabEstado VARCHAR2(3) NOT NULL,
+); 
 
-                CodEstado VARCHAR2(3) NOT NULL,
+ 
 
-                Vigente VARCHAR2(1) NOT NULL,
+CREATE TABLE FLUJOCAJA_DET( 
 
-                CONSTRAINT FLUJOCAJA_PK PRIMARY KEY (CodCia,CodPyto,IngEgr,Tipo,CodPartida)
+                Anno NUMBER(4) NOT NULL, 
 
-);
+                CodCia NUMBER(6) NOT NULL, 
 
+                CodPyto NUMBER(6) NOT NULL, 
 
+                IngEgr VARCHAR2(1) NOT NULL, 
 
-CREATE TABLE FLUJOCAJA_DET(
+                Tipo VARCHAR2(1) NOT NULL, 
 
-                Anno NUMBER(4) NOT NULL,
+                CodPartida NUMBER(6) NOT NULL, 
 
-                CodCia NUMBER(6) NOT NULL,
+                Orden NUMBER(5)NOT NULL, 
 
-                CodPyto NUMBER(6) NOT NULL,
+                ImpIni NUMBER(12,2) NOT NULL, 
 
-                IngEgr VARCHAR2(1) NOT NULL,
+                ImpRealIni NUMBER(12,2) NOT NULL, 
 
-                Tipo VARCHAR2(1) NOT NULL,
+                ImpEne NUMBER(12,2) NOT NULL, 
 
-                CodPartida NUMBER(6) NOT NULL,
+                ImpRealEne NUMBER(12,2) NOT NULL, 
 
-                Orden NUMBER(5)NOT NULL,
+                ImpFeb NUMBER(12,2) NOT NULL, 
 
-                ImpIni NUMBER(12,2) NOT NULL,
+                ImpRealFeb NUMBER(12,2) NOT NULL, 
 
-                ImpRealIni NUMBER(12,2) NOT NULL,
+                ImpMar NUMBER(12,2) NOT NULL, 
 
-                ImpEne NUMBER(12,2) NOT NULL,
+                ImpRealMar NUMBER(12,2) NOT NULL, 
 
-                ImpRealEne NUMBER(12,2) NOT NULL,
+                ImpAbr NUMBER(12,2) NOT NULL, 
 
-                ImpFeb NUMBER(12,2) NOT NULL,
+                ImpRealAbr NUMBER(12,2) NOT NULL, 
 
-                ImpRealFeb NUMBER(12,2) NOT NULL,
+                ImpMay NUMBER(12,2) NOT NULL, 
 
-                ImpMar NUMBER(12,2) NOT NULL,
+                ImpRealMay NUMBER(12,2) NOT NULL, 
 
-                ImpRealMar NUMBER(12,2) NOT NULL,
+                ImpJun NUMBER(12,2) NOT NULL, 
 
-                ImpAbr NUMBER(12,2) NOT NULL,
+                ImpRealJun NUMBER(12,2) NOT NULL, 
 
-                ImpRealAbr NUMBER(12,2) NOT NULL,
+                ImpJul NUMBER(12,2) NOT NULL, 
 
-                ImpMay NUMBER(12,2) NOT NULL,
+                ImpRealJul NUMBER(12,2) NOT NULL, 
 
-                ImpRealMay NUMBER(12,2) NOT NULL,
+                ImpAgo NUMBER(12,2) NOT NULL, 
 
-                ImpJun NUMBER(12,2) NOT NULL,
+                ImpRealAgo NUMBER(12,2) NOT NULL, 
 
-                ImpRealJun NUMBER(12,2) NOT NULL,
+                ImpSep NUMBER(12,2) NOT NULL, 
 
-                ImpJul NUMBER(12,2) NOT NULL,
+                ImpRealSep NUMBER(12,2) NOT NULL, 
 
-                ImpRealJul NUMBER(12,2) NOT NULL,
+                ImpOct NUMBER(12,2) NOT NULL, 
 
-                ImpAgo NUMBER(12,2) NOT NULL,
+                ImpRealOct NUMBER(12,2) NOT NULL, 
 
-                ImpRealAgo NUMBER(12,2) NOT NULL,
+                ImpNov NUMBER(12,2) NOT NULL, 
 
-                ImpSep NUMBER(12,2) NOT NULL,
+                ImpRealNov NUMBER(12,2) NOT NULL, 
 
-                ImpRealSep NUMBER(12,2) NOT NULL,
+                ImpDic NUMBER(12,2) NOT NULL, 
 
-                ImpOct NUMBER(12,2) NOT NULL,
+                ImpRealDic NUMBER(12,2) NOT NULL, 
 
-                ImpRealOct NUMBER(12,2) NOT NULL,
+                ImpAcum NUMBER(12,2) NOT NULL, 
 
-                ImpNov NUMBER(12,2) NOT NULL,
+                ImpRealAcum NUMBER(12,2) NOT NULL, 
 
-                ImpRealNov NUMBER(12,2) NOT NULL,
+                CONSTRAINT FLUJOCAJA_DET_PK PRIMARY KEY (Anno,CodCia,CodPyto,IngEgr,Tipo,CodPartida) 
 
-                ImpDic NUMBER(12,2) NOT NULL,
-
-                ImpRealDic NUMBER(12,2) NOT NULL,
-
-                ImpAcum NUMBER(12,2) NOT NULL,
-
-                ImpRealAcum NUMBER(12,2) NOT NULL,
-
-                CONSTRAINT FLUJOCAJA_DET_PK PRIMARY KEY (Anno,CodCia,CodPyto,IngEgr,Tipo,CodPartida)
-
-);
+); 
 
 --NUEVO PARA EMPLEADO
 CREATE TABLE COMP_PAGOEMPLEADO_DET (
@@ -429,39 +429,39 @@ CREATE TABLE COMP_PAGOEMPLEADO_DET (
     CONSTRAINT COMP_PAGOEMPDET_PK PRIMARY KEY (CodCIA, CodEmpleado, NroCP, Sec)
 );
 
-ALTER TABLE PARTIDA ADD CONSTRAINT CIA_PARTIDAFK
-FOREIGN KEY (CodCia)
-REFERENCES CIA (CodCia);
+ALTER TABLE PARTIDA ADD CONSTRAINT CIA_PARTIDAFK 
+FOREIGN KEY (CodCia) 
+REFERENCES CIA (CodCia); 
 
-ALTER TABLE PROY_PARTIDA
-ADD CONSTRAINT PROYECTO_PROY_PARTIDA_FK
-FOREIGN KEY (CodCia,CodPyto)
-REFERENCES PROYECTO(CodCia,CODPYTO);
+ALTER TABLE PROY_PARTIDA 
+ADD CONSTRAINT PROYECTO_PROY_PARTIDA_FK 
+FOREIGN KEY (CodCia,CodPyto) 
+REFERENCES PROYECTO(CodCia,CODPYTO); 
 
-ALTER TABLE PROY_PARTIDA
-ADD CONSTRAINT PARTIDA_PROY_PARTIDA_FK
-FOREIGN KEY (CodCia,IngEgr,CodPartida)
-REFERENCES PARTIDA (CodCia,IngEgr,CodPartida);
+ALTER TABLE PROY_PARTIDA 
+ADD CONSTRAINT PARTIDA_PROY_PARTIDA_FK 
+FOREIGN KEY (CodCia,IngEgr,CodPartida) 
+REFERENCES PARTIDA (CodCia,IngEgr,CodPartida); 
 
-ALTER TABLE PARTIDA_MEZCLA
-ADD CONSTRAINT PARTIDA_PARTIDA_MEZCLA_FK
-FOREIGN KEY (CodCia,IngEgr,CodPartida)
-REFERENCES PARTIDA (CodCia,IngEgr,CodPartida);
+ALTER TABLE PARTIDA_MEZCLA 
+ADD CONSTRAINT PARTIDA_PARTIDA_MEZCLA_FK 
+FOREIGN KEY (CodCia,IngEgr,CodPartida) 
+REFERENCES PARTIDA (CodCia,IngEgr,CodPartida); 
 
-ALTER TABLE PROY_PARTIDA_MEZCLA
-ADD CONSTRAINT PROY_PARTIDA_PROY_PARTIDA_MEZCLA_FK
-FOREIGN KEY (CodCia,CodPyto,NroVersion,IngEgr,CodPartida)
-REFERENCES PROY_PARTIDA (CodCia,CodPyto,NroVersion,IngEgr,CodPartida);
+ALTER TABLE PROY_PARTIDA_MEZCLA 
+ADD CONSTRAINT PROY_PARTIDA_PROY_PARTIDA_MEZCLA_FK 
+FOREIGN KEY (CodCia,CodPyto,NroVersion,IngEgr,CodPartida) 
+REFERENCES PROY_PARTIDA (CodCia,CodPyto,NroVersion,IngEgr,CodPartida); 
 
-ALTER TABLE COMP_PAGODET
-ADD CONSTRAINT COMP_PAGODET_COMP_PAGOCAB_FK
-FOREIGN KEY (CodCIA,CodProveedor,NroCP)
-REFERENCES COMP_PAGOCAB (CodCIA,CodProveedor,NroCP);
+ALTER TABLE COMP_PAGODET 
+ADD CONSTRAINT COMP_PAGODET_COMP_PAGOCAB_FK 
+FOREIGN KEY (CodCIA,CodProveedor,NroCP) 
+REFERENCES COMP_PAGOCAB (CodCIA,CodProveedor,NroCP); 
 
-ALTER TABLE COMP_PAGODET
-ADD CONSTRAINT COMP_PAGODET_PARTIDA_FK
-FOREIGN KEY (CodCIA,IngEgr,CodPartida)
-REFERENCES PARTIDA (CodCIA,IngEgr,CodPartida);
+ALTER TABLE COMP_PAGODET 
+ADD CONSTRAINT COMP_PAGODET_PARTIDA_FK 
+FOREIGN KEY (CodCIA,IngEgr,CodPartida) 
+REFERENCES PARTIDA (CodCIA,IngEgr,CodPartida); 
 
 ALTER TABLE COMP_PAGOEMPLEADO_DET
 ADD CONSTRAINT COMP_PAGOEMPDET_CAB_FK
@@ -473,9 +473,9 @@ ADD CONSTRAINT COMP_PAGOEMPDET_PARTIDA_FK
 FOREIGN KEY (CodCIA, IngEgr, CodPartida)
 REFERENCES PARTIDA (CodCIA, IngEgr, CodPartida);
 
-ALTER TABLE VTACOMP_PAGOCAB
-ADD CONSTRAINT VTACOMP_PAGOCAB_PROYECTO_FK
-FOREIGN KEY (CodCIA,CodPyto)
+ALTER TABLE VTACOMP_PAGOCAB 
+ADD CONSTRAINT VTACOMP_PAGOCAB_PROYECTO_FK 
+FOREIGN KEY (CodCIA,CodPyto) 
 REFERENCES PROYECTO (CodCIA,CodPyto);
 
 ALTER TABLE VTACOMP_PAGODET
@@ -484,23 +484,23 @@ FOREIGN KEY (CodCIA, IngEgr, CodPartida)
 REFERENCES PARTIDA (CodCIA, IngEgr, CodPartida);
 
 ALTER TABLE VTACOMP_PAGODET
-ADD CONSTRAINT VTACOMP_PAGODET_VTACOMP_PAGOCAB_FK
-FOREIGN KEY (CodCIA, NROCP)
+ADD CONSTRAINT VTACOMP_PAGODET_VTACOMP_PAGOCAB_FK 
+FOREIGN KEY (CodCIA, NROCP) 
 REFERENCES VTACOMP_PAGOCAB(CodCIA, NROCP);
 
-ALTER TABLE DPROY_PARTIDA_MEZCLA ADD CONSTRAINT PROY_PARTIDA_MEZCLA_DPROY_PARTIDA_MEZCLA_FK
-FOREIGN KEY (CodCia, CodPyto, IngEgr, NroVersion, CodPartida, Corr)
-REFERENCES PROY_PARTIDA_MEZCLA (CodCia, CodPyto, IngEgr, NroVersion, CodPartida, Corr);
+ALTER TABLE DPROY_PARTIDA_MEZCLA ADD CONSTRAINT PROY_PARTIDA_MEZCLA_DPROY_PARTIDA_MEZCLA_FK 
+FOREIGN KEY (CodCia, CodPyto, IngEgr, NroVersion, CodPartida, Corr) 
+REFERENCES PROY_PARTIDA_MEZCLA (CodCia, CodPyto, IngEgr, NroVersion, CodPartida, Corr); 
 
-ALTER TABLE FLUJOCAJA ADD CONSTRAINT PARTIDA_FLUJOCAJA_FK
-FOREIGN KEY (CodCia,IngEgr,CodPartida)
-REFERENCES PARTIDA (CodCia,IngEgr,CodPartida);
+ALTER TABLE FLUJOCAJA ADD CONSTRAINT PARTIDA_FLUJOCAJA_FK 
+FOREIGN KEY (CodCia,IngEgr,CodPartida) 
+REFERENCES PARTIDA (CodCia,IngEgr,CodPartida); 
 
-ALTER TABLE FLUJOCAJA ADD CONSTRAINT PROYECTO_FLUJOCAJA_FK
-FOREIGN KEY (CodCia,CodPyto)
+ALTER TABLE FLUJOCAJA ADD CONSTRAINT PROYECTO_FLUJOCAJA_FK 
+FOREIGN KEY (CodCia,CodPyto) 
 REFERENCES PROYECTO (CodCia,CodPyto);
 
-ALTER TABLE FLUJOCAJA_DET ADD CONSTRAINT FLUJOCAJA_FLUJOCAJA_DET_FK
-FOREIGN KEY (CodCia,CodPyto,IngEgr,Tipo,CodPartida)
+ALTER TABLE FLUJOCAJA_DET ADD CONSTRAINT FLUJOCAJA_FLUJOCAJA_DET_FK 
+FOREIGN KEY (CodCia,CodPyto,IngEgr,Tipo,CodPartida) 
 REFERENCES FLUJOCAJA(CodCia,CodPyto,IngEgr,Tipo,CodPartida);
 COMMIT;

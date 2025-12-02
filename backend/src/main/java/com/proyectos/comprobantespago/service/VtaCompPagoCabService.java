@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.proyectos.comprobantespago.dto.VtaCompPagoCabDTO;
 import com.proyectos.comprobantespago.dto.VtaCompPagoDetDTO;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio para gestión de Comprobantes de Venta/Ingreso
+ * Para VTACOMP_PAGOCAB: FotoCp y FotoAbono son VARCHAR2(60) (rutas de archivo)
  */
 @Service
 @Transactional
@@ -41,6 +43,7 @@ public class VtaCompPagoCabService {
     private final PresupuestoService presupuestoService;
     private final PartidaHierarchyService partidaHierarchyService;
     private final TaxCalculationService taxCalculationService;
+    private final FileStorageService fileStorageService;
 
     /**
      * Crear nuevo comprobante de venta/ingreso con detalles
@@ -502,8 +505,11 @@ public class VtaCompPagoCabService {
                 .impNetoMn(cabecera.getImpNetoMn())
                 .impIgvMn(cabecera.getImpIgvMn())
                 .impTotalMn(cabecera.getImpTotalMn())
-                .tieneFotoCp(cabecera.getFotoCp() != null && cabecera.getFotoCp().length > 0)
-                .tieneFotoAbono(cabecera.getFotoAbono() != null && cabecera.getFotoAbono().length > 0)
+                // FotoCp y FotoAbono son VARCHAR2(60) - rutas de archivo
+                .fotoCp(cabecera.getFotoCp())
+                .fotoAbono(cabecera.getFotoAbono())
+                .tieneFotoCp(cabecera.getFotoCp() != null && !cabecera.getFotoCp().isEmpty())
+                .tieneFotoAbono(cabecera.getFotoAbono() != null && !cabecera.getFotoAbono().isEmpty())
                 .fecAbono(cabecera.getFecAbono())
                 .desAbono(cabecera.getDesAbono())
                 .semilla(cabecera.getSemilla())
@@ -567,39 +573,57 @@ public class VtaCompPagoCabService {
                 .build();
     }
 
-    // ==================== Métodos de imágenes BLOB ====================
-    // Feature: empleados-comprobantes-blob
+    // ==================== Métodos de imágenes VARCHAR (rutas de archivo)
+    // ====================
+    // Feature: empleados-comprobantes-file-path
     // Requirements: 3.1, 3.2, 6.1, 6.2
+    // NOTA: En grupo06, VTACOMP_PAGOCAB usa VARCHAR2(60) para FotoCp y FotoAbono
+    // (rutas de archivo)
+    // a diferencia de COMP_PAGOCAB que usa BLOB
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final java.util.List<String> ALLOWED_CONTENT_TYPES = java.util.List.of(
             "image/jpeg", "image/png", "image/gif", "application/pdf");
 
     /**
-     * Sube la imagen del comprobante (FotoCP) como BLOB
+     * Sube la imagen del comprobante (FotoCP) y guarda la ruta en la BD
+     * VTACOMP_PAGOCAB usa VARCHAR2(60) para almacenar la ruta del archivo
      */
-    public void uploadFotoCp(Long codCia, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+    public String uploadFotoCp(Long codCia, String nroCp, MultipartFile file) {
         validateFile(file);
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        try {
-            cabecera.setFotoCp(file.getBytes());
-            vtaCompPagoCabRepository.save(cabecera);
-            log.info("FotoCp BLOB subida para ingreso: codCia={}, nroCp={}", codCia, nroCp);
-        } catch (java.io.IOException e) {
-            throw new RuntimeException("Error al procesar el archivo: " + e.getMessage());
+        // Obtener año y mes de la fecha del comprobante
+        int year = cabecera.getFecCp() != null ? cabecera.getFecCp().getYear() : LocalDate.now().getYear();
+        int month = cabecera.getFecCp() != null ? cabecera.getFecCp().getMonthValue() : LocalDate.now().getMonthValue();
+
+        // Guardar archivo en disco y obtener la ruta
+        String filePath = fileStorageService.storeComprobanteFile(
+                file, codCia.intValue(), year, month, "ingreso");
+
+        // Validar que la ruta cabe en VARCHAR2(60)
+        if (filePath.length() > 60) {
+            log.error("Ruta del archivo excede 60 caracteres ({}): {}", filePath.length(), filePath);
+            throw new RuntimeException("La ruta del archivo excede el límite de 60 caracteres");
         }
+        cabecera.setFotoCp(filePath);
+        vtaCompPagoCabRepository.save(cabecera);
+        log.info("FotoCp guardada para ingreso: codCia={}, nroCp={}, path={}", codCia, nroCp, filePath);
+
+        return filePath;
     }
 
     /**
-     * Obtiene la imagen del comprobante (FotoCP) desde BLOB
+     * Obtiene la ruta de la imagen del comprobante (FotoCP)
+     *
+     * @return Ruta del archivo almacenado en el servidor
      */
-    public byte[] getFotoCp(Long codCia, String nroCp) {
+    public String getFotoCpPath(Long codCia, String nroCp) {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado: " + nroCp));
 
-        if (cabecera.getFotoCp() == null) {
+        if (cabecera.getFotoCp() == null || cabecera.getFotoCp().isEmpty()) {
             throw new ResourceNotFoundException("El comprobante no tiene imagen de comprobante");
         }
         return cabecera.getFotoCp();
@@ -612,36 +636,51 @@ public class VtaCompPagoCabService {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
+        // TODO: Opcionalmente eliminar el archivo físico del disco
         cabecera.setFotoCp(null);
         vtaCompPagoCabRepository.save(cabecera);
-        log.info("FotoCp BLOB eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+        log.info("FotoCp eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
     }
 
     /**
-     * Sube la imagen del abono (FotoAbono) como BLOB
+     * Sube la imagen del abono (FotoAbono) y guarda la ruta en la BD
+     * VTACOMP_PAGOCAB usa VARCHAR2(60) para almacenar la ruta del archivo
      */
-    public void uploadFotoAbono(Long codCia, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+    public String uploadFotoAbono(Long codCia, String nroCp, MultipartFile file) {
         validateFile(file);
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        try {
-            cabecera.setFotoAbono(file.getBytes());
-            vtaCompPagoCabRepository.save(cabecera);
-            log.info("FotoAbono BLOB subida para ingreso: codCia={}, nroCp={}", codCia, nroCp);
-        } catch (java.io.IOException e) {
-            throw new RuntimeException("Error al procesar el archivo: " + e.getMessage());
+        // Obtener año y mes de la fecha del comprobante
+        int year = cabecera.getFecCp() != null ? cabecera.getFecCp().getYear() : LocalDate.now().getYear();
+        int month = cabecera.getFecCp() != null ? cabecera.getFecCp().getMonthValue() : LocalDate.now().getMonthValue();
+
+        // Guardar archivo en disco y obtener la ruta
+        String filePath = fileStorageService.storeAbonoFile(
+                file, codCia.intValue(), year, month);
+
+        // Validar que la ruta cabe en VARCHAR2(60)
+        if (filePath.length() > 60) {
+            log.error("Ruta del archivo excede 60 caracteres ({}): {}", filePath.length(), filePath);
+            throw new RuntimeException("La ruta del archivo excede el límite de 60 caracteres");
         }
+        cabecera.setFotoAbono(filePath);
+        vtaCompPagoCabRepository.save(cabecera);
+        log.info("FotoAbono guardada para ingreso: codCia={}, nroCp={}, path={}", codCia, nroCp, filePath);
+
+        return filePath;
     }
 
     /**
-     * Obtiene la imagen del abono (FotoAbono) desde BLOB
+     * Obtiene la ruta de la imagen del abono (FotoAbono)
+     *
+     * @return Ruta del archivo almacenado en el servidor
      */
-    public byte[] getFotoAbono(Long codCia, String nroCp) {
+    public String getFotoAbonoPath(Long codCia, String nroCp) {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado: " + nroCp));
 
-        if (cabecera.getFotoAbono() == null) {
+        if (cabecera.getFotoAbono() == null || cabecera.getFotoAbono().isEmpty()) {
             throw new ResourceNotFoundException("El comprobante no tiene imagen de abono");
         }
         return cabecera.getFotoAbono();
@@ -654,12 +693,13 @@ public class VtaCompPagoCabService {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
+        // TODO: Opcionalmente eliminar el archivo físico del disco
         cabecera.setFotoAbono(null);
         vtaCompPagoCabRepository.save(cabecera);
-        log.info("FotoAbono BLOB eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+        log.info("FotoAbono eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
     }
 
-    private void validateFile(org.springframework.web.multipart.MultipartFile file) {
+    private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new RuntimeException("El archivo está vacío");
         }

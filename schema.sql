@@ -194,6 +194,54 @@ CREATE TABLE EMPLEADO (
     CONSTRAINT EMPLEADO_PK PRIMARY KEY (CodCIA, CodEmpleado)
 );
 
+CREATE TABLE COMP_PAGOEMPLEADO (
+    CodCIA NUMBER(6) NOT NULL,
+    CodEmpleado NUMBER(6) NOT NULL,
+    NroCP VARCHAR2(20) NOT NULL,
+    CodPyto NUMBER(6) NOT NULL,
+    NroPago NUMBER(3) NOT NULL,
+    TCompPago VARCHAR2(3) NOT NULL,
+    ECompPago VARCHAR2(3) NOT NULL,
+    FecCP DATE NOT NULL,
+    TMoneda VARCHAR2(3) NOT NULL,
+    EMoneda VARCHAR2(3) NOT NULL,
+    TipCambio NUMBER(7,4) NOT NULL,
+    ImpMO NUMBER(9,2) NOT NULL,
+    ImpNetoMN NUMBER(9,2) NOT NULL,
+    ImpIGVMN NUMBER(9,2) NOT NULL,
+    ImpTotalMn NUMBER(10,2) NOT NULL,
+    FotoCP BLOB,
+    FotoAbono BLOB,
+    FecAbono DATE NOT NULL,
+    DesAbono VARCHAR2(1000) NOT NULL,
+    Semilla NUMBER(5) NOT NULL,
+    TabEstado VARCHAR2(3) NOT NULL,
+    CodEstado VARCHAR2(3) NOT NULL,
+    CONSTRAINT COMP_PAGOEMPLEADO_PK PRIMARY KEY (CodCIA, CodEmpleado, NroCP),
+    CONSTRAINT COMP_PAGOEMPLEADO_EMPLEADO_FK FOREIGN KEY (CodCIA, CodEmpleado) REFERENCES EMPLEADO (CodCIA, CodEmpleado),
+    CONSTRAINT COMP_PAGOEMPLEADO_ELEMENTOS_FK FOREIGN KEY (TMoneda, EMoneda) REFERENCES ELEMENTOS (CodTab, CodElem),
+    CONSTRAINT COMP_PAGOEMPLEADO_ELEMENTOS_2_FK FOREIGN KEY (TCompPago, ECompPago) REFERENCES ELEMENTOS (CodTab, CodElem),
+    CONSTRAINT COMP_PAGOEMPLEADO_PROYECTO_FK FOREIGN KEY (CodCIA, CodPyto) REFERENCES PROYECTO (CodCIA, CodPyto)
+);
+
+-- ==================================================================
+-- COMP_PAGOEMPLEADO_DET: Detalle de comprobantes de pago a empleados
+-- ==================================================================
+CREATE TABLE COMP_PAGOEMPLEADO_DET (
+    CodCIA NUMBER(6) NOT NULL,
+    CodEmpleado NUMBER(6) NOT NULL,
+    NroCP VARCHAR2(20) NOT NULL,
+    Sec NUMBER(4) NOT NULL,
+    IngEgr VARCHAR2(1) NOT NULL,
+    CodPartida NUMBER(6) NOT NULL,
+    ImpNetoMN NUMBER(9,2) NOT NULL,
+    ImpIGVMN NUMBER(9,2) NOT NULL,
+    ImpTotalMN NUMBER(9,2) NOT NULL,
+    Semilla NUMBER(5) NOT NULL,
+    CONSTRAINT COMP_PAGOEMPDET_PK PRIMARY KEY (CodCIA, CodEmpleado, NroCP, Sec),
+    CONSTRAINT COMP_PAGOEMPDET_CAB_FK FOREIGN KEY (CodCIA, CodEmpleado, NroCP) REFERENCES COMP_PAGOEMPLEADO (CodCIA, CodEmpleado, NroCP),
+    CONSTRAINT COMP_PAGOEMPDET_PARTIDA_FK FOREIGN KEY (CodCIA, IngEgr, CodPartida) REFERENCES PARTIDA (CodCIA, IngEgr, CodPartida)
+);
 
 --PARTIDA: Es la tabla maestra de todas las partidas presupuestales o contables.
 --Cada partida representa un concepto de ingreso (I) o egreso (E), como materiales, mano de obra, servicios, etc.
@@ -1539,6 +1587,62 @@ INSERT INTO DPROY_PARTIDA_MEZCLA VALUES (1, 102, 'E', 1, 2303, 3, 3, '005', 'NOR
 
 
 
+-- ============================================================================
+-- 17. TABLA EMPLEADO - Datos de empleados (extiende PERSONA)
+-- ============================================================================
+INSERT INTO EMPLEADO VALUES (1, 1001, 'Av. Principal 2500, Lima', '992184753', 'Lectura, Proyectos de Ingeniería', NULL, DATE '1972-05-15', '41829305', 'CIP418293', DATE '2025-12-31', '1', 'S', 'Gerente General', 1, 'juan.perez@consandina.pe', 'S');
+INSERT INTO EMPLEADO VALUES (1, 1002, 'Calle Los Andes 450, San Isidro', '954821039', 'Diseño asistido por computadora, Fútbol', NULL, DATE '1982-08-22', '75031298', 'CIP750312', DATE '2025-06-30', '1', 'S', 'Especialista en proyectos de infraestructura', 2, 'maria.rodriguez@consandina.pe', 'S');
+
+-- ============================================================================
+-- 18. TABLA COMP_PAGOEMPLEADO - Comprobantes de pago a empleados
+-- ============================================================================
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1001, 'CPE-001', 101, 1, '003', 'REC', DATE '2023-02-28',
+  '001', 'PEN', 1.0000, 15000.00, 15000.00, 2700.00, 17700.00,
+  NULL, NULL, DATE '2023-03-05', 'Pago de honorarios - Supervisión de proyecto - Febrero 2023',
+  1, '004', 'PAG'
+);
+
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1001, 'CPE-002', 101, 2, '003', 'REC', DATE '2023-03-28',
+  '001', 'PEN', 1.0000, 15000.00, 15000.00, 2700.00, 17700.00,
+  NULL, NULL, DATE '2023-04-05', 'Pago de honorarios - Supervisión de proyecto - Marzo 2023',
+  2, '004', 'PAG'
+);
+
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1002, 'CPE-003', 101, 1, '003', 'REC', DATE '2023-02-28',
+  '001', 'PEN', 1.0000, 12000.00, 12000.00, 2160.00, 14160.00,
+  NULL, NULL, DATE '2023-03-05', 'Pago de honorarios - Ingeniería de diseño - Febrero 2023',
+  3, '004', 'PAG'
+);
+
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1002, 'CPE-004', 102, 1, '003', 'REC', DATE '2023-04-28',
+  '001', 'PEN', 1.0000, 11000.00, 11000.00, 1980.00, 12980.00,
+  NULL, NULL, DATE '2023-05-05', 'Pago de honorarios - Control de calidad - Abril 2023',
+  4, '004', 'REG'
+);
+
+-- ============================================================================
+-- 19. TABLA COMP_PAGOEMPLEADO_DET - Detalle de pagos a empleados
+-- ============================================================================
+INSERT INTO COMP_PAGOEMPLEADO_DET (
+    CodCIA, CodEmpleado, NroCP, Sec, IngEgr, CodPartida, 
+    ImpNetoMN, ImpIGVMN, ImpTotalMN, Semilla
+) VALUES (
+    1, 1, 'CPE-001-2023-001', 1, 'E', 2104,
+    12000, 2160, 14160, 1
+);
+
+INSERT INTO COMP_PAGOEMPLEADO_DET (
+    CodCIA, CodEmpleado, NroCP, Sec, IngEgr, CodPartida, 
+    ImpNetoMN, ImpIGVMN, ImpTotalMN, Semilla
+) VALUES (
+    1, 1, 'CPE-001-2023-001', 2, 'E', 2104,
+    3000, 540, 3540, 1
+);
+
 
 -- 1. Ver tabla CIA
 SELECT * FROM CIA;
@@ -1580,7 +1684,6 @@ SELECT * FROM DPROY_PARTIDA_MEZCLA;
 SELECT * FROM COMP_PAGOCAB;
 
 -- 14. Ver tabla COMP_PAGODET
--- 14. Ver tabla COMP_PAGODET
 SELECT * FROM COMP_PAGODET;
 
 -- 15. Ver tabla VTACOMP_PAGOCAB
@@ -1589,45 +1692,11 @@ SELECT * FROM VTACOMP_PAGOCAB;
 -- 16. Ver tabla VTACOMP_PAGODET
 SELECT * FROM VTACOMP_PAGODET;
 
--- ============================================================================
--- 17. TABLA EMPLEADO - Datos de empleados (extiende PERSONA)
--- ============================================================================
-INSERT INTO EMPLEADO VALUES (1, 1001, 'Av. Principal 2500, Lima', '992184753', 'Lectura, Proyectos de Ingeniería', NULL, DATE '1972-05-15', '41829305', 'CIP418293', DATE '2025-12-31', '1', 'S', 'Gerente General', 1, 'juan.perez@consandina.pe', 'S');
-INSERT INTO EMPLEADO VALUES (1, 1002, 'Calle Los Andes 450, San Isidro', '954821039', 'Diseño asistido por computadora, Fútbol', NULL, DATE '1982-08-22', '75031298', 'CIP750312', DATE '2025-06-30', '1', 'S', 'Especialista en proyectos de infraestructura', 2, 'maria.rodriguez@consandina.pe', 'S');
-
--- ============================================================================
--- 18. TABLA COMP_PAGOEMPLEADO - Comprobantes de pago a empleados
--- ============================================================================
-INSERT INTO COMP_PAGOEMPLEADO VALUES (
-  1, 1001, 'CPE-001', 101, 1, '003', 'REC', DATE '2023-02-28',
-  '001', 'PEN', 1.0000, 15000.00, 15000.00, 2700.00, 17700.00,
-  NULL, NULL, DATE '2023-03-05', 'Pago de honorarios - Supervisión de proyecto - Febrero 2023',
-  1, '004', 'PAG'
-);
-
-INSERT INTO COMP_PAGOEMPLEADO VALUES (
-  1, 1001, 'CPE-002', 101, 2, '003', 'REC', DATE '2023-03-28',
-  '001', 'PEN', 1.0000, 15000.00, 15000.00, 2700.00, 17700.00,
-  NULL, NULL, DATE '2023-04-05', 'Pago de honorarios - Supervisión de proyecto - Marzo 2023',
-  2, '004', 'PAG'
-);
-
-INSERT INTO COMP_PAGOEMPLEADO VALUES (
-  1, 1002, 'CPE-003', 101, 1, '003', 'REC', DATE '2023-02-28',
-  '001', 'PEN', 1.0000, 12000.00, 12000.00, 2160.00, 14160.00,
-  NULL, NULL, DATE '2023-03-05', 'Pago de honorarios - Ingeniería de diseño - Febrero 2023',
-  3, '004', 'PAG'
-);
-
-INSERT INTO COMP_PAGOEMPLEADO VALUES (
-  1, 1002, 'CPE-004', 102, 1, '003', 'REC', DATE '2023-04-28',
-  '001', 'PEN', 1.0000, 11000.00, 11000.00, 1980.00, 12980.00,
-  NULL, NULL, DATE '2023-05-05', 'Pago de honorarios - Control de calidad - Abril 2023',
-  4, '004', 'REG'
-);
-
 -- 17. Ver tabla EMPLEADO
 SELECT * FROM EMPLEADO;
 
 -- 18. Ver tabla COMP_PAGOEMPLEADO
 SELECT * FROM COMP_PAGOEMPLEADO;
+
+-- 19. Ver tabla COMP_PAGOEMPLEADO_DET
+SELECT * FROM COMP_PAGOEMPLEADO_DET;

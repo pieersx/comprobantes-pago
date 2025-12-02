@@ -59,6 +59,12 @@ const ImageViewer = ({ src, alt, title, thumbnailSize = 'md', downloadFilename, 
   const [imageError, setImageError] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Resetear estado cuando cambia la URL de la imagen
+  useEffect(() => {
+    setImageError(false);
+    setLoading(true);
+  }, [src]);
+
   const sizeClasses = {
     sm: 'h-24 w-24',
     md: 'h-40 w-40',
@@ -607,14 +613,21 @@ export default function DetalleComprobantePage() {
               <p className="text-sm font-medium text-muted-foreground">Imagen del Comprobante</p>
               {tipo === 'egreso' && comprobante.codProveedor ? (
                 <>
-                  <ImageViewer
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-cp`}
-                    alt="Comprobante"
-                    title="Imagen del Comprobante"
-                    thumbnailSize="lg"
-                    downloadFilename={`comprobante-${comprobante.nroCp}`}
-                    onError={() => console.log('No hay imagen de comprobante')}
-                  />
+                  {comprobante.tieneFotoCp ? (
+                    <ImageViewer
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-cp`}
+                      alt="Comprobante"
+                      title="Imagen del Comprobante"
+                      thumbnailSize="lg"
+                      downloadFilename={`comprobante-${comprobante.nroCp}`}
+                      onError={() => console.log('No hay imagen de comprobante')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-56 w-56 bg-muted rounded-lg border border-dashed">
+                      <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+                    </div>
+                  )}
                   <BlobImageUploader
                     label="Subir/Actualizar Factura"
                     tipoComprobante="egreso"
@@ -627,14 +640,21 @@ export default function DetalleComprobantePage() {
                 </>
               ) : tipo === 'egreso-empleado' && comprobante.codEmpleado ? (
                 <>
-                  <ImageViewer
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-cp`}
-                    alt="Comprobante"
-                    title="Imagen del Comprobante"
-                    thumbnailSize="lg"
-                    downloadFilename={`comprobante-${comprobante.nroCp}`}
-                    onError={() => console.log('No hay imagen de comprobante')}
-                  />
+                  {comprobante.tieneFotoCp ? (
+                    <ImageViewer
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-cp`}
+                      alt="Comprobante"
+                      title="Imagen del Comprobante"
+                      thumbnailSize="lg"
+                      downloadFilename={`comprobante-${comprobante.nroCp}`}
+                      onError={() => console.log('No hay imagen de comprobante')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-56 w-56 bg-muted rounded-lg border border-dashed">
+                      <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+                    </div>
+                  )}
                   <BlobImageUploader
                     label="Subir/Actualizar Factura"
                     tipoComprobante="egreso-empleado"
@@ -647,14 +667,21 @@ export default function DetalleComprobantePage() {
                 </>
               ) : tipo === 'ingreso' ? (
                 <>
-                  <ImageViewer
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${comprobante.nroCp}/foto-cp`}
-                    alt="Comprobante"
-                    title="Imagen del Comprobante"
-                    thumbnailSize="lg"
-                    downloadFilename={`comprobante-${comprobante.nroCp}`}
-                    onError={() => console.log('No hay imagen de comprobante')}
-                  />
+                  {comprobante.fotoCp ? (
+                    <ImageViewer
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/files/download?path=${encodeURIComponent(comprobante.fotoCp)}`}
+                      alt="Comprobante"
+                      title="Imagen del Comprobante"
+                      thumbnailSize="lg"
+                      downloadFilename={`comprobante-${comprobante.nroCp}`}
+                      onError={() => console.log('No hay imagen de comprobante')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-56 w-56 bg-muted rounded-lg border border-dashed">
+                      <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+                    </div>
+                  )}
                   <BlobImageUploader
                     label="Subir/Actualizar Factura"
                     tipoComprobante="ingreso"
@@ -674,14 +701,21 @@ export default function DetalleComprobantePage() {
               <p className="text-sm font-medium text-muted-foreground">Imagen del Abono</p>
               {tipo === 'egreso' && comprobante.codProveedor ? (
                 <>
-                  <ImageViewer
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-abono`}
-                    alt="Abono"
-                    title="Imagen del Abono"
-                    thumbnailSize="lg"
-                    downloadFilename={`abono-${comprobante.nroCp}`}
-                    onError={() => console.log('No hay imagen de abono')}
-                  />
+                  {comprobante.tieneFotoAbono ? (
+                    <ImageViewer
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-abono`}
+                      alt="Abono"
+                      title="Imagen del Abono"
+                      thumbnailSize="lg"
+                      downloadFilename={`abono-${comprobante.nroCp}`}
+                      onError={() => console.log('No hay imagen de abono')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-56 w-56 bg-muted rounded-lg border border-dashed">
+                      <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+                    </div>
+                  )}
                   <BlobImageUploader
                     label="Subir/Actualizar Voucher"
                     tipoComprobante="egreso"
@@ -694,14 +728,21 @@ export default function DetalleComprobantePage() {
                 </>
               ) : tipo === 'egreso-empleado' && comprobante.codEmpleado ? (
                 <>
-                  <ImageViewer
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-abono`}
-                    alt="Abono"
-                    title="Imagen del Abono"
-                    thumbnailSize="lg"
-                    downloadFilename={`abono-${comprobante.nroCp}`}
-                    onError={() => console.log('No hay imagen de abono')}
-                  />
+                  {comprobante.tieneFotoAbono ? (
+                    <ImageViewer
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-abono`}
+                      alt="Abono"
+                      title="Imagen del Abono"
+                      thumbnailSize="lg"
+                      downloadFilename={`abono-${comprobante.nroCp}`}
+                      onError={() => console.log('No hay imagen de abono')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-56 w-56 bg-muted rounded-lg border border-dashed">
+                      <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+                    </div>
+                  )}
                   <BlobImageUploader
                     label="Subir/Actualizar Voucher"
                     tipoComprobante="egreso-empleado"
@@ -714,14 +755,21 @@ export default function DetalleComprobantePage() {
                 </>
               ) : tipo === 'ingreso' ? (
                 <>
-                  <ImageViewer
-                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${comprobante.nroCp}/foto-abono`}
-                    alt="Abono"
-                    title="Imagen del Abono"
-                    thumbnailSize="lg"
-                    downloadFilename={`abono-${comprobante.nroCp}`}
-                    onError={() => console.log('No hay imagen de abono')}
-                  />
+                  {comprobante.fotoAbono ? (
+                    <ImageViewer
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/files/download?path=${encodeURIComponent(comprobante.fotoAbono)}`}
+                      alt="Abono"
+                      title="Imagen del Abono"
+                      thumbnailSize="lg"
+                      downloadFilename={`abono-${comprobante.nroCp}`}
+                      onError={() => console.log('No hay imagen de abono')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-56 w-56 bg-muted rounded-lg border border-dashed">
+                      <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+                    </div>
+                  )}
                   <BlobImageUploader
                     label="Subir/Actualizar Voucher"
                     tipoComprobante="ingreso"

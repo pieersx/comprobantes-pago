@@ -25,6 +25,8 @@ public interface ComprobantePagoMapper {
     @Mapping(target = "impIgvMn", source = "impIgvmn")
     @Mapping(target = "fotoCp", ignore = true)
     @Mapping(target = "fotoAbono", ignore = true)
+    @Mapping(target = "tieneFotoCp", expression = "java(entity.getFotoCp() != null && entity.getFotoCp().length > 0)")
+    @Mapping(target = "tieneFotoAbono", expression = "java(entity.getFotoAbono() != null && entity.getFotoAbono().length > 0)")
     ComprobantePagoDTO toDTO(ComprobantePagoCab entity);
 
     @Mapping(target = "impIgvmn", source = "impIgvMn")
