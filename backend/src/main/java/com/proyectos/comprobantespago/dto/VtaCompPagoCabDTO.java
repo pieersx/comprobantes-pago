@@ -81,10 +81,9 @@ public class VtaCompPagoCabDTO {
     @DecimalMin(value = "0.0", message = "El importe total debe ser mayor o igual a 0")
     private BigDecimal impTotalMn;
 
-    @Size(max = 60)
+    // Campos de imagen - ahora opcionales (se manejan por endpoints separados de BLOB)
     private String fotoCp;
 
-    @Size(max = 60)
     private String fotoAbono;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -92,6 +91,10 @@ public class VtaCompPagoCabDTO {
 
     @Size(max = 1000)
     private String desAbono;
+
+    // Flags para indicar si tiene imágenes BLOB (sin cargar los bytes)
+    private Boolean tieneFotoCp;
+    private Boolean tieneFotoAbono;
 
     private Integer semilla;
 

@@ -170,7 +170,7 @@ public class ClienteController {
     @GetMapping("/activos")
     @Transactional(readOnly = true)
     public ResponseEntity<List<ClienteDTO>> listarClientesActivos() {
-        List<Cliente> clientes = clienteRepository.findByVigente("S");
+        List<Cliente> clientes = clienteRepository.findByVigente("1");
         List<ClienteDTO> clientesDTO = clientes.stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
@@ -203,7 +203,7 @@ public class ClienteController {
         cliente.setCodCia(dto.getCodCia());
         cliente.setCodCliente(dto.getCodCliente());
         cliente.setNroRuc(dto.getNroRuc());
-        cliente.setVigente(dto.getVigente() != null ? dto.getVigente() : "S");
+        cliente.setVigente(dto.getVigente() != null ? dto.getVigente() : "1");
 
         // TODO: Asociar con Persona existente o crear nueva
         // Por ahora dejamos pendiente la relación con Persona

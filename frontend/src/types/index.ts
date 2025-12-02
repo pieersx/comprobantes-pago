@@ -35,10 +35,13 @@ export interface Persona {
 export interface Cliente {
   codCia: number;
   codCliente: number;
-  ruc?: string;
+  nroRuc?: string;
+  ruc?: string; // Alias para compatibilidad
   vigente: string;
   desPersona?: string;
   desCorta?: string;
+  descAlterna?: string;
+  desCortaAlt?: string;
   dirLegal?: string;
   persona?: Persona;
 }
@@ -48,6 +51,10 @@ export interface Proveedor {
   codProveedor: number;
   nroRuc: string;
   vigente: string;
+  desPersona?: string;
+  desCorta?: string;
+  descAlterna?: string;
+  desCortaAlt?: string;
   persona?: Persona;
 }
 

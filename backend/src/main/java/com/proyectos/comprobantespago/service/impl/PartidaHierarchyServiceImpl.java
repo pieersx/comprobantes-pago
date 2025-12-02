@@ -35,7 +35,9 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
     private final ProyPartidaRepository proyPartidaRepository;
 
     // Constantes para límites de niveles
-    private static final int MAX_NIVEL_INGRESO = 2;
+    // Según notas del profesor: Ingresos nivel 2, Egresos nivel 3
+    // PERO según el schema.sql actual, ambos usan nivel 3
+    private static final int MAX_NIVEL_INGRESO = 3;
     private static final int MAX_NIVEL_EGRESO = 3;
     private static final String TIPO_INGRESO = "I";
     private static final String TIPO_EGRESO = "E";
@@ -43,10 +45,10 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
     @Override
     public List<PartidaTreeNode> buildPartidaTree(Long codCia, String ingEgr) {
         // Obtener todas las partidas
-        List<Partida> partidas = partidaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "S");
+        List<Partida> partidas = partidaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "1");
 
         // Obtener todas las relaciones de jerarquía desde PartidaMezcla
-        List<PartidaMezcla> mezclas = partidaMezclaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "S");
+        List<PartidaMezcla> mezclas = partidaMezclaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "1");
 
         // Crear mapa de partidas por código para acceso rápido
         Map<Long, Partida> partidaMap = partidas.stream()
@@ -278,7 +280,7 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
 
     private Long findParentCode(Long codCia, String ingEgr, Long codPartida) {
         List<PartidaMezcla> mezclas = partidaMezclaRepository
-                .findByCodCiaAndIngEgrAndCodPartidaAndVigente(codCia, ingEgr, codPartida, "S");
+                .findByCodCiaAndIngEgrAndCodPartidaAndVigente(codCia, ingEgr, codPartida, "1");
 
         if (!mezclas.isEmpty()) {
             Long parentCode = mezclas.get(0).getPadCodPartida();
@@ -344,7 +346,7 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
         List<Partida> partidasNivel3 = partidaRepository.findByCodCiaAndIngEgrAndNivel(codCia, ingEgr, 3);
 
         return partidasNivel3.stream()
-                .filter(p -> "S".equals(p.getVigente()))
+                .filter(p -> "1".equals(p.getVigente()))
                 .map(this::convertToDTOWithHierarchy)
                 .collect(Collectors.toList());
     }
@@ -358,7 +360,7 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
     public List<PartidaDTO> getAllPartidasByProyecto(Long codCia, Long codPyto, String ingEgr) {
         // Obtener TODAS las partidas del catálogo vigentes (niveles 1, 2 y 3)
         // Esto mostrará toda la estructura jerárquica disponible
-        List<Partida> todasPartidas = partidaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "S");
+        List<Partida> todasPartidas = partidaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "1");
 
         // Convertir a DTO con información de jerarquía
         return todasPartidas.stream()

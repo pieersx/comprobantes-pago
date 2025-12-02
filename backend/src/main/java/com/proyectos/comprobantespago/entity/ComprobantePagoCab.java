@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
@@ -143,13 +144,13 @@ public class ComprobantePagoCab implements Serializable {
     @Column(name = "IMPTOTALMN", nullable = false, precision = 10, scale = 2)
     private BigDecimal impTotalMn;
 
-    @Size(max = 200)
-    @Column(name = "FOTOCP", length = 200)
-    private String fotoCp;
+    @Lob
+    @Column(name = "FOTOCP")
+    private byte[] fotoCp;
 
-    @Size(max = 200)
-    @Column(name = "FOTOABONO", length = 200)
-    private String fotoAbono;
+    @Lob
+    @Column(name = "FOTOABONO")
+    private byte[] fotoAbono;
 
     @Column(name = "FECABONO")
     private LocalDate fecAbono;

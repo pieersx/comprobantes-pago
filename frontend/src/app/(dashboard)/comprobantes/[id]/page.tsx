@@ -1,8 +1,7 @@
 'use client';
 
-import { AbonoInfo, EstadoBadge } from '@/components/comprobantes';
+import { AbonoInfo, BlobImageUploader, EstadoBadge } from '@/components/comprobantes';
 import { FileUploader } from '@/components/comprobantes/FileUploader';
-import { Badge } from '@/components/ui/badge';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -30,17 +29,88 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
+import { mapEstadoToUI } from '@/constants/estados';
+import { comprobantesEmpleadoService } from '@/services/comprobantes-empleado.service';
 import {
     comprobantesEgresoService,
     comprobantesIngresoService,
 } from '@/services/comprobantes.service';
 import { generarComprobantePDF } from '@/services/pdf-generator.service';
 import { useAppStore } from '@/store/useAppStore';
-import { Download, Edit, FileX, Upload } from 'lucide-react';
+import { Download, Edit, ExternalLink, FileImage, FileX, Image as ImageIcon, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast as sonnerToast } from 'sonner';
+
+/**
+ * Componente para visualizar imágenes con manejo de errores
+ */
+interface ImageViewerProps {
+  src: string;
+  alt: string;
+  title: string;
+  thumbnailSize?: 'sm' | 'md' | 'lg';
+  downloadFilename?: string;
+  onError?: () => void;
+}
+
+const ImageViewer = ({ src, alt, title, thumbnailSize = 'md', downloadFilename, onError }: ImageViewerProps) => {
+  const [imageError, setImageError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const sizeClasses = {
+    sm: 'h-24 w-24',
+    md: 'h-40 w-40',
+    lg: 'h-56 w-56',
+  };
+
+  if (imageError) {
+    return (
+      <div className={`flex flex-col items-center justify-center ${sizeClasses[thumbnailSize]} bg-muted rounded-lg border border-dashed`}>
+        <FileImage className="h-8 w-8 text-muted-foreground mb-2" />
+        <p className="text-xs text-muted-foreground text-center">Sin imagen</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className={`relative ${sizeClasses[thumbnailSize]} bg-muted rounded-lg overflow-hidden border`}>
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        )}
+        <img
+          src={src}
+          alt={alt}
+          title={title}
+          className={`w-full h-full object-cover transition-opacity ${loading ? 'opacity-0' : 'opacity-100'}`}
+          onLoad={() => setLoading(false)}
+          onError={() => {
+            setImageError(true);
+            setLoading(false);
+            onError?.();
+          }}
+        />
+      </div>
+      {!imageError && !loading && (
+        <div className="flex gap-2">
+          <a
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-xs text-primary hover:underline"
+          >
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Ver completa
+          </a>
+        </div>
+      )}
+    </div>
+  );
+};
 
 /**
  * Página de detalle de un comprobante
@@ -55,7 +125,7 @@ export default function DetalleComprobantePage() {
 
   const [loading, setLoading] = useState(true);
   const [comprobante, setComprobante] = useState<any>(null);
-  const [tipo, setTipo] = useState<'ingreso' | 'egreso'>('egreso');
+  const [tipo, setTipo] = useState<'ingreso' | 'egreso' | 'egreso-empleado'>('egreso');
   const [anularDialogOpen, setAnularDialogOpen] = useState(false);
   const [anulando, setAnulando] = useState(false);
   const [subirFacturaDialogOpen, setSubirFacturaDialogOpen] = useState(false);
@@ -68,24 +138,45 @@ export default function DetalleComprobantePage() {
       try {
         setLoading(true);
 
-        const parts = comprobanteId.split('-');
-        const tipoComprobante = parts[0];
-
-        if (tipoComprobante === 'egreso') {
-          if (parts.length < 3) {
-            throw new Error('ID de comprobante inválido');
+        // Detectar el tipo de comprobante basado en el prefijo del ID
+        // Formatos: egreso-{codProveedor}-{nroCp}, egreso-empleado-{codEmpleado}-{nroCp}, ingreso-{nroCp}
+        if (comprobanteId.startsWith('egreso-empleado-')) {
+          // Comprobante de empleado: egreso-empleado-{codEmpleado}-{nroCp}
+          const withoutPrefix = comprobanteId.replace('egreso-empleado-', '');
+          const parts = withoutPrefix.split('-');
+          if (parts.length < 2) {
+            throw new Error('ID de comprobante de empleado inválido');
           }
-          const codProveedor = parseInt(parts[1]);
-          const nroCp = parts.slice(2).join('-');
+          const codEmpleado = parseInt(parts[0]);
+          const nroCp = parts.slice(1).join('-');
+
+          if (isNaN(codEmpleado) || codEmpleado <= 0) {
+            throw new Error('Código de empleado inválido');
+          }
+
+          setTipo('egreso-empleado');
+          const data = await comprobantesEmpleadoService.getById(codCia, codEmpleado, nroCp);
+          setComprobante(data);
+        } else if (comprobanteId.startsWith('egreso-')) {
+          // Comprobante de egreso (proveedor): egreso-{codProveedor}-{nroCp}
+          const withoutPrefix = comprobanteId.replace('egreso-', '');
+          const parts = withoutPrefix.split('-');
+          if (parts.length < 2) {
+            throw new Error('ID de comprobante de egreso inválido');
+          }
+          const codProveedor = parseInt(parts[0]);
+          const nroCp = parts.slice(1).join('-');
+
+          if (isNaN(codProveedor) || codProveedor <= 0) {
+            throw new Error('Código de proveedor inválido');
+          }
 
           setTipo('egreso');
           const data = await comprobantesEgresoService.getById(codCia, codProveedor, nroCp);
           setComprobante(data);
-        } else if (tipoComprobante === 'ingreso') {
-          if (parts.length < 2) {
-            throw new Error('ID de comprobante inválido');
-          }
-          const nroCp = parts.slice(1).join('-');
+        } else if (comprobanteId.startsWith('ingreso-')) {
+          // Comprobante de ingreso: ingreso-{nroCp}
+          const nroCp = comprobanteId.replace('ingreso-', '');
 
           setTipo('ingreso');
           const data = await comprobantesIngresoService.getById(codCia, nroCp);
@@ -114,13 +205,20 @@ export default function DetalleComprobantePage() {
     try {
       setAnulando(true);
 
-      const parts = comprobanteId.split('-');
-      if (tipo === 'egreso') {
-        const codProveedor = parseInt(parts[1]);
-        const nroCp = parts.slice(2).join('-');
+      if (tipo === 'egreso-empleado') {
+        const withoutPrefix = comprobanteId.replace('egreso-empleado-', '');
+        const parts = withoutPrefix.split('-');
+        const codEmpleado = parseInt(parts[0]);
+        const nroCp = parts.slice(1).join('-');
+        await comprobantesEmpleadoService.anular(codCia, codEmpleado, nroCp);
+      } else if (tipo === 'egreso') {
+        const withoutPrefix = comprobanteId.replace('egreso-', '');
+        const parts = withoutPrefix.split('-');
+        const codProveedor = parseInt(parts[0]);
+        const nroCp = parts.slice(1).join('-');
         await comprobantesEgresoService.anular(codCia, codProveedor, nroCp);
       } else {
-        const nroCp = parts.slice(1).join('-');
+        const nroCp = comprobanteId.replace('ingreso-', '');
         await comprobantesIngresoService.anular(codCia, nroCp);
       }
 
@@ -151,7 +249,8 @@ export default function DetalleComprobantePage() {
     }
 
     try {
-      // Guardar FotoCP en el backend
+      // Guardar FotoCP en el backend - por ahora solo soporta egreso e ingreso
+      // TODO: Agregar soporte para empleados cuando el backend lo soporte
       if (tipo === 'egreso') {
         await comprobantesEgresoService.actualizarFotoCP(
           codCia,
@@ -159,7 +258,7 @@ export default function DetalleComprobantePage() {
           comprobante.nroCp,
           fotoCP
         );
-      } else {
+      } else if (tipo === 'ingreso') {
         await comprobantesIngresoService.actualizarFotoCP(
           codCia,
           comprobante.nroCp,
@@ -172,14 +271,22 @@ export default function DetalleComprobantePage() {
       setFotoCP('');
 
       // Recargar comprobante
-      const parts = comprobanteId.split('-');
-      if (tipo === 'egreso') {
-        const codProveedor = parseInt(parts[1]);
-        const nroCp = parts.slice(2).join('-');
+      if (tipo === 'egreso-empleado') {
+        const withoutPrefix = comprobanteId.replace('egreso-empleado-', '');
+        const parts = withoutPrefix.split('-');
+        const codEmpleado = parseInt(parts[0]);
+        const nroCp = parts.slice(1).join('-');
+        const data = await comprobantesEmpleadoService.getById(codCia, codEmpleado, nroCp);
+        setComprobante(data);
+      } else if (tipo === 'egreso') {
+        const withoutPrefix = comprobanteId.replace('egreso-', '');
+        const parts = withoutPrefix.split('-');
+        const codProveedor = parseInt(parts[0]);
+        const nroCp = parts.slice(1).join('-');
         const data = await comprobantesEgresoService.getById(codCia, codProveedor, nroCp);
         setComprobante(data);
       } else {
-        const nroCp = parts.slice(1).join('-');
+        const nroCp = comprobanteId.replace('ingreso-', '');
         const data = await comprobantesIngresoService.getById(codCia, nroCp);
         setComprobante(data);
       }
@@ -244,7 +351,7 @@ export default function DetalleComprobantePage() {
         impSubTotMn: subtotal,
         impIgvMn: igvTotal,
         monTotal: comprobante.impTotalMn || 0,
-        tipo: tipo,
+        tipo: tipo === 'egreso-empleado' ? 'egreso' : tipo, // Mapear egreso-empleado a egreso para el PDF
       });
 
       toast({
@@ -288,10 +395,11 @@ export default function DetalleComprobantePage() {
     );
   }
 
+  const estadoUI = mapEstadoToUI(comprobante.codEstado || 'REG');
   const estadoVariant =
-    comprobante.codEstado === 'PAG'
+    estadoUI === 'PAG'
       ? 'default'
-      : comprobante.codEstado === 'ANU'
+      : estadoUI === 'ANU'
       ? 'destructive'
       : 'secondary';
 
@@ -319,7 +427,7 @@ export default function DetalleComprobantePage() {
             Comprobante {comprobante.nroCp}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {tipo === 'egreso' ? 'Comprobante de Egreso' : 'Comprobante de Ingreso'}
+            {tipo === 'egreso' ? 'Comprobante de Egreso' : tipo === 'egreso-empleado' ? 'Comprobante de Egreso (Empleado)' : 'Comprobante de Ingreso'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -327,13 +435,13 @@ export default function DetalleComprobantePage() {
             <Download className="mr-2 h-4 w-4" />
             Descargar PDF
           </Button>
-          {tipo === 'egreso' && comprobante.codEstado !== 'ANU' && (
+          {tipo === 'egreso' && mapEstadoToUI(comprobante.codEstado) !== 'ANU' && (
             <Button variant="outline" onClick={() => setSubirFacturaDialogOpen(true)}>
               <Upload className="mr-2 h-4 w-4" />
               Subir Factura
             </Button>
           )}
-          {comprobante.codEstado !== 'ANU' && comprobante.codEstado !== 'PAG' && (
+          {mapEstadoToUI(comprobante.codEstado) !== 'ANU' && mapEstadoToUI(comprobante.codEstado) !== 'PAG' && (
             <Button variant="outline" asChild>
               <Link href={`/comprobantes/${comprobanteId}/editar`}>
                 <Edit className="mr-2 h-4 w-4" />
@@ -341,7 +449,7 @@ export default function DetalleComprobantePage() {
               </Link>
             </Button>
           )}
-          {comprobante.codEstado !== 'ANU' && (
+          {mapEstadoToUI(comprobante.codEstado) !== 'ANU' && (
             <Button variant="destructive" onClick={() => setAnularDialogOpen(true)}>
               <FileX className="mr-2 h-4 w-4" />
               Anular
@@ -364,7 +472,7 @@ export default function DetalleComprobantePage() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Estado</p>
               <div className="mt-1">
-                <EstadoBadge estado={comprobante.codEstado || 'REG'} />
+                <EstadoBadge estado={mapEstadoToUI(comprobante.codEstado || 'REG')} />
               </div>
             </div>
             <div>
@@ -379,11 +487,13 @@ export default function DetalleComprobantePage() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                {tipo === 'egreso' ? 'Proveedor' : 'Cliente'}
+                {tipo === 'egreso' ? 'Proveedor' : tipo === 'egreso-empleado' ? 'Empleado' : 'Cliente'}
               </p>
               <p className="text-lg font-semibold mt-1">
                 {tipo === 'egreso'
                   ? `Proveedor ${comprobante.codProveedor}`
+                  : tipo === 'egreso-empleado'
+                  ? comprobante.nombreEmpleado || `Empleado ${comprobante.codEmpleado}`
                   : `Cliente ${comprobante.codCliente}`}
               </p>
             </div>
@@ -424,9 +534,9 @@ export default function DetalleComprobantePage() {
                     <TableCell>{detalle.sec}</TableCell>
                     <TableCell>
                       Partida {detalle.codPartida}
-                      {detalle.descripcion && (
+                      {(detalle.nombrePartida || detalle.descripcion) && (
                         <span className="text-muted-foreground block text-sm">
-                          {detalle.descripcion}
+                          {detalle.nombrePartida || detalle.descripcion}
                         </span>
                       )}
                     </TableCell>
@@ -469,7 +579,7 @@ export default function DetalleComprobantePage() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">IGV Total</p>
               <p className="text-2xl font-semibold mt-1">
-                S/ {(comprobante.impIgvMn || 0).toFixed(2)}
+                S/ {(comprobante.impIgvMn || comprobante.impIgvmn || 0).toFixed(2)}
               </p>
             </div>
             <div>
@@ -482,13 +592,161 @@ export default function DetalleComprobantePage() {
         </CardContent>
       </Card>
 
-      {/* Gestión de Abonos */}
+      {/* Imágenes del Comprobante - Feature: empleados-comprobantes-blob */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            Documentos Adjuntos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Imagen del Comprobante (FotoCP) */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Imagen del Comprobante</p>
+              {tipo === 'egreso' && comprobante.codProveedor ? (
+                <>
+                  <ImageViewer
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-cp`}
+                    alt="Comprobante"
+                    title="Imagen del Comprobante"
+                    thumbnailSize="lg"
+                    downloadFilename={`comprobante-${comprobante.nroCp}`}
+                    onError={() => console.log('No hay imagen de comprobante')}
+                  />
+                  <BlobImageUploader
+                    label="Subir/Actualizar Factura"
+                    tipoComprobante="egreso"
+                    tipoImagen="foto-cp"
+                    codCia={codCia}
+                    codProveedor={comprobante.codProveedor}
+                    nroCP={comprobante.nroCp}
+                    onUploadSuccess={() => window.location.reload()}
+                  />
+                </>
+              ) : tipo === 'egreso-empleado' && comprobante.codEmpleado ? (
+                <>
+                  <ImageViewer
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-cp`}
+                    alt="Comprobante"
+                    title="Imagen del Comprobante"
+                    thumbnailSize="lg"
+                    downloadFilename={`comprobante-${comprobante.nroCp}`}
+                    onError={() => console.log('No hay imagen de comprobante')}
+                  />
+                  <BlobImageUploader
+                    label="Subir/Actualizar Factura"
+                    tipoComprobante="egreso-empleado"
+                    tipoImagen="foto-cp"
+                    codCia={codCia}
+                    codEmpleado={comprobante.codEmpleado}
+                    nroCP={comprobante.nroCp}
+                    onUploadSuccess={() => window.location.reload()}
+                  />
+                </>
+              ) : tipo === 'ingreso' ? (
+                <>
+                  <ImageViewer
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${comprobante.nroCp}/foto-cp`}
+                    alt="Comprobante"
+                    title="Imagen del Comprobante"
+                    thumbnailSize="lg"
+                    downloadFilename={`comprobante-${comprobante.nroCp}`}
+                    onError={() => console.log('No hay imagen de comprobante')}
+                  />
+                  <BlobImageUploader
+                    label="Subir/Actualizar Factura"
+                    tipoComprobante="ingreso"
+                    tipoImagen="foto-cp"
+                    codCia={codCia}
+                    nroCP={comprobante.nroCp}
+                    onUploadSuccess={() => window.location.reload()}
+                  />
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No disponible</p>
+              )}
+            </div>
+
+            {/* Imagen del Abono (FotoAbono) */}
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Imagen del Abono</p>
+              {tipo === 'egreso' && comprobante.codProveedor ? (
+                <>
+                  <ImageViewer
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-abono`}
+                    alt="Abono"
+                    title="Imagen del Abono"
+                    thumbnailSize="lg"
+                    downloadFilename={`abono-${comprobante.nroCp}`}
+                    onError={() => console.log('No hay imagen de abono')}
+                  />
+                  <BlobImageUploader
+                    label="Subir/Actualizar Voucher"
+                    tipoComprobante="egreso"
+                    tipoImagen="foto-abono"
+                    codCia={codCia}
+                    codProveedor={comprobante.codProveedor}
+                    nroCP={comprobante.nroCp}
+                    onUploadSuccess={() => window.location.reload()}
+                  />
+                </>
+              ) : tipo === 'egreso-empleado' && comprobante.codEmpleado ? (
+                <>
+                  <ImageViewer
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-abono`}
+                    alt="Abono"
+                    title="Imagen del Abono"
+                    thumbnailSize="lg"
+                    downloadFilename={`abono-${comprobante.nroCp}`}
+                    onError={() => console.log('No hay imagen de abono')}
+                  />
+                  <BlobImageUploader
+                    label="Subir/Actualizar Voucher"
+                    tipoComprobante="egreso-empleado"
+                    tipoImagen="foto-abono"
+                    codCia={codCia}
+                    codEmpleado={comprobante.codEmpleado}
+                    nroCP={comprobante.nroCp}
+                    onUploadSuccess={() => window.location.reload()}
+                  />
+                </>
+              ) : tipo === 'ingreso' ? (
+                <>
+                  <ImageViewer
+                    src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${comprobante.nroCp}/foto-abono`}
+                    alt="Abono"
+                    title="Imagen del Abono"
+                    thumbnailSize="lg"
+                    downloadFilename={`abono-${comprobante.nroCp}`}
+                    onError={() => console.log('No hay imagen de abono')}
+                  />
+                  <BlobImageUploader
+                    label="Subir/Actualizar Voucher"
+                    tipoComprobante="ingreso"
+                    tipoImagen="foto-abono"
+                    codCia={codCia}
+                    nroCP={comprobante.nroCp}
+                    onUploadSuccess={() => window.location.reload()}
+                  />
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No disponible</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Gestión de Abonos - Para egreso, ingreso y empleados */}
       <AbonoInfo
         tipo={tipo}
         codCia={codCia}
         codProveedor={tipo === 'egreso' ? comprobante.codProveedor : undefined}
+        codEmpleado={tipo === 'egreso-empleado' ? comprobante.codEmpleado : undefined}
         nroCP={comprobante.nroCp}
-        estado={comprobante.codEstado || 'REG'}
+        estado={mapEstadoToUI(comprobante.codEstado || 'REG')}
         onEstadoChange={async () => {
           // Recargar comprobante para actualizar el estado
           if (tipo === 'egreso') {
@@ -498,8 +756,15 @@ export default function DetalleComprobantePage() {
               comprobante.nroCp
             );
             setComprobante(data);
-          } else {
+          } else if (tipo === 'ingreso') {
             const data = await comprobantesIngresoService.getById(codCia, comprobante.nroCp);
+            setComprobante(data);
+          } else if (tipo === 'egreso-empleado') {
+            const data = await comprobantesEmpleadoService.getById(
+              codCia,
+              comprobante.codEmpleado,
+              comprobante.nroCp
+            );
             setComprobante(data);
           }
         }}
@@ -522,7 +787,7 @@ export default function DetalleComprobantePage() {
             <TableBody>
               <TableRow>
                 <TableCell>
-                  <Badge variant={estadoVariant}>{comprobante.codEstado}</Badge>
+                  <EstadoBadge estado={estadoUI} />
                 </TableCell>
                 <TableCell>{new Date(comprobante.fecCp).toLocaleDateString('es-PE')}</TableCell>
                 <TableCell>Sistema</TableCell>
@@ -545,7 +810,7 @@ export default function DetalleComprobantePage() {
           <div className="py-4">
             <FileUploader
               label="Factura del Proveedor (PDF o Imagen)"
-              tipo={tipo}
+              tipo={tipo === 'egreso-empleado' ? 'egreso' : tipo}
               onUploadSuccess={(path) => setFotoCP(path)}
               currentFile={fotoCP || comprobante?.fotoCP}
               accept=".pdf,.jpg,.jpeg,.png"
@@ -576,7 +841,7 @@ export default function DetalleComprobantePage() {
           <DialogHeader>
             <DialogTitle>Confirmar anulación</DialogTitle>
             <DialogDescription>
-              {comprobante.codEstado === 'PAG'
+              {mapEstadoToUI(comprobante.codEstado) === 'PAG'
                 ? 'Este comprobante ya fue pagado. ¿Está seguro que desea anularlo? Esta acción no se puede deshacer.'
                 : '¿Está seguro que desea anular este comprobante? Esta acción no se puede deshacer.'}
             </DialogDescription>

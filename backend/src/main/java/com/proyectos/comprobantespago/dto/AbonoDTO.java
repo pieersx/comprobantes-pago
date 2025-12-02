@@ -35,7 +35,13 @@ public class AbonoDTO {
     private BigDecimal montoAbono;
 
     /**
-     * Ruta del archivo PDF/imagen del comprobante de pago
+     * Ruta del archivo PDF/imagen del comprobante de pago (opcional)
+     * Las imágenes se manejan por endpoints separados de BLOB
      */
     private String fotoAbono;
+
+    /**
+     * Flag para indicar si tiene imagen BLOB (sin cargar los bytes)
+     */
+    private Boolean tieneFotoAbono;
 }

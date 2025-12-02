@@ -11,15 +11,28 @@ services:
     depends_on:
       - oracle
     ports:
-      - "8080:8080"
+      - "6969:6969"   # Backend Spring Boot
+      - "4584:4584"   # Frontend Next.js
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:6969/api/v1
+      - PORT=4584
+      - DB_HOST=oracle
+      - DB_PORT=1521
+      - DB_SID=XE
+      - DB_USERNAME=C##py02
+      - DB_PASSWORD=123
 
   oracle:
-    image: gvenzl/oracle-free:23-slim
+    image: gvenzl/oracle-xe:21-slim
     container_name: oracle
     environment:
-      - ORACLE_PASSWORD=oracle
-      - APP_USER=oracle
-      - APP_USER_PASSWORD=oracle
+      - ORACLE_PASSWORD=123
     ports:
       - "1521:1521"
       - "5500:5500"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./initdb:/container-entrypoint-initdb.d
+
+volumes:
+  oracle-data:

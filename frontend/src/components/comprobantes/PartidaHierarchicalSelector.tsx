@@ -52,7 +52,8 @@ export function PartidaHierarchicalSelector({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Cargar partidas del proyecto (solo nivel 3 para egresos, nivel 2 para ingresos)
+  // Cargar TODAS las partidas del proyecto (niveles 1, 2 y 3)
+  // NUEVO REQUERIMIENTO: El usuario puede seleccionar cualquier nivel
   useEffect(() => {
     const cargarPartidas = async () => {
       if (!codPyto) {
@@ -66,16 +67,15 @@ export function PartidaHierarchicalSelector({
       try {
         // Obtener compañía del localStorage o contexto
         const codCia = 1; // TODO: Obtener de useAppStore o contexto
-        console.log(`🔄 Cargando partidas nivel ${tipo === 'E' ? '3' : '2'} para proyecto ${codPyto}...`);
+        console.log(`🔄 Cargando TODAS las partidas (niveles 1, 2, 3) para proyecto ${codPyto}...`);
 
-        // Llamar al endpoint que retorna solo partidas del último nivel con jerarquía
-        const data = await partidasService.getPartidasNivel3(codCia, codPyto, tipo);
+        // NUEVO: Llamar al endpoint que retorna TODAS las partidas (cualquier nivel)
+        const data = await partidasService.getTodasPartidasPorProyecto(codCia, codPyto, tipo);
         console.log(`✅ Partidas con jerarquía cargadas:`, data);
         setPartidas(data);
       } catch (err) {
         setErrorMsg('Error al cargar partidas. Por favor contacte al administrador del sistema.');
         console.error('❌ Error cargando partidas:', err);
-        console.warn('💡 El backend necesita implementar el endpoint: GET /api/v1/partidas/nivel3?codCia={codCia}&codPyto={codPyto}&ingEgr={tipo}');
       } finally {
         setLoading(false);
       }

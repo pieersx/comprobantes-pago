@@ -22,6 +22,7 @@ import {
 import { useComprobanteForm } from '@/hooks/useComprobanteForm';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { usePresupuestoValidation } from '@/hooks/usePresupuestoValidation';
+import { comprobantesEmpleadoService } from '@/services/comprobantes-empleado.service';
 import {
     catalogosService,
     clientesService,
@@ -30,7 +31,9 @@ import {
     proveedoresService,
     proyectosService,
 } from '@/services/comprobantes.service';
+import { empleadosService } from '@/services/empleados.service';
 import { Cliente, Elemento, Proveedor, Proyecto } from '@/types/comprobante';
+import { Empleado } from '@/types/empleado';
 import { DetalleEgreso } from '@/types/presupuesto';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -87,12 +90,17 @@ export function ComprobanteForm({
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [tiposMoneda, setTiposMoneda] = useState<Elemento[]>([]);
+  const [tiposComprobante, setTiposComprobante] = useState<Elemento[]>([]);
 
   // Estados de UI
   const [loading, setLoading] = useState(false);
   const [loadingCatalogos, setLoadingCatalogos] = useState(true);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+  // Feature: empleados-comprobantes-blob - Tipo de beneficiario para egresos
+  const [tipoBeneficiario, setTipoBeneficiario] = useState<'proveedor' | 'empleado'>('proveedor');
 
   // Cargar catálogos al montar el componente
   useEffect(() => {
@@ -103,22 +111,31 @@ export function ComprobanteForm({
 
         console.log('🔄 Cargando catálogos...');
 
-        const [proyectosData, tiposMonedaData] = await Promise.all([
+        const [proyectosData, tiposMonedaData, tiposComprobanteData] = await Promise.all([
           proyectosService.getAll(codCia),
           catalogosService.getTiposMoneda(),
+          catalogosService.getTiposComprobante(),
         ]);
 
         console.log('✅ Proyectos cargados:', proyectosData);
         console.log('✅ Tipos de moneda cargados:', tiposMonedaData);
+        console.log('✅ Tipos de comprobante cargados:', tiposComprobanteData);
 
         setProyectos(proyectosData);
         setTiposMoneda(tiposMonedaData);
+        setTiposComprobante(tiposComprobanteData);
 
-        // Cargar proveedores o clientes según el tipo
+        // Cargar proveedores, empleados o clientes según el tipo
         if (tipo === 'egreso') {
-          const proveedoresData = await proveedoresService.getAll(codCia);
+          // Feature: empleados-comprobantes-blob - Cargar proveedores y empleados para egresos
+          const [proveedoresData, empleadosData] = await Promise.all([
+            proveedoresService.getAll(codCia),
+            empleadosService.getAll(codCia, true).catch(() => []), // Graceful fallback
+          ]);
           console.log('✅ Proveedores cargados:', proveedoresData);
+          console.log('✅ Empleados cargados:', empleadosData);
           setProveedores(proveedoresData);
+          setEmpleados(empleadosData);
         } else {
           const clientesData = await clientesService.getAll(codCia);
           console.log('✅ Clientes cargados:', clientesData);
@@ -141,13 +158,23 @@ export function ComprobanteForm({
 
   // Manejar guardado del formulario
   const handleSubmit = async () => {
+    // Validar que los catálogos estén cargados
+    if (tiposComprobante.length === 0 || tiposMoneda.length === 0) {
+      handleError(new Error('Los catálogos no se han cargado correctamente. Por favor recargue la página.'));
+      console.error('❌ Catálogos no cargados:', {
+        tiposComprobante: tiposComprobante.length,
+        tiposMoneda: tiposMoneda.length
+      });
+      return;
+    }
+
     // Validar formulario
     if (!esValido()) {
       handleError(new Error('Por favor complete todos los campos obligatorios'));
       return;
     }
 
-    // Validar presupuesto para egresos
+    // Validar presupuesto para egresos (solo advertencias, no bloquea)
     if (tipo === 'egreso' && formState.detalles.length > 0) {
       const detallesEgreso: DetalleEgreso[] = formState.detalles.map((d) => ({
         codPartida: d.codPartida,
@@ -163,34 +190,14 @@ export function ComprobanteForm({
           detallesEgreso
         );
 
-        if (!validacion || !validacion.valido) {
-          handleError(
-            new Error(
-              validacion?.mensajeError || 'Presupuesto insuficiente para una o más partidas'
-            )
-          );
-          return;
+        // Solo mostrar advertencia si hay mensaje de error, pero NO bloquear
+        if (validacion?.mensajeError) {
+          console.warn('⚠️ Advertencia de presupuesto:', validacion.mensajeError);
+          // No retornamos, continuamos con el guardado
         }
       } catch (error: any) {
-        // Manejo específico de errores de validación
-        if (error?.response?.data?.message) {
-          const errorMsg = error.response.data.message;
-
-          // Detectar errores específicos de niveles de partidas
-          if (errorMsg.includes('último nivel') || errorMsg.includes('nivel 2') || errorMsg.includes('nivel 3')) {
-            handleError(new Error(`❌ Error de nivel de partida: ${errorMsg}`), 'Validación de partidas');
-            return;
-          }
-
-          // Detectar errores de partidas duplicadas
-          if (errorMsg.includes('duplicada') || errorMsg.includes('repetir partidas')) {
-            handleError(new Error(`❌ Partida duplicada: ${errorMsg}`), 'Validación de partidas');
-            return;
-          }
-        }
-
-        handleError(error, 'validar presupuesto');
-        return;
+        // Solo log de errores de validación, no bloquear el guardado
+        console.warn('⚠️ Error en validación de presupuesto (se continúa con el guardado):', error);
       }
     }
 
@@ -223,17 +230,21 @@ export function ComprobanteForm({
         // Obtener el elemento de moneda seleccionado
         const monedaSeleccionada = tiposMoneda.find(m => m.codElem === formState.tMoneda);
 
+        // Usar el primer tipo de comprobante/moneda disponible si no hay selección
+        const primerTipoComprobante = tiposComprobante.length > 0 ? tiposComprobante[0].codElem : '001';
+        const primerTipoMoneda = tiposMoneda.length > 0 ? tiposMoneda[0].codElem : '001';
+
         const data = {
           codCia: Number(formState.codCia),
           codProveedor: Number(formState.codProveedor!),
           nroCp: formState.nroCp,
           codPyto: Number(formState.codPyto),
           nroPago: 1,
-          tCompPago: '003', // Tabla de tipos de comprobante
-          eCompPago: formState.tCompPago || 'FAC', // Elemento: Factura, Boleta o Recibo
+          tCompPago: '004', // Tabla de tipos de comprobante (codTab='004' según TABS)
+          eCompPago: formState.tCompPago || primerTipoComprobante, // Usar primer tipo disponible de la BD
           fecCp: fechaISO,
-          tMoneda: monedaSeleccionada?.codTab || '001', // Tabla de monedas
-          eMoneda: formState.tMoneda || 'PEN', // Elemento de moneda (PEN, USD, etc.)
+          tMoneda: '003', // Tabla de monedas (codTab='003' según TABS)
+          eMoneda: formState.tMoneda || primerTipoMoneda, // Usar primera moneda disponible de la BD
           tipCambio: Number(formState.tipCambio) || 1.00,
           impMo: Number(formState.impNetoMn), // Importe en moneda origen
           impNetoMn: Number(formState.impNetoMn),
@@ -243,7 +254,11 @@ export function ComprobanteForm({
           fotoAbono: 'SIN_FOTO',
           fecAbono: fechaISO,
           desAbono: `PAGO ${formState.nroCp}`,
-          porcentajeImpuesto: formState.tCompPago === 'REC' ? formState.porcentajeImpuesto : undefined,
+          // Incluir porcentaje de impuesto si es recibo (detectado por nombre del tipo)
+          porcentajeImpuesto: (() => {
+            const tipoSeleccionado = tiposComprobante.find(t => t.codElem === formState.tCompPago);
+            return tipoSeleccionado?.denEle?.toLowerCase().includes('recibo') ? formState.porcentajeImpuesto : undefined;
+          })(),
           semilla: 1,
           tabEstado: '001', // Tabla de estados
           codEstado: '001', // Estado inicial
@@ -270,17 +285,98 @@ export function ComprobanteForm({
           monedaSeleccionada: monedaSeleccionada
         });
 
-        if (modo === 'crear') {
-          await comprobantesEgresoService.create(data);
-          showSuccess('Comprobante de egreso creado exitosamente');
+        // Feature: empleados-comprobantes-blob - Enviar a servicio según tipo de beneficiario
+        if (tipoBeneficiario === 'empleado') {
+          // Comprobante de egreso a empleado
+          // Usar el primer tipo de comprobante disponible si no hay selección
+          const primerTipoComprobante = tiposComprobante.length > 0 ? tiposComprobante[0].codElem : '001';
+          const primerTipoMoneda = tiposMoneda.length > 0 ? tiposMoneda[0].codElem : '001';
+
+          // DEBUG: Mostrar qué valores se van a enviar
+          console.log('🔍 DEBUG EMPLEADO - Valores de catálogos:', {
+            tiposComprobanteCargados: tiposComprobante.length,
+            tiposMonedaCargados: tiposMoneda.length,
+            primerTipoComprobante,
+            primerTipoMoneda,
+            formStateTCompPago: formState.tCompPago,
+            formStateTMoneda: formState.tMoneda,
+            tiposComprobanteDisponibles: tiposComprobante.map(t => ({ codElem: t.codElem, denEle: t.denEle })),
+            tiposMonedaDisponibles: tiposMoneda.map(m => ({ codElem: m.codElem, denEle: m.denEle })),
+          });
+
+          const empleadoData = {
+            codCia: Number(formState.codCia),
+            codEmpleado: Number(formState.codEmpleado!),
+            nroCp: formState.nroCp,
+            codPyto: Number(formState.codPyto),
+            nroPago: 1,
+            tCompPago: '004', // Tabla de tipos de comprobante (codTab='004' según TABS)
+            eCompPago: formState.tCompPago || primerTipoComprobante, // Usar primer tipo disponible de la BD
+            fecCp: fechaISO,
+            tMoneda: '003', // Tabla de monedas (codTab='003' según TABS)
+            eMoneda: formState.tMoneda || primerTipoMoneda, // Usar primera moneda disponible de la BD
+            tipCambio: Number(formState.tipCambio) || 1.00,
+            impMo: Number(formState.impNetoMn), // Importe en moneda origen
+            impNetoMn: Number(formState.impNetoMn),
+            impIgvmn: Number(formState.impIgvMn),
+            impTotalMn: Number(formState.impTotalMn),
+            fecAbono: fechaISO,
+            desAbono: `PAGO ${formState.nroCp}`,
+          };
+
+          console.log('📤 EMPLEADO DATA A ENVIAR:', JSON.stringify(empleadoData, null, 2));
+          console.log('📤 DETALLES A ENVIAR:', formState.detalles);
+
+          if (modo === 'crear') {
+            // 1. Crear el comprobante cabecera
+            await comprobantesEmpleadoService.create(empleadoData);
+
+            // 2. Agregar los detalles (partidas) uno por uno
+            if (formState.detalles && formState.detalles.length > 0) {
+              console.log('📤 Agregando', formState.detalles.length, 'detalles al comprobante...');
+              for (const detalle of formState.detalles) {
+                const detalleData = {
+                  ingEgr: 'E', // Egreso
+                  codPartida: Number(detalle.codPartida),
+                  impNetoMn: Number(detalle.impNetoMn),
+                  impIgvMn: Number(detalle.impIgvMn),
+                  impTotalMn: Number(detalle.impTotalMn),
+                };
+                console.log('📤 Agregando detalle:', detalleData);
+                await comprobantesEmpleadoService.addDetalle(
+                  Number(formState.codCia),
+                  Number(formState.codEmpleado!),
+                  formState.nroCp,
+                  detalleData
+                );
+              }
+              console.log('✅ Todos los detalles agregados correctamente');
+            }
+
+            showSuccess('Comprobante de egreso a empleado creado exitosamente');
+          } else {
+            await comprobantesEmpleadoService.update(
+              formState.codCia,
+              formState.codEmpleado!,
+              formState.nroCp,
+              empleadoData
+            );
+            showSuccess('Comprobante de egreso a empleado actualizado exitosamente');
+          }
         } else {
-          await comprobantesEgresoService.update(
-            formState.codCia,
-            formState.codProveedor!,
-            formState.nroCp,
-            data
-          );
-          showSuccess('Comprobante de egreso actualizado exitosamente');
+          // Comprobante de egreso a proveedor (flujo original)
+          if (modo === 'crear') {
+            await comprobantesEgresoService.create(data);
+            showSuccess('Comprobante de egreso creado exitosamente');
+          } else {
+            await comprobantesEgresoService.update(
+              formState.codCia,
+              formState.codProveedor!,
+              formState.nroCp,
+              data
+            );
+            showSuccess('Comprobante de egreso actualizado exitosamente');
+          }
         }
       } else {
         // Convertir fecha a formato ISO (yyyy-MM-dd) si viene en formato DD/MM/YYYY
@@ -297,17 +393,21 @@ export function ComprobanteForm({
         // Obtener el elemento de moneda seleccionado
         const monedaSeleccionada = tiposMoneda.find(m => m.codElem === formState.tMoneda);
 
+        // Usar el primer tipo de comprobante/moneda disponible si no hay selección
+        const primerTipoComprobanteIngreso = tiposComprobante.length > 0 ? tiposComprobante[0].codElem : '001';
+        const primerTipoMonedaIngreso = tiposMoneda.length > 0 ? tiposMoneda[0].codElem : '001';
+
         const data = {
           codCia: Number(formState.codCia),
           codCliente: Number(formState.codCliente!),
           nroCp: formState.nroCp,
           codPyto: Number(formState.codPyto),
           nroPago: 1,
-          tCompPago: '003', // Tabla de tipos de comprobante
-          eCompPago: formState.tCompPago || 'FAC', // Elemento: Factura, Boleta o Recibo
+          tCompPago: '004', // Tabla de tipos de comprobante (codTab='004' según TABS)
+          eCompPago: formState.tCompPago || primerTipoComprobanteIngreso, // Usar primer tipo disponible de la BD
           fecCp: fechaISO,
-          tMoneda: monedaSeleccionada?.codTab || '001', // Tabla de monedas
-          eMoneda: formState.tMoneda || 'PEN', // Elemento de moneda (PEN, USD, etc.)
+          tMoneda: '003', // Tabla de monedas (codTab='003' según TABS) - siempre es '003'
+          eMoneda: formState.tMoneda || primerTipoMonedaIngreso, // Usar primera moneda disponible de la BD
           tipCambio: Number(formState.tipCambio) || 1.00,
           impMo: Number(formState.impNetoMn), // Importe en moneda origen
           impNetoMn: Number(formState.impNetoMn),
@@ -317,7 +417,11 @@ export function ComprobanteForm({
           fotoAbono: 'SIN_FOTO',
           fecAbono: fechaISO,
           desAbono: `PAGO ${formState.nroCp}`,
-          porcentajeImpuesto: formState.tCompPago === 'REC' ? formState.porcentajeImpuesto : undefined,
+          // Incluir porcentaje de impuesto si es recibo (detectado por nombre del tipo)
+          porcentajeImpuesto: (() => {
+            const tipoSeleccionado = tiposComprobante.find(t => t.codElem === formState.tCompPago);
+            return tipoSeleccionado?.denEle?.toLowerCase().includes('recibo') ? formState.porcentajeImpuesto : undefined;
+          })(),
           semilla: 1,
           tabEstado: '001', // Tabla de estados
           codEstado: '001', // Estado inicial
@@ -467,24 +571,20 @@ export function ComprobanteForm({
                   <SelectValue placeholder="Seleccione el tipo de comprobante" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FAC">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">Factura</span>
-                      <span className="text-xs text-muted-foreground">IGV 18%</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="BOL">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">Boleta</span>
-                      <span className="text-xs text-muted-foreground">IGV 18%</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="REC">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">Recibo por Honorarios</span>
-                      <span className="text-xs text-muted-foreground">Retención 8%</span>
-                    </div>
-                  </SelectItem>
+                  {tiposComprobante.map((tipoComp) => (
+                    <SelectItem key={tipoComp.codElem} value={tipoComp.codElem}>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{tipoComp.denEle}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {tipoComp.denEle?.toLowerCase().includes('factura') || tipoComp.denEle?.toLowerCase().includes('boleta')
+                            ? 'IGV 18%'
+                            : tipoComp.denEle?.toLowerCase().includes('recibo')
+                              ? 'Retención 8%'
+                              : ''}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
@@ -493,16 +593,24 @@ export function ComprobanteForm({
               {formState.tCompPago && (
                 <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm font-medium text-blue-900">
-                    {formState.tCompPago === 'FAC' && '✓ Factura: IGV fijo del 18% (no editable)'}
-                    {formState.tCompPago === 'BOL' && '✓ Boleta: IGV fijo del 18% (no editable)'}
-                    {formState.tCompPago === 'REC' && '✓ Recibo por Honorarios: Ingrese el porcentaje de retención manualmente'}
+                    {(() => {
+                      const tipoSeleccionado = tiposComprobante.find(t => t.codElem === formState.tCompPago);
+                      const nombre = tipoSeleccionado?.denEle?.toLowerCase() || '';
+                      if (nombre.includes('factura')) return '✓ Factura: IGV fijo del 18% (no editable)';
+                      if (nombre.includes('boleta')) return '✓ Boleta: IGV fijo del 18% (no editable)';
+                      if (nombre.includes('recibo')) return '✓ Recibo por Honorarios: Ingrese el porcentaje de retención manualmente';
+                      return `✓ ${tipoSeleccionado?.denEle || 'Tipo seleccionado'}`;
+                    })()}
                   </p>
                 </div>
               )}
             </div>
 
             {/* Campo de Porcentaje de Impuesto (solo para Recibo por Honorarios) */}
-            {formState.tCompPago === 'REC' && (
+            {(() => {
+              const tipoSeleccionado = tiposComprobante.find(t => t.codElem === formState.tCompPago);
+              return tipoSeleccionado?.denEle?.toLowerCase().includes('recibo');
+            })() && (
               <div className="space-y-2">
                 <Label htmlFor="porcentajeImpuesto" className="text-base font-semibold">
                   Porcentaje de Retención *
@@ -534,7 +642,19 @@ export function ComprobanteForm({
               </Label>
               <Select
                 value={formState.codPyto ? formState.codPyto.toString() : ''}
-                onValueChange={(value) => updateField('codPyto', parseInt(value))}
+                onValueChange={(value) => {
+                  const codPyto = parseInt(value);
+                  updateField('codPyto', codPyto);
+
+                  // Para ingresos: auto-seleccionar el cliente del proyecto
+                  if (tipo === 'ingreso') {
+                    const proyectoSeleccionado = proyectos.find(p => p.codPyto === codPyto);
+                    if (proyectoSeleccionado?.codCliente) {
+                      updateField('codCliente', proyectoSeleccionado.codCliente);
+                      console.log('✅ Cliente auto-seleccionado:', proyectoSeleccionado.codCliente);
+                    }
+                  }
+                }}
               >
                 <SelectTrigger
                   id="codPyto"
@@ -555,8 +675,37 @@ export function ComprobanteForm({
               )}
             </div>
 
-            {/* Proveedor (solo egresos) */}
+            {/* Feature: empleados-comprobantes-blob - Tipo de Beneficiario (solo egresos) */}
             {tipo === 'egreso' && (
+              <div className="space-y-2">
+                <Label htmlFor="tipoBeneficiario" className="text-base font-semibold">
+                  Tipo de Beneficiario *
+                </Label>
+                <Select
+                  value={tipoBeneficiario}
+                  onValueChange={(value: 'proveedor' | 'empleado') => {
+                    setTipoBeneficiario(value);
+                    // Limpiar selección anterior
+                    if (value === 'proveedor') {
+                      updateField('codEmpleado', undefined);
+                    } else {
+                      updateField('codProveedor', undefined);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="tipoBeneficiario">
+                    <SelectValue placeholder="Seleccione tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="proveedor">Proveedor</SelectItem>
+                    <SelectItem value="empleado">Empleado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Proveedor (solo egresos con tipo proveedor) */}
+            {tipo === 'egreso' && tipoBeneficiario === 'proveedor' && (
               <div className="space-y-2">
                 <Label
                   htmlFor="codProveedor"
@@ -591,7 +740,43 @@ export function ComprobanteForm({
               </div>
             )}
 
-            {/* Cliente (solo ingresos) */}
+            {/* Feature: empleados-comprobantes-blob - Empleado (solo egresos con tipo empleado) */}
+            {tipo === 'egreso' && tipoBeneficiario === 'empleado' && (
+              <div className="space-y-2">
+                <Label
+                  htmlFor="codEmpleado"
+                  className={hasError('codEmpleado') ? 'text-destructive' : ''}
+                >
+                  Empleado *
+                </Label>
+                <Select
+                  value={formState.codEmpleado ? formState.codEmpleado.toString() : ''}
+                  onValueChange={(value) => updateField('codEmpleado', parseInt(value))}
+                >
+                  <SelectTrigger
+                    id="codEmpleado"
+                    className={hasError('codEmpleado') ? 'border-destructive' : ''}
+                  >
+                    <SelectValue placeholder="Seleccione un empleado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {empleados.map((empleado) => (
+                      <SelectItem
+                        key={`${empleado.codCia}-${empleado.codEmpleado}`}
+                        value={empleado.codEmpleado.toString()}
+                      >
+                        {empleado.desPersona} - {empleado.dni}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {hasError('codEmpleado') && (
+                  <p className="text-sm text-destructive">{getError('codEmpleado')}</p>
+                )}
+              </div>
+            )}
+
+            {/* Cliente (solo ingresos) - Auto-seleccionado según el proyecto */}
             {tipo === 'ingreso' && (
               <div className="space-y-2">
                 <Label
@@ -600,24 +785,37 @@ export function ComprobanteForm({
                 >
                   Cliente *
                 </Label>
-                <Select
-                  value={formState.codCliente ? formState.codCliente.toString() : ''}
-                  onValueChange={(value) => updateField('codCliente', parseInt(value))}
-                >
-                  <SelectTrigger
-                    id="codCliente"
-                    className={hasError('codCliente') ? 'border-destructive' : ''}
-                  >
-                    <SelectValue placeholder="Seleccione un cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((cliente) => (
-                      <SelectItem key={cliente.codCliente} value={cliente.codCliente.toString()}>
-                        {cliente.desPersona || cliente.nroRuc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {formState.codPyto ? (
+                  // Cliente auto-seleccionado (readonly)
+                  <div className="space-y-2">
+                    <Input
+                      id="codCliente"
+                      value={(() => {
+                        const cliente = clientes.find(c => c.codCliente === formState.codCliente);
+                        return cliente?.desPersona || cliente?.nroRuc || 'Cargando...';
+                      })()}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      ℹ️ El cliente se asigna automáticamente según el proyecto seleccionado
+                    </p>
+                  </div>
+                ) : (
+                  // Sin proyecto seleccionado - mostrar mensaje
+                  <div className="space-y-2">
+                    <Input
+                      id="codCliente"
+                      value=""
+                      disabled
+                      placeholder="Primero seleccione un proyecto"
+                      className="bg-muted"
+                    />
+                    <p className="text-sm text-amber-600">
+                      ⚠️ Seleccione un proyecto para asignar el cliente automáticamente
+                    </p>
+                  </div>
+                )}
                 {hasError('codCliente') && (
                   <p className="text-sm text-destructive">{getError('codCliente')}</p>
                 )}
@@ -686,8 +884,16 @@ export function ComprobanteForm({
               )}
             </div>
 
-            {/* Tipo de Cambio (solo si es USD) */}
-            {formState.tMoneda === 'USD' && (
+            {/* Tipo de Cambio (solo si NO es Soles - moneda base) */}
+            {(() => {
+              const monedaSeleccionada = tiposMoneda.find(m => m.codElem === formState.tMoneda);
+              const esMonedaExtranjera = monedaSeleccionada?.denEle?.toLowerCase().includes('dólar') ||
+                                         monedaSeleccionada?.denEle?.toLowerCase().includes('dollar') ||
+                                         monedaSeleccionada?.denEle?.toLowerCase().includes('usd') ||
+                                         monedaSeleccionada?.denEle?.toLowerCase().includes('euro') ||
+                                         (formState.tMoneda && formState.tMoneda !== '001'); // Cualquier moneda que no sea Soles (001)
+              return esMonedaExtranjera;
+            })() && (
               <div className="space-y-2">
                 <Label
                   htmlFor="tipCambio"
@@ -727,7 +933,7 @@ export function ComprobanteForm({
             onUpdate={editarPartida}
             onRemove={eliminarPartida}
             porcentajeImpuesto={formState.porcentajeImpuesto || 18.0}
-            tipoComprobante={formState.tCompPago || 'FAC'}
+            tipoComprobante={formState.tCompPago || '001'}
           />
           {hasError('detalles') && (
             <p className="text-sm text-destructive mt-2">{getError('detalles')}</p>

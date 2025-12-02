@@ -91,7 +91,7 @@ public class ProyPartida implements Serializable {
     @Size(max = 1)
     @Builder.Default
     @Column(name = "VIGENTE", nullable = false, length = 1)
-    private String vigente = "S";
+    private String vigente = "1";
 
     // Relaciones
     @ManyToOne(fetch = FetchType.LAZY)

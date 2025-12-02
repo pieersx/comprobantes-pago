@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/abonos")
+@RequestMapping("/abonos")
 @RequiredArgsConstructor
 @Tag(name = "Abonos", description = "Gestión de abonos y estados de comprobantes")
 @CrossOrigin(origins = "*")
@@ -99,6 +99,45 @@ public class AbonoController {
 
         EstadoComprobante nuevoEstado = EstadoComprobante.fromCodigo(estado);
         abonoService.cambiarEstadoIngreso(codCia, nroCP, nuevoEstado);
+        return ResponseEntity.ok("Estado actualizado exitosamente");
+    }
+
+    // ==================== Endpoints para Empleados ====================
+
+    @PostMapping("/empleado/{codCia}/{codEmpleado}/{nroCP}")
+    @Operation(summary = "Registrar abono para comprobante de empleado", description = "Registra el pago de un comprobante de empleado y cambia su estado a PAGADO")
+    public ResponseEntity<String> registrarAbonoEmpleado(
+            @PathVariable @Parameter(description = "Código de compañía") Long codCia,
+            @PathVariable @Parameter(description = "Código del empleado") Long codEmpleado,
+            @PathVariable @Parameter(description = "Número de comprobante") String nroCP,
+            @Valid @RequestBody AbonoDTO abonoDTO) {
+
+        log.info("POST /api/v1/abonos/empleado/{}/{}/{}", codCia, codEmpleado, nroCP);
+        abonoService.registrarAbonoEmpleado(codCia, codEmpleado, nroCP, abonoDTO);
+        return ResponseEntity.ok("Abono registrado exitosamente");
+    }
+
+    @GetMapping("/empleado/{codCia}/{codEmpleado}/{nroCP}")
+    @Operation(summary = "Consultar abono de comprobante de empleado")
+    public ResponseEntity<AbonoDTO> consultarAbonoEmpleado(
+            @PathVariable Long codCia,
+            @PathVariable Long codEmpleado,
+            @PathVariable String nroCP) {
+
+        AbonoDTO abono = abonoService.getAbonoEmpleado(codCia, codEmpleado, nroCP);
+        return ResponseEntity.ok(abono);
+    }
+
+    @PutMapping("/empleado/{codCia}/{codEmpleado}/{nroCP}/estado/{estado}")
+    @Operation(summary = "Cambiar estado de comprobante de empleado")
+    public ResponseEntity<String> cambiarEstadoEmpleado(
+            @PathVariable Long codCia,
+            @PathVariable Long codEmpleado,
+            @PathVariable String nroCP,
+            @PathVariable String estado) {
+
+        EstadoComprobante nuevoEstado = EstadoComprobante.fromCodigo(estado);
+        abonoService.cambiarEstadoEmpleado(codCia, codEmpleado, nroCP, nuevoEstado);
         return ResponseEntity.ok("Estado actualizado exitosamente");
     }
 }

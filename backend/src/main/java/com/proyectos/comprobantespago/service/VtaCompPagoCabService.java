@@ -1,19 +1,26 @@
 package com.proyectos.comprobantespago.service;
 
-import com.proyectos.comprobantespago.dto.VtaCompPagoCabDTO;
-import com.proyectos.comprobantespago.dto.VtaCompPagoDetDTO;
-import com.proyectos.comprobantespago.entity.VtaCompPagoCab;
-import com.proyectos.comprobantespago.entity.VtaCompPagoDet;
-import com.proyectos.comprobantespago.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.proyectos.comprobantespago.dto.VtaCompPagoCabDTO;
+import com.proyectos.comprobantespago.dto.VtaCompPagoDetDTO;
+import com.proyectos.comprobantespago.entity.VtaCompPagoCab;
+import com.proyectos.comprobantespago.entity.VtaCompPagoDet;
+import com.proyectos.comprobantespago.exception.ResourceNotFoundException;
+import com.proyectos.comprobantespago.repository.ClienteRepository;
+import com.proyectos.comprobantespago.repository.PartidaRepository;
+import com.proyectos.comprobantespago.repository.ProyectoRepository;
+import com.proyectos.comprobantespago.repository.VtaCompPagoCabRepository;
+import com.proyectos.comprobantespago.repository.VtaCompPagoDetRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio para gestión de Comprobantes de Venta/Ingreso
@@ -49,24 +56,27 @@ public class VtaCompPagoCabService {
         // Validar partidas únicas (Requirements: 1.3, 5.2, 5.3)
         validarPartidasUnicas(dto);
 
-        // Validar niveles de partidas según tipo de movimiento (Requirements: 1.3, 5.2, 5.3)
+        // Validar niveles de partidas según tipo de movimiento (Requirements: 1.3, 5.2,
+        // 5.3)
         validarNivelesPartidas(dto);
 
         // Validar que exista el cliente
-        if (!clienteRepository.existsById(new com.proyectos.comprobantespago.entity.Cliente.ClienteId(dto.getCodCia(), dto.getCodCliente()))) {
+        if (!clienteRepository.existsById(
+                new com.proyectos.comprobantespago.entity.Cliente.ClienteId(dto.getCodCia(), dto.getCodCliente()))) {
             throw new RuntimeException("No existe el cliente: " + dto.getCodCliente());
         }
 
         // Validar que exista el proyecto
         com.proyectos.comprobantespago.entity.Proyecto proyecto = proyectoRepository
-            .findById(new com.proyectos.comprobantespago.entity.Proyecto.ProyectoId(dto.getCodCia(), dto.getCodPyto()))
-            .orElseThrow(() -> new RuntimeException("No existe el proyecto: " + dto.getCodPyto()));
+                .findById(new com.proyectos.comprobantespago.entity.Proyecto.ProyectoId(dto.getCodCia(),
+                        dto.getCodPyto()))
+                .orElseThrow(() -> new RuntimeException("No existe el proyecto: " + dto.getCodPyto()));
 
         // Validar que el cliente sea el contratante del proyecto (Requirement 2.2)
         if (!proyecto.getCodCliente().equals(dto.getCodCliente())) {
             throw new RuntimeException(String.format(
-                "El cliente %d no es el contratante del proyecto %d. Cliente esperado: %d",
-                dto.getCodCliente(), dto.getCodPyto(), proyecto.getCodCliente()));
+                    "El cliente %d no es el contratante del proyecto %d. Cliente esperado: %d",
+                    dto.getCodCliente(), dto.getCodPyto(), proyecto.getCodCliente()));
         }
 
         // Validar que las partidas sean de tipo "I" (Ingreso) (Requirement 2.3)
@@ -74,8 +84,8 @@ public class VtaCompPagoCabService {
             for (VtaCompPagoDetDTO detalleDTO : dto.getDetalles()) {
                 if (!"I".equals(detalleDTO.getIngEgr())) {
                     throw new RuntimeException(String.format(
-                        "La partida %d debe ser de tipo 'I' (Ingreso). Tipo recibido: '%s'",
-                        detalleDTO.getCodPartida(), detalleDTO.getIngEgr()));
+                            "La partida %d debe ser de tipo 'I' (Ingreso). Tipo recibido: '%s'",
+                            detalleDTO.getCodPartida(), detalleDTO.getIngEgr()));
                 }
             }
         }
@@ -118,7 +128,7 @@ public class VtaCompPagoCabService {
         log.info("Obteniendo comprobante de venta/ingreso: {}-{}", codCia, nroCp);
 
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
-            .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
         List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia, nroCp);
 
@@ -133,11 +143,12 @@ public class VtaCompPagoCabService {
         log.info("Obteniendo comprobantes de venta/ingreso de la compañía: {}", codCia);
 
         return vtaCompPagoCabRepository.findByCodCia(codCia).stream()
-            .map(cab -> {
-                List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia, cab.getNroCp());
-                return convertirCabeceraADTO(cab, detalles);
-            })
-            .collect(Collectors.toList());
+                .map(cab -> {
+                    List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia,
+                            cab.getNroCp());
+                    return convertirCabeceraADTO(cab, detalles);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -148,11 +159,12 @@ public class VtaCompPagoCabService {
         log.info("Obteniendo comprobantes del proyecto: {}-{}", codCia, codPyto);
 
         return vtaCompPagoCabRepository.findByCodCiaAndCodPyto(codCia, codPyto).stream()
-            .map(cab -> {
-                List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia, cab.getNroCp());
-                return convertirCabeceraADTO(cab, detalles);
-            })
-            .collect(Collectors.toList());
+                .map(cab -> {
+                    List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia,
+                            cab.getNroCp());
+                    return convertirCabeceraADTO(cab, detalles);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -163,11 +175,12 @@ public class VtaCompPagoCabService {
         log.info("Obteniendo comprobantes del cliente: {}-{}", codCia, codCliente);
 
         return vtaCompPagoCabRepository.findByCodCiaAndCodCliente(codCia, codCliente).stream()
-            .map(cab -> {
-                List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia, cab.getNroCp());
-                return convertirCabeceraADTO(cab, detalles);
-            })
-            .collect(Collectors.toList());
+                .map(cab -> {
+                    List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia,
+                            cab.getNroCp());
+                    return convertirCabeceraADTO(cab, detalles);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -178,11 +191,12 @@ public class VtaCompPagoCabService {
         log.info("Obteniendo comprobantes entre {} y {}", fechaInicio, fechaFin);
 
         return vtaCompPagoCabRepository.findByFechaRange(codCia, fechaInicio, fechaFin).stream()
-            .map(cab -> {
-                List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia, cab.getNroCp());
-                return convertirCabeceraADTO(cab, detalles);
-            })
-            .collect(Collectors.toList());
+                .map(cab -> {
+                    List<VtaCompPagoDet> detalles = vtaCompPagoDetRepository.findByCodCiaAndNroCpOrderBySec(codCia,
+                            cab.getNroCp());
+                    return convertirCabeceraADTO(cab, detalles);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -192,12 +206,13 @@ public class VtaCompPagoCabService {
         log.info("Actualizando comprobante de venta/ingreso: {}", nroCp);
 
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
-            .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
         // Validar partidas únicas (Requirements: 1.3, 5.2, 5.3)
         validarPartidasUnicas(dto);
 
-        // Validar niveles de partidas según tipo de movimiento (Requirements: 1.3, 5.2, 5.3)
+        // Validar niveles de partidas según tipo de movimiento (Requirements: 1.3, 5.2,
+        // 5.3)
         validarNivelesPartidas(dto);
 
         // Actualizar datos de cabecera
@@ -214,8 +229,7 @@ public class VtaCompPagoCabService {
         cabecera.setImpNetoMn(dto.getImpNetoMn());
         cabecera.setImpIgvMn(dto.getImpIgvMn());
         cabecera.setImpTotalMn(dto.getImpTotalMn());
-        cabecera.setFotoCp(dto.getFotoCp());
-        cabecera.setFotoAbono(dto.getFotoAbono());
+        // FotoCp y FotoAbono se manejan por endpoints BLOB separados
         cabecera.setFecAbono(dto.getFecAbono());
         cabecera.setDesAbono(dto.getDesAbono());
         cabecera.setTabEstado(dto.getTabEstado());
@@ -245,7 +259,7 @@ public class VtaCompPagoCabService {
         log.info("Eliminando comprobante de venta/ingreso: {}", nroCp);
 
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
-            .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
         // Cambiar estado a anulado (código '003')
         cabecera.setTabEstado("001"); // Tabla de estados
@@ -263,7 +277,7 @@ public class VtaCompPagoCabService {
 
         // Obtener el comprobante
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
-            .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
         // Verificar que no esté ya anulado (código '003')
         if ("003".equals(cabecera.getCodEstado())) {
@@ -277,11 +291,12 @@ public class VtaCompPagoCabService {
 
         // Actualizar flujo de caja del proyecto
         // El flujo de caja se actualiza automáticamente al recalcular los ingresos
-        // ya que el método calcularTotalIngresosPorProyecto solo considera comprobantes activos
+        // ya que el método calcularTotalIngresosPorProyecto solo considera comprobantes
+        // activos
         BigDecimal nuevoTotalIngresos = calcularTotalIngresosPorProyecto(codCia, cabecera.getCodPyto());
 
         log.info("Comprobante anulado exitosamente. Nuevo total de ingresos del proyecto: S/ {}",
-            nuevoTotalIngresos);
+                nuevoTotalIngresos);
 
         return obtenerPorId(codCia, nroCp);
     }
@@ -304,24 +319,25 @@ public class VtaCompPagoCabService {
         // Comparar y generar alerta si supera
         if (totalIngresos.compareTo(valorContractual) > 0) {
             BigDecimal exceso = totalIngresos.subtract(valorContractual);
-            log.warn("ALERTA: Los ingresos del proyecto {}-{} (S/ {}) superan el valor contractual (S/ {}). Exceso: S/ {}",
-                codCia, codPyto, totalIngresos, valorContractual, exceso);
+            log.warn(
+                    "ALERTA: Los ingresos del proyecto {}-{} (S/ {}) superan el valor contractual (S/ {}). Exceso: S/ {}",
+                    codCia, codPyto, totalIngresos, valorContractual, exceso);
 
             // Generar alerta informativa a través del servicio de presupuesto
-            com.proyectos.comprobantespago.dto.AlertaPresupuestoDTO alerta =
-                com.proyectos.comprobantespago.dto.AlertaPresupuestoDTO.builder()
+            com.proyectos.comprobantespago.dto.AlertaPresupuestoDTO alerta = com.proyectos.comprobantespago.dto.AlertaPresupuestoDTO
+                    .builder()
                     .id(java.util.UUID.randomUUID().toString())
                     .tipo("info")
                     .nivel("amarillo")
                     .mensaje(String.format(
-                        "Los ingresos registrados (S/ %.2f) superan el valor contractual del proyecto (S/ %.2f). Exceso: S/ %.2f",
-                        totalIngresos, valorContractual, exceso))
+                            "Los ingresos registrados (S/ %.2f) superan el valor contractual del proyecto (S/ %.2f). Exceso: S/ %.2f",
+                            totalIngresos, valorContractual, exceso))
                     .codPartida(null)
                     .nombrePartida("Ingresos Totales")
                     .porcentajeEjecucion(totalIngresos
-                        .divide(valorContractual, 4, java.math.RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100))
-                        .setScale(2, java.math.RoundingMode.HALF_UP))
+                            .divide(valorContractual, 4, java.math.RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100))
+                            .setScale(2, java.math.RoundingMode.HALF_UP))
                     .presupuestoOriginal(valorContractual)
                     .presupuestoEjecutado(totalIngresos)
                     .presupuestoDisponible(valorContractual.subtract(totalIngresos))
@@ -346,13 +362,13 @@ public class VtaCompPagoCabService {
             for (VtaCompPagoDetDTO detalle : dto.getDetalles()) {
                 // Calcular IGV como 18% del importe neto
                 BigDecimal igv = detalle.getImpNetoMn()
-                    .multiply(IGV_RATE)
-                    .setScale(2, java.math.RoundingMode.HALF_UP);
+                        .multiply(IGV_RATE)
+                        .setScale(2, java.math.RoundingMode.HALF_UP);
 
                 // Calcular total como neto + IGV
                 BigDecimal total = detalle.getImpNetoMn()
-                    .add(igv)
-                    .setScale(2, java.math.RoundingMode.HALF_UP);
+                        .add(igv)
+                        .setScale(2, java.math.RoundingMode.HALF_UP);
 
                 // Actualizar el detalle
                 detalle.setImpIgvMn(igv);
@@ -371,48 +387,33 @@ public class VtaCompPagoCabService {
         dto.setImpTotalMn(totalGeneral.setScale(2, java.math.RoundingMode.HALF_UP));
 
         log.debug("IGV y totales calculados - Neto: {}, IGV: {}, Total: {}",
-            totalNeto, totalIgv, totalGeneral);
+                totalNeto, totalIgv, totalGeneral);
     }
 
     /**
-     * Actualiza los archivos adjuntos de un comprobante de ingreso
+     * Actualiza los archivos adjuntos de un comprobante de ingreso (deprecated -
+     * usar endpoints BLOB)
      * Feature: comprobantes-jerarquicos
      * Requirements: 4.1, 4.2
      *
-     * @param codCia Código de compañía
-     * @param nroCp Número de comprobante
-     * @param fotoCp Ruta del archivo del comprobante (opcional)
-     * @param fotoAbono Ruta del archivo del abono (opcional)
+     * NOTA: Este método ya no actualiza las imágenes directamente.
+     * Use los endpoints uploadFotoCp/uploadFotoAbono para subir imágenes BLOB.
+     *
+     * @param codCia    Código de compañía
+     * @param nroCp     Número de comprobante
+     * @param fotoCp    Ignorado - usar endpoint BLOB
+     * @param fotoAbono Ignorado - usar endpoint BLOB
      * @return DTO del comprobante actualizado
      */
     public VtaCompPagoCabDTO updateFiles(Long codCia, String nroCp, String fotoCp, String fotoAbono) {
-        log.info("Actualizando archivos del comprobante de ingreso: {}", nroCp);
+        log.info("Actualizando archivos del comprobante de ingreso: {} (usar endpoints BLOB para imágenes)", nroCp);
 
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // Actualizar fotoCp si se proporciona
-        if (fotoCp != null && !fotoCp.trim().isEmpty()) {
-            // Validar que la ruta sea válida (no vacía y con formato correcto)
-            if (fotoCp.length() > 200) {
-                throw new RuntimeException("La ruta del archivo del comprobante excede el límite de 200 caracteres");
-            }
-            cabecera.setFotoCp(fotoCp);
-            log.debug("Archivo de comprobante actualizado: {}", fotoCp);
-        }
-
-        // Actualizar fotoAbono si se proporciona
-        if (fotoAbono != null && !fotoAbono.trim().isEmpty()) {
-            // Validar que la ruta sea válida
-            if (fotoAbono.length() > 200) {
-                throw new RuntimeException("La ruta del archivo del abono excede el límite de 200 caracteres");
-            }
-            cabecera.setFotoAbono(fotoAbono);
-            log.debug("Archivo de abono actualizado: {}", fotoAbono);
-        }
-
-        vtaCompPagoCabRepository.save(cabecera);
-        log.info("Archivos actualizados exitosamente para comprobante de ingreso: {}", nroCp);
+        // Las imágenes ahora se manejan como BLOB a través de endpoints separados
+        log.warn(
+                "updateFiles: Las imágenes deben actualizarse usando los endpoints BLOB (uploadFotoCp/uploadFotoAbono)");
 
         return obtenerPorId(codCia, nroCp);
     }
@@ -448,31 +449,14 @@ public class VtaCompPagoCabService {
     }
 
     /**
-     * Valida que todas las partidas sean del último nivel según tipo de movimiento
-     * Requirements: 1.3, 5.2, 5.3
-     * - Ingresos: solo nivel 2
-     * - Egresos: solo nivel 3
+     * Valida que todas las partidas existan y estén vigentes
+     * NUEVO REQUERIMIENTO: El usuario puede seleccionar cualquier nivel (1, 2 o 3)
+     * Ya no se valida estrictamente que sea del último nivel
      */
     private void validarNivelesPartidas(VtaCompPagoCabDTO dto) {
-        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
-            return;
-        }
-
-        for (VtaCompPagoDetDTO detalle : dto.getDetalles()) {
-            String ingEgr = detalle.getIngEgr();
-            Long codPartida = detalle.getCodPartida();
-
-            // Validar que la partida sea del último nivel
-            boolean esNivelValido = partidaHierarchyService.validatePartidaForComprobante(
-                    dto.getCodCia(), ingEgr, codPartida);
-
-            if (!esNivelValido) {
-                String tipoDesc = "I".equals(ingEgr) ? "ingreso (nivel 2)" : "egreso (nivel 3)";
-                throw new RuntimeException(
-                        String.format("Solo se pueden usar partidas del último nivel para %s. " +
-                                "La partida %d no cumple con este requisito.", tipoDesc, codPartida));
-            }
-        }
+        // NUEVO REQUERIMIENTO: El usuario puede seleccionar cualquier nivel (1, 2 o 3)
+        // Ya no se valida estrictamente que sea del último nivel
+        // La validación de existencia de partida se hace en otro lugar
     }
 
     /**
@@ -499,88 +483,192 @@ public class VtaCompPagoCabService {
     // Métodos de conversión
     private VtaCompPagoCabDTO convertirCabeceraADTO(VtaCompPagoCab cabecera, List<VtaCompPagoDet> detalles) {
         List<VtaCompPagoDetDTO> detallesDTO = detalles.stream()
-            .map(this::convertirDetalleADTO)
-            .collect(Collectors.toList());
+                .map(this::convertirDetalleADTO)
+                .collect(Collectors.toList());
 
         return VtaCompPagoCabDTO.builder()
-            .codCia(cabecera.getCodCia())
-            .nroCp(cabecera.getNroCp())
-            .codPyto(cabecera.getCodPyto())
-            .codCliente(cabecera.getCodCliente())
-            .nroPago(cabecera.getNroPago())
-            .tCompPago(cabecera.getTCompPago())
-            .eCompPago(cabecera.getECompPago())
-            .fecCp(cabecera.getFecCp())
-            .tMoneda(cabecera.getTMoneda())
-            .eMoneda(cabecera.getEMoneda())
-            .tipCambio(cabecera.getTipCambio())
-            .impMo(cabecera.getImpMo())
-            .impNetoMn(cabecera.getImpNetoMn())
-            .impIgvMn(cabecera.getImpIgvMn())
-            .impTotalMn(cabecera.getImpTotalMn())
-            .fotoCp(cabecera.getFotoCp())
-            .fotoAbono(cabecera.getFotoAbono())
-            .fecAbono(cabecera.getFecAbono())
-            .desAbono(cabecera.getDesAbono())
-            .semilla(cabecera.getSemilla())
-            .tabEstado(cabecera.getTabEstado())
-            .codEstado(cabecera.getCodEstado())
-            .detalles(detallesDTO)
-            .build();
+                .codCia(cabecera.getCodCia())
+                .nroCp(cabecera.getNroCp())
+                .codPyto(cabecera.getCodPyto())
+                .codCliente(cabecera.getCodCliente())
+                .nroPago(cabecera.getNroPago())
+                .tCompPago(cabecera.getTCompPago())
+                .eCompPago(cabecera.getECompPago())
+                .fecCp(cabecera.getFecCp())
+                .tMoneda(cabecera.getTMoneda())
+                .eMoneda(cabecera.getEMoneda())
+                .tipCambio(cabecera.getTipCambio())
+                .impMo(cabecera.getImpMo())
+                .impNetoMn(cabecera.getImpNetoMn())
+                .impIgvMn(cabecera.getImpIgvMn())
+                .impTotalMn(cabecera.getImpTotalMn())
+                .tieneFotoCp(cabecera.getFotoCp() != null && cabecera.getFotoCp().length > 0)
+                .tieneFotoAbono(cabecera.getFotoAbono() != null && cabecera.getFotoAbono().length > 0)
+                .fecAbono(cabecera.getFecAbono())
+                .desAbono(cabecera.getDesAbono())
+                .semilla(cabecera.getSemilla())
+                .tabEstado(cabecera.getTabEstado())
+                .codEstado(cabecera.getCodEstado())
+                .detalles(detallesDTO)
+                .build();
     }
 
     private VtaCompPagoDetDTO convertirDetalleADTO(VtaCompPagoDet detalle) {
         return VtaCompPagoDetDTO.builder()
-            .codCia(detalle.getCodCia())
-            .nroCp(detalle.getNroCp())
-            .sec(detalle.getSec())
-            .ingEgr(detalle.getIngEgr())
-            .codPartida(detalle.getCodPartida())
-            .impNetoMn(detalle.getImpNetoMn())
-            .impIgvMn(detalle.getImpIgvMn())
-            .impTotalMn(detalle.getImpTotalMn())
-            .semilla(detalle.getSemilla())
-            .build();
+                .codCia(detalle.getCodCia())
+                .nroCp(detalle.getNroCp())
+                .sec(detalle.getSec())
+                .ingEgr(detalle.getIngEgr())
+                .codPartida(detalle.getCodPartida())
+                .impNetoMn(detalle.getImpNetoMn())
+                .impIgvMn(detalle.getImpIgvMn())
+                .impTotalMn(detalle.getImpTotalMn())
+                .semilla(detalle.getSemilla())
+                .build();
     }
 
     private VtaCompPagoCab convertirCabeceraAEntidad(VtaCompPagoCabDTO dto) {
         return VtaCompPagoCab.builder()
-            .codCia(dto.getCodCia())
-            .nroCp(dto.getNroCp())
-            .codPyto(dto.getCodPyto())
-            .codCliente(dto.getCodCliente())
-            .nroPago(dto.getNroPago())
-            .tCompPago(dto.getTCompPago())
-            .eCompPago(dto.getECompPago())
-            .fecCp(dto.getFecCp())
-            .tMoneda(dto.getTMoneda())
-            .eMoneda(dto.getEMoneda())
-            .tipCambio(dto.getTipCambio())
-            .impMo(dto.getImpMo())
-            .impNetoMn(dto.getImpNetoMn())
-            .impIgvMn(dto.getImpIgvMn())
-            .impTotalMn(dto.getImpTotalMn())
-            .fotoCp(dto.getFotoCp())
-            .fotoAbono(dto.getFotoAbono())
-            .fecAbono(dto.getFecAbono())
-            .desAbono(dto.getDesAbono())
-            .semilla(dto.getSemilla())
-            .tabEstado(dto.getTabEstado())
-            .codEstado(dto.getCodEstado())
-            .build();
+                .codCia(dto.getCodCia())
+                .nroCp(dto.getNroCp())
+                .codPyto(dto.getCodPyto())
+                .codCliente(dto.getCodCliente())
+                .nroPago(dto.getNroPago())
+                .tCompPago(dto.getTCompPago())
+                .eCompPago(dto.getECompPago())
+                .fecCp(dto.getFecCp())
+                .tMoneda(dto.getTMoneda())
+                .eMoneda(dto.getEMoneda())
+                .tipCambio(dto.getTipCambio())
+                .impMo(dto.getImpMo())
+                .impNetoMn(dto.getImpNetoMn())
+                .impIgvMn(dto.getImpIgvMn())
+                .impTotalMn(dto.getImpTotalMn())
+                // FotoCp y FotoAbono se manejan por endpoints BLOB separados
+                .fecAbono(dto.getFecAbono())
+                .desAbono(dto.getDesAbono())
+                .semilla(dto.getSemilla())
+                .tabEstado(dto.getTabEstado())
+                .codEstado(dto.getCodEstado())
+                .build();
     }
 
     private VtaCompPagoDet convertirDetalleAEntidad(VtaCompPagoDetDTO dto) {
         return VtaCompPagoDet.builder()
-            .codCia(dto.getCodCia())
-            .nroCp(dto.getNroCp())
-            .sec(dto.getSec())
-            .ingEgr(dto.getIngEgr())
-            .codPartida(dto.getCodPartida())
-            .impNetoMn(dto.getImpNetoMn())
-            .impIgvMn(dto.getImpIgvMn())
-            .impTotalMn(dto.getImpTotalMn())
-            .semilla(dto.getSemilla())
-            .build();
+                .codCia(dto.getCodCia())
+                .nroCp(dto.getNroCp())
+                .sec(dto.getSec())
+                .ingEgr(dto.getIngEgr())
+                .codPartida(dto.getCodPartida())
+                .impNetoMn(dto.getImpNetoMn())
+                .impIgvMn(dto.getImpIgvMn())
+                .impTotalMn(dto.getImpTotalMn())
+                .semilla(dto.getSemilla())
+                .build();
+    }
+
+    // ==================== Métodos de imágenes BLOB ====================
+    // Feature: empleados-comprobantes-blob
+    // Requirements: 3.1, 3.2, 6.1, 6.2
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final java.util.List<String> ALLOWED_CONTENT_TYPES = java.util.List.of(
+            "image/jpeg", "image/png", "image/gif", "application/pdf");
+
+    /**
+     * Sube la imagen del comprobante (FotoCP) como BLOB
+     */
+    public void uploadFotoCp(Long codCia, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+        validateFile(file);
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+
+        try {
+            cabecera.setFotoCp(file.getBytes());
+            vtaCompPagoCabRepository.save(cabecera);
+            log.info("FotoCp BLOB subida para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error al procesar el archivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene la imagen del comprobante (FotoCP) desde BLOB
+     */
+    public byte[] getFotoCp(Long codCia, String nroCp) {
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado: " + nroCp));
+
+        if (cabecera.getFotoCp() == null) {
+            throw new ResourceNotFoundException("El comprobante no tiene imagen de comprobante");
+        }
+        return cabecera.getFotoCp();
+    }
+
+    /**
+     * Elimina la imagen del comprobante (FotoCP)
+     */
+    public void deleteFotoCp(Long codCia, String nroCp) {
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+
+        cabecera.setFotoCp(null);
+        vtaCompPagoCabRepository.save(cabecera);
+        log.info("FotoCp BLOB eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+    }
+
+    /**
+     * Sube la imagen del abono (FotoAbono) como BLOB
+     */
+    public void uploadFotoAbono(Long codCia, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+        validateFile(file);
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+
+        try {
+            cabecera.setFotoAbono(file.getBytes());
+            vtaCompPagoCabRepository.save(cabecera);
+            log.info("FotoAbono BLOB subida para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error al procesar el archivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene la imagen del abono (FotoAbono) desde BLOB
+     */
+    public byte[] getFotoAbono(Long codCia, String nroCp) {
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado: " + nroCp));
+
+        if (cabecera.getFotoAbono() == null) {
+            throw new ResourceNotFoundException("El comprobante no tiene imagen de abono");
+        }
+        return cabecera.getFotoAbono();
+    }
+
+    /**
+     * Elimina la imagen del abono (FotoAbono)
+     */
+    public void deleteFotoAbono(Long codCia, String nroCp) {
+        VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
+
+        cabecera.setFotoAbono(null);
+        vtaCompPagoCabRepository.save(cabecera);
+        log.info("FotoAbono BLOB eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+    }
+
+    private void validateFile(org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("El archivo está vacío");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new RuntimeException("El archivo excede el límite de 10MB");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new RuntimeException("Tipo de archivo no permitido. Use jpg, png, gif o pdf");
+        }
     }
 }

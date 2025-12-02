@@ -70,4 +70,38 @@ public interface AbonoService {
      * @return Datos del abono o null si no tiene
      */
     AbonoDTO getAbonoIngreso(Long codCia, String nroCP);
+
+    // ==================== Métodos para Empleados ====================
+
+    /**
+     * Registrar un abono para un comprobante de empleado
+     * Actualiza los campos FecAbono, DesAbono
+     * y cambia el estado a 'PAG' (PAGADO)
+     *
+     * @param codCia      Código de compañía
+     * @param codEmpleado Código del empleado
+     * @param nroCP       Número de comprobante
+     * @param abonoDTO    Datos del abono
+     */
+    void registrarAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP, AbonoDTO abonoDTO);
+
+    /**
+     * Cambiar el estado de un comprobante de empleado
+     *
+     * @param codCia      Código de compañía
+     * @param codEmpleado Código del empleado
+     * @param nroCP       Número de comprobante
+     * @param nuevoEstado Nuevo estado
+     */
+    void cambiarEstadoEmpleado(Long codCia, Long codEmpleado, String nroCP, EstadoComprobante nuevoEstado);
+
+    /**
+     * Obtener datos del abono de un comprobante de empleado
+     *
+     * @param codCia      Código de compañía
+     * @param codEmpleado Código del empleado
+     * @param nroCP       Número de comprobante
+     * @return Datos del abono o null si no tiene
+     */
+    AbonoDTO getAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP);
 }

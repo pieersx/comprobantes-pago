@@ -34,7 +34,7 @@ interface DetallePartidasProps {
   onRemove: (sec: number) => void;
   readonly?: boolean;
   porcentajeImpuesto?: number; // Porcentaje de impuesto del comprobante
-  tipoComprobante?: string; // Tipo de comprobante (FAC, BOL, REC)
+  tipoComprobante?: string; // Tipo de comprobante (001=Factura, 002=RxH, etc.)
 }
 
 /**
@@ -58,7 +58,7 @@ export function DetallePartidas({
   onRemove,
   readonly = false,
   porcentajeImpuesto = 18.0,
-  tipoComprobante = 'FAC',
+  tipoComprobante = '001', // Valor por defecto: Factura
 }: DetallePartidasProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPartida, setEditingPartida] = useState<DetallePartidaForm | null>(null);

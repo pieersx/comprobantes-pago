@@ -104,13 +104,13 @@ public class VtaCompPagoCab implements Serializable {
     @Column(name = "IMPTOTALMN", nullable = false, precision = 10, scale = 2)
     private BigDecimal impTotalMn;
 
-    @Size(max = 200)
-    @Column(name = "FOTOCP", length = 200)
-    private String fotoCp;
+    @jakarta.persistence.Lob
+    @Column(name = "FOTOCP")
+    private byte[] fotoCp;
 
-    @Size(max = 200)
-    @Column(name = "FOTOABONO", length = 200)
-    private String fotoAbono;
+    @jakarta.persistence.Lob
+    @Column(name = "FOTOABONO")
+    private byte[] fotoAbono;
 
     @Column(name = "FECABONO")
     private LocalDate fecAbono;

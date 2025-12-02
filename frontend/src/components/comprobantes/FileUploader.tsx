@@ -57,16 +57,18 @@ export function FileUploader({
       const year = now.getFullYear();
       const month = now.getMonth() + 1; // 0-indexed
 
-      let endpoint = '/api/files/upload';
+      // URL base del backend
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6969/api/v1';
+      let endpoint = `${API_BASE_URL}/files/upload`;
 
       // Determinar endpoint según tipo
       if (tipo === 'abono') {
-        endpoint = '/api/files/abono';
+        endpoint = `${API_BASE_URL}/files/abono`;
         formData.append('codCia', '1'); // TODO: Obtener de store
         formData.append('year', year.toString());
         formData.append('month', month.toString());
       } else if (tipo === 'egreso' || tipo === 'ingreso') {
-        endpoint = '/api/files/comprobante';
+        endpoint = `${API_BASE_URL}/files/comprobante`;
         formData.append('codCia', '1'); // TODO: Obtener de store
         formData.append('year', year.toString());
         formData.append('month', month.toString());
@@ -108,7 +110,8 @@ export function FileUploader({
 
   const handleViewFile = () => {
     if (currentFile) {
-      window.open(`/api/files/download?path=${encodeURIComponent(currentFile)}`, '_blank');
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6969/api/v1';
+      window.open(`${API_BASE_URL}/files/download?path=${encodeURIComponent(currentFile)}`, '_blank');
     }
   };
 

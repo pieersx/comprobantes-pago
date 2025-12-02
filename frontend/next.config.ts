@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 
-const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
+const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6969/api/v1').replace(/\/$/, '');
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

@@ -20,7 +20,9 @@ public class ComprobantesPagoApplication {
 		System.out.println("\n========================================");
 		System.out.println("Sistema de Gestión de Comprobantes de Pago");
 		System.out.println("Proyecto 9 - Iniciado correctamente");
-		System.out.println("Swagger UI: http://localhost:8080/api/v1/swagger-ui/index.html");
+		System.out.println("Puerto: 6969");
+		System.out.println("Base de Datos: C##py02@localhost:1521:XE");
+		System.out.println("Swagger UI: http://localhost:6969/api/v1/swagger-ui/index.html");
 		System.out.println("========================================\n");
 	}
 

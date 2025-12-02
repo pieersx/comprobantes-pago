@@ -43,5 +43,5 @@ public class Tabs implements Serializable {
 
     @Builder.Default
     @Column(name = "VIGENTE", nullable = false, length = 1)
-    private String vigente = "S";
+    private String vigente = "1";
 }

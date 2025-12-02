@@ -48,7 +48,7 @@ public class Proveedor implements Serializable {
 
     @Builder.Default
     @Column(name = "VIGENTE", nullable = false, length = 1)
-    private String vigente = "S";
+    private String vigente = "1";
 
     @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

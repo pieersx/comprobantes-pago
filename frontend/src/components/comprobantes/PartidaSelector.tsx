@@ -155,10 +155,9 @@ export function PartidaSelector({
             </div>
           ) : (
             partidas.map((partida) => {
-              const sinPresupuesto = partida.presupuestoDisponible <= 0 && tipo === 'E';
               const partidaValue = String(partida.codPartida);
-              // Solo permitir seleccionar partidas de nivel 3
-              const esSeleccionable = partida.nivel === 3;
+              // NUEVO: Permitir seleccionar cualquier nivel (1, 2 o 3)
+              const esSeleccionable = true;
 
               return (
                 <SelectItem
@@ -171,33 +170,24 @@ export function PartidaSelector({
                       <Badge variant={getNivelBadgeVariant(partida.nivel)} className="text-xs px-2 py-0.5">
                         Nivel {partida.nivel || '?'}
                       </Badge>
-                      <span className={`font-medium ${!esSeleccionable ? 'text-muted-foreground' : ''}`}>
+                      <span className="font-medium">
                         {partida.codPartida} - {partida.desPartida}
                       </span>
-                      {!esSeleccionable && (
-                        <span className="text-xs text-muted-foreground">(No seleccionable)</span>
-                      )}
                     </div>
                     {partida.hierarchyPath && (
                       <div className="text-xs text-muted-foreground pl-1">
                         📁 {partida.hierarchyPath}
                       </div>
                     )}
-                    {esSeleccionable && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className={getNivelAlertaColor(partida.nivelAlerta)}>
-                          Disponible: {formatearMonto(partida.presupuestoDisponible)}
-                        </span>
-                        <span className="text-muted-foreground">
-                          ({partida.porcentajeEjecucion.toFixed(1)}% ejecutado)
-                        </span>
-                      </div>
-                    )}
-                    {esSeleccionable && sinPresupuesto && (
-                      <span className="text-xs text-destructive font-medium">
-                        Sin presupuesto disponible
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className={getNivelAlertaColor(partida.nivelAlerta)}>
+                        Disponible: {formatearMonto(partida.presupuestoDisponible)}
                       </span>
-                    )}
+                      <span className="text-muted-foreground">
+                        ({partida.porcentajeEjecucion.toFixed(1)}% ejecutado)
+                      </span>
+                    </div>
+
                   </div>
                 </SelectItem>
               );

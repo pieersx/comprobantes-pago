@@ -23,7 +23,7 @@ class AbonosService {
     abonoData: AbonoData
   ): Promise<void> {
     const response = await apiClient.post(
-      `/api/v1/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`,
+      `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`,
       abonoData
     );
     return response.data;
@@ -38,7 +38,7 @@ class AbonosService {
     abonoData: AbonoData
   ): Promise<void> {
     const response = await apiClient.post(
-      `/api/v1/abonos/ingreso/${codCia}/${nroCP}`,
+      `/abonos/ingreso/${codCia}/${nroCP}`,
       abonoData
     );
     return response.data;
@@ -54,7 +54,7 @@ class AbonosService {
   ): Promise<AbonoData | null> {
     try {
       const response = await apiClient.get(
-        `/api/v1/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`
+        `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`
       );
       return response.data;
     } catch (error) {
@@ -71,7 +71,7 @@ class AbonosService {
   ): Promise<AbonoData | null> {
     try {
       const response = await apiClient.get(
-        `/api/v1/abonos/ingreso/${codCia}/${nroCP}`
+        `/abonos/ingreso/${codCia}/${nroCP}`
       );
       return response.data;
     } catch (error) {
@@ -89,7 +89,7 @@ class AbonosService {
     estado: 'REG' | 'PAG' | 'ANU'
   ): Promise<void> {
     const response = await apiClient.put(
-      `/api/v1/abonos/egreso/${codCia}/${codProveedor}/${nroCP}/estado/${estado}`
+      `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}/estado/${estado}`
     );
     return response.data;
   }
@@ -103,7 +103,58 @@ class AbonosService {
     estado: 'REG' | 'PAG' | 'ANU'
   ): Promise<void> {
     const response = await apiClient.put(
-      `/api/v1/abonos/ingreso/${codCia}/${nroCP}/estado/${estado}`
+      `/abonos/ingreso/${codCia}/${nroCP}/estado/${estado}`
+    );
+    return response.data;
+  }
+
+  // ==================== Métodos para Empleados ====================
+
+  /**
+   * Registrar abono para un comprobante de empleado
+   */
+  async registrarAbonoEmpleado(
+    codCia: number,
+    codEmpleado: number,
+    nroCP: string,
+    abonoData: AbonoData
+  ): Promise<void> {
+    const response = await apiClient.post(
+      `/abonos/empleado/${codCia}/${codEmpleado}/${nroCP}`,
+      abonoData
+    );
+    return response.data;
+  }
+
+  /**
+   * Consultar abono de un comprobante de empleado
+   */
+  async consultarAbonoEmpleado(
+    codCia: number,
+    codEmpleado: number,
+    nroCP: string
+  ): Promise<AbonoData | null> {
+    try {
+      const response = await apiClient.get(
+        `/abonos/empleado/${codCia}/${codEmpleado}/${nroCP}`
+      );
+      return response.data;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Cambiar estado de un comprobante de empleado
+   */
+  async cambiarEstadoEmpleado(
+    codCia: number,
+    codEmpleado: number,
+    nroCP: string,
+    estado: 'REG' | 'PAG' | 'ANU'
+  ): Promise<void> {
+    const response = await apiClient.put(
+      `/abonos/empleado/${codCia}/${codEmpleado}/${nroCP}/estado/${estado}`
     );
     return response.data;
   }

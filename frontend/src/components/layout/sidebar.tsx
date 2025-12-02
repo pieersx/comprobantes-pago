@@ -15,7 +15,7 @@ import {
     TrendingDown,
     TrendingUp,
     Users,
-    Wallet,
+    Wallet
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -34,6 +34,7 @@ const navigation = [
   { name: 'Proyectos', href: '/proyectos', icon: FolderKanban },
   { name: 'Clientes', href: '/clientes', icon: Users },
   { name: 'Proveedores', href: '/proveedores', icon: Building2 },
+  { name: 'Empleados', href: '/empleados', icon: Users }, // Feature: empleados-comprobantes-blob
   { name: 'Partidas', href: '/partidas', icon: Package },
   { name: 'Reportes', href: '/reportes', icon: BarChart3 },
   { name: 'Configuración', href: '/configuracion', icon: Settings },

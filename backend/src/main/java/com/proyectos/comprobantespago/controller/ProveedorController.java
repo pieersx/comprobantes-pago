@@ -174,7 +174,7 @@ public class ProveedorController {
     @GetMapping("/activos")
     @Transactional(readOnly = true)
     public ResponseEntity<List<ProveedorDTO>> listarProveedoresActivos() {
-        List<Proveedor> proveedores = proveedorRepository.findByVigente("S");
+        List<Proveedor> proveedores = proveedorRepository.findByVigente("1");
         List<ProveedorDTO> proveedoresDTO = proveedores.stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
@@ -207,7 +207,7 @@ public class ProveedorController {
         proveedor.setCodCia(dto.getCodCia());
         proveedor.setCodProveedor(dto.getCodProveedor());
         proveedor.setNroRuc(dto.getNroRuc());
-        proveedor.setVigente(dto.getVigente() != null ? dto.getVigente() : "S");
+        proveedor.setVigente(dto.getVigente() != null ? dto.getVigente() : "1");
 
         return proveedor;
     }

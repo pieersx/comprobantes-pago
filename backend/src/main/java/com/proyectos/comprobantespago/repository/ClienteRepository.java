@@ -22,7 +22,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, Cliente.Client
 
     Optional<Cliente> findByCodCiaAndCodCliente(Long codCia, Long codCliente);
 
-    @Query("SELECT c FROM Cliente c WHERE c.codCia = :codCia AND c.vigente = 'S' ORDER BY c.codCliente")
+    @Query("SELECT c FROM Cliente c WHERE c.codCia = :codCia AND c.vigente = '1' ORDER BY c.codCliente")
     List<Cliente> findAllActiveByCodCia(@Param("codCia") Long codCia);
 
     boolean existsByNroRuc(String nroRuc);

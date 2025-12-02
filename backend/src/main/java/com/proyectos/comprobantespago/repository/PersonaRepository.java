@@ -19,7 +19,7 @@ public interface PersonaRepository extends JpaRepository<Persona, Persona.Person
 
     List<Persona> findByCodCiaAndTipPersonaAndVigente(Long codCia, String tipPersona, String vigente);
 
-    @Query("SELECT p FROM Persona p WHERE p.codCia = :codCia AND p.vigente = 'S' ORDER BY p.desPersona")
+    @Query("SELECT p FROM Persona p WHERE p.codCia = :codCia AND p.vigente = '1' ORDER BY p.desPersona")
     List<Persona> findByCodCiaAndVigenteOrderByDesPersona(Long codCia);
 
     Optional<Persona> findByCodCiaAndCodPersona(Long codCia, Long codPersona);

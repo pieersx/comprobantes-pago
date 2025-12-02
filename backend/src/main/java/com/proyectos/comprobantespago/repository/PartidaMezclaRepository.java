@@ -30,7 +30,7 @@ public interface PartidaMezclaRepository extends JpaRepository<PartidaMezcla, Pa
      * Obtener estructura jerárquica de una partida
      */
     @Query("SELECT pm FROM PartidaMezcla pm WHERE pm.codCia = :codCia AND pm.ingEgr = :ingEgr " +
-            "AND pm.codPartida = :codPartida AND pm.vigente = 'S' ORDER BY pm.nivel, pm.orden")
+            "AND pm.codPartida = :codPartida AND pm.vigente = '1' ORDER BY pm.nivel, pm.orden")
     List<PartidaMezcla> findEstructuraPartida(
             @Param("codCia") Long codCia,
             @Param("ingEgr") String ingEgr,
@@ -55,7 +55,7 @@ public interface PartidaMezclaRepository extends JpaRepository<PartidaMezcla, Pa
      * Obtener subpartidas de una partida padre
      */
     @Query("SELECT pm FROM PartidaMezcla pm WHERE pm.codCia = :codCia AND pm.ingEgr = :ingEgr " +
-            "AND pm.padCodPartida = :padCodPartida AND pm.vigente = 'S' ORDER BY pm.orden")
+            "AND pm.padCodPartida = :padCodPartida AND pm.vigente = '1' ORDER BY pm.orden")
     List<PartidaMezcla> findSubpartidas(
             @Param("codCia") Long codCia,
             @Param("ingEgr") String ingEgr,

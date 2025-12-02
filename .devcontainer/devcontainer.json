@@ -19,7 +19,25 @@
     }
   },
 
-  "forwardPorts": [8080, 1521, 5500, 3000],
+  "forwardPorts": [6969, 4584, 1521, 5500],
+  "portsAttributes": {
+    "6969": {
+      "label": "Backend Spring Boot",
+      "onAutoForward": "notify"
+    },
+    "4584": {
+      "label": "Frontend Next.js",
+      "onAutoForward": "notify"
+    },
+    "1521": {
+      "label": "Oracle Database",
+      "onAutoForward": "silent"
+    },
+    "5500": {
+      "label": "Oracle EM Express",
+      "onAutoForward": "silent"
+    }
+  },
   "postCreateCommand": "java --version && mvn --version && node --version && npm --version",
   "remoteUser": "vscode"
 }

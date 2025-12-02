@@ -78,7 +78,7 @@ public class Partida implements Serializable {
     @Size(max = 1)
     @Builder.Default
     @Column(name = "VIGENTE", nullable = false, length = 1)
-    private String vigente = "S";
+    private String vigente = "1";
 
     /**
      * Clase interna para la clave compuesta

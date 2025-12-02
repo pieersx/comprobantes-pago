@@ -1,13 +1,13 @@
 import { apiClient, ApiResponse, handleApiError } from '@/lib/api';
 import {
-    Cliente,
-    Compania,
-    CompPagoCab,
-    Elemento,
-    Proveedor,
-    Proyecto,
-    Tabs,
-    VtaCompPagoCab,
+  Cliente,
+  Compania,
+  CompPagoCab,
+  Elemento,
+  Proveedor,
+  Proyecto,
+  Tabs,
+  VtaCompPagoCab,
 } from '@/types/comprobante';
 
 // ===================================
@@ -148,7 +148,7 @@ export const comprobantesIngresoService = {
     }
   },
 
-  // Actualizar FotoCP (factura)
+  // Actualizar FotoCP (factura) - LEGACY
   actualizarFotoCP: async (
     codCia: number,
     nroCp: string,
@@ -160,6 +160,84 @@ export const comprobantesIngresoService = {
         { fotoCp: fotoCP }
       );
       return response.data.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  // ==================== Métodos de Imágenes BLOB ====================
+  // Feature: empleados-comprobantes-blob
+  // Requirements: 6.1, 6.2
+
+  /**
+   * POST /api/comprobantes-venta/{codCia}/{nroCp}/foto-cp
+   * Sube la imagen del comprobante de ingreso como BLOB
+   */
+  uploadFotoCp: async (codCia: number, nroCp: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${nroCp}/foto-cp`,
+      { method: 'POST', body: formData }
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al subir imagen del comprobante');
+    }
+  },
+
+  /**
+   * GET URL de la imagen del comprobante de ingreso
+   */
+  getFotoCpUrl: (codCia: number, nroCp: string): string => {
+    return `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${nroCp}/foto-cp`;
+  },
+
+  /**
+   * DELETE /api/comprobantes-venta/{codCia}/{nroCp}/foto-cp
+   * Elimina la imagen del comprobante de ingreso
+   */
+  deleteFotoCp: async (codCia: number, nroCp: string): Promise<void> => {
+    try {
+      await apiClient.delete(`/comprobantes-venta/${codCia}/${nroCp}/foto-cp`);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * POST /api/comprobantes-venta/{codCia}/{nroCp}/foto-abono
+   * Sube la imagen del abono de ingreso como BLOB
+   */
+  uploadFotoAbono: async (codCia: number, nroCp: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${nroCp}/foto-abono`,
+      { method: 'POST', body: formData }
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al subir imagen del abono');
+    }
+  },
+
+  /**
+   * GET URL de la imagen del abono de ingreso
+   */
+  getFotoAbonoUrl: (codCia: number, nroCp: string): string => {
+    return `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${nroCp}/foto-abono`;
+  },
+
+  /**
+   * DELETE /api/comprobantes-venta/{codCia}/{nroCp}/foto-abono
+   * Elimina la imagen del abono de ingreso
+   */
+  deleteFotoAbono: async (codCia: number, nroCp: string): Promise<void> => {
+    try {
+      await apiClient.delete(`/comprobantes-venta/${codCia}/${nroCp}/foto-abono`);
     } catch (error) {
       throw new Error(handleApiError(error));
     }
@@ -273,7 +351,7 @@ export const comprobantesEgresoService = {
     }
   },
 
-  // Actualizar FotoCP (factura del proveedor)
+  // Actualizar FotoCP (factura del proveedor) - LEGACY
   actualizarFotoCP: async (
     codCia: number,
     codProveedor: number,
@@ -286,6 +364,75 @@ export const comprobantesEgresoService = {
         { fotoCp: fotoCP }
       );
       return response.data.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  // ==================== Métodos de Imágenes BLOB ====================
+  // Feature: empleados-comprobantes-blob
+
+  /**
+   * POST /api/comprobantes-pago/{codCia}/{codProveedor}/{nroCp}/foto-cp
+   * Sube la imagen del comprobante como BLOB
+   */
+  uploadFotoCp: async (codCia: number, codProveedor: number, nroCp: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/foto-cp`,
+      { method: 'POST', body: formData }
+    );
+  },
+
+  /**
+   * GET URL de la imagen del comprobante
+   */
+  getFotoCpUrl: (codCia: number, codProveedor: number, nroCp: string): string => {
+    return `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/foto-cp`;
+  },
+
+  /**
+   * DELETE /api/comprobantes-pago/{codCia}/{codProveedor}/{nroCp}/foto-cp
+   * Elimina la imagen del comprobante
+   */
+  deleteFotoCp: async (codCia: number, codProveedor: number, nroCp: string): Promise<void> => {
+    try {
+      await apiClient.delete(`/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/foto-cp`);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * POST /api/comprobantes-pago/{codCia}/{codProveedor}/{nroCp}/foto-abono
+   * Sube la imagen del abono como BLOB
+   */
+  uploadFotoAbono: async (codCia: number, codProveedor: number, nroCp: string, file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/foto-abono`,
+      { method: 'POST', body: formData }
+    );
+  },
+
+  /**
+   * GET URL de la imagen del abono
+   */
+  getFotoAbonoUrl: (codCia: number, codProveedor: number, nroCp: string): string => {
+    return `${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/foto-abono`;
+  },
+
+  /**
+   * DELETE /api/comprobantes-pago/{codCia}/{codProveedor}/{nroCp}/foto-abono
+   * Elimina la imagen del abono
+   */
+  deleteFotoAbono: async (codCia: number, codProveedor: number, nroCp: string): Promise<void> => {
+    try {
+      await apiClient.delete(`/comprobantes-pago/${codCia}/${codProveedor}/${nroCp}/foto-abono`);
     } catch (error) {
       throw new Error(handleApiError(error));
     }
@@ -415,7 +562,7 @@ export const clientesService = {
       const response = await apiClient.get<ApiResponse<Cliente[]> | Cliente[]>(
         `/clientes`,
         {
-          params: { vigente: 'S' } // Solo clientes activos
+          params: { vigente: '1' } // Solo clientes activos (el profesor usa '1' en lugar de 'S')
         }
       );
 
@@ -446,7 +593,7 @@ export const proveedoresService = {
       const response = await apiClient.get<ApiResponse<Proveedor[]> | Proveedor[]>(
         `/proveedores`,
         {
-          params: { vigente: 'S' } // Solo proveedores activos
+          params: { vigente: '1' } // Solo proveedores activos (profesor usa '1' en lugar de 'S')
         }
       );
 
@@ -474,8 +621,8 @@ export const proveedoresService = {
 // ===================================
 
 import type {
-    Abono,
-    CreateComprobanteRequest
+  Abono,
+  CreateComprobanteRequest
 } from '@/types/comprobante';
 
 export const comprobantesService = {

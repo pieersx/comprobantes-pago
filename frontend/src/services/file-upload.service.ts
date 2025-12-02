@@ -59,7 +59,7 @@ export async function uploadComprobanteFile(
   formData.append('month', month.toString());
   formData.append('tipo', tipo);
 
-  return uploadWithRetry('/api/v1/files/comprobante', formData);
+  return uploadWithRetry('/files/comprobante', formData);
 }
 
 /**
@@ -91,7 +91,7 @@ export async function uploadAbonoFile(
   formData.append('year', year.toString());
   formData.append('month', month.toString());
 
-  return uploadWithRetry('/api/v1/files/abono', formData);
+  return uploadWithRetry('/files/abono', formData);
 }
 
 /**
@@ -115,7 +115,7 @@ export async function uploadComprobante(
   formData.append('nroComprobante', nroComprobante);
   formData.append('tipoDocumento', tipoDocumento);
 
-  return uploadWithRetry('/api/v1/files/upload/comprobante', formData);
+  return uploadWithRetry('/files/upload/comprobante', formData);
 }
 
 /**
@@ -136,7 +136,7 @@ export async function uploadAbono(
   formData.append('codCia', codCia.toString());
   formData.append('nroComprobante', nroComprobante);
 
-  return uploadWithRetry('/api/v1/files/upload/abono', formData);
+  return uploadWithRetry('/files/upload/abono', formData);
 }
 
 /**

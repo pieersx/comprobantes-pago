@@ -29,4 +29,7 @@ public interface PartidaRepository extends JpaRepository<Partida, Partida.Partid
 
     // Métodos para jerarquía de partidas
     List<Partida> findByCodCiaAndIngEgrAndNivel(Long codCia, String ingEgr, Integer nivel);
+
+    // Buscar partida específica por código
+    Partida findByCodCiaAndIngEgrAndCodPartida(Long codCia, String ingEgr, Long codPartida);
 }

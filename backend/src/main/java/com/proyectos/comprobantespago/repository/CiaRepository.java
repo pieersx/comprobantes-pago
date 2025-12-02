@@ -43,6 +43,6 @@ public interface CiaRepository extends JpaRepository<Compania, Long> {
     /**
      * Obtener todas las compañías vigentes ordenadas
      */
-    @Query("SELECT c FROM Compania c WHERE c.vigente = 'S' ORDER BY c.desCia")
+    @Query("SELECT c FROM Compania c WHERE c.vigente = '1' ORDER BY c.desCia")
     List<Compania> findAllActive();
 }

@@ -33,6 +33,7 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**",
                                 "/actuator/**",
+                                "/api/v1/**", // Permitir todas las rutas de API v1
                                 "/auth/**",
                                 "/files/**",
                                 "/comprobantes/**",
@@ -48,6 +49,7 @@ public class SecurityConfig {
                                 "/partidas/**",
                                 "/presupuesto/**",
                                 "/elementos/**",
+                                "/empleados/**", // Agregar empleados
                                 "/tabs/**")
                         .permitAll()
                         .anyRequest().permitAll() // Temporalmente permitir todo para desarrollo
@@ -59,7 +61,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:4584",
+                "http://localhost:3000",
+                "http://localhost:3001"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Tenant-ID"));

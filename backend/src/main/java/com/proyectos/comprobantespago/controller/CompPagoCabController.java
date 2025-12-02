@@ -73,7 +73,8 @@ public class CompPagoCabController {
         return comprobantePagoCabRepository.findByEstado(codCia, estado);
     }
 
-    @Operation(summary = "Actualizar archivos adjuntos del comprobante de egreso", description = "Actualiza las rutas de los archivos adjuntos (comprobante y/o abono) de un comprobante de egreso existente.")
+    @Operation(summary = "Actualizar archivos adjuntos del comprobante de egreso (deprecated)",
+               description = "DEPRECATED: Use los endpoints BLOB /foto-cp y /foto-abono para subir imágenes. Este endpoint ya no modifica las imágenes.")
     @PutMapping("/{codCia}/{codProveedor}/{nroCp}/archivos")
     public ComprobantePagoCab actualizarArchivos(
             @PathVariable Long codCia,
@@ -85,17 +86,11 @@ public class CompPagoCabController {
                 .findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado"));
 
-        String fotoCp = archivos.get("fotoCp");
-        String fotoAbono = archivos.get("fotoAbono");
+        // Las imágenes ahora se manejan como BLOB a través de endpoints separados
+        // Este endpoint ya no modifica fotoCp ni fotoAbono
+        // Use POST /{codCia}/{codProveedor}/{nroCp}/foto-cp para subir imagen de comprobante
+        // Use POST /{codCia}/{codProveedor}/{nroCp}/foto-abono para subir imagen de abono
 
-        if (fotoCp != null) {
-            comprobante.setFotoCp(fotoCp);
-        }
-
-        if (fotoAbono != null) {
-            comprobante.setFotoAbono(fotoAbono);
-        }
-
-        return comprobantePagoCabRepository.save(comprobante);
+        return comprobante;
     }
 }

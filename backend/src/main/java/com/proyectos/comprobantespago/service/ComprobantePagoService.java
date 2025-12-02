@@ -292,7 +292,7 @@ public class ComprobantePagoService {
         }
 
         // Actualizar datos del abono
-        cabecera.setFotoAbono(abonoDTO.getFotoAbono());
+        // FotoAbono se maneja por endpoints BLOB separados, no se actualiza aquí
         cabecera.setFecAbono(abonoDTO.getFechaAbono());
         cabecera.setDesAbono(abonoDTO.getDescripcionMedioPago());
 
@@ -658,47 +658,137 @@ public class ComprobantePagoService {
     }
 
     /**
-     * Actualiza los archivos adjuntos de un comprobante
+     * Actualiza los archivos adjuntos de un comprobante (deprecated - usar endpoints BLOB)
      * Feature: comprobantes-jerarquicos
      * Requirements: 4.1, 4.2
+     *
+     * NOTA: Este método ya no actualiza las imágenes directamente.
+     * Use los endpoints uploadFotoCp/uploadFotoAbono para subir imágenes BLOB.
      *
      * @param codCia       Código de compañía
      * @param codProveedor Código de proveedor
      * @param nroCp        Número de comprobante
-     * @param fotoCp       Ruta del archivo del comprobante (opcional)
-     * @param fotoAbono    Ruta del archivo del abono (opcional)
+     * @param fotoCp       Ignorado - usar endpoint BLOB
+     * @param fotoAbono    Ignorado - usar endpoint BLOB
      * @return DTO del comprobante actualizado
      */
     public ComprobantePagoDTO updateFiles(Long codCia, Long codProveedor, String nroCp,
             String fotoCp, String fotoAbono) {
-        log.info("Actualizando archivos del comprobante: {}", nroCp);
+        log.info("Actualizando archivos del comprobante: {} (usar endpoints BLOB para imágenes)", nroCp);
 
         ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
 
-        // Actualizar fotoCp si se proporciona
-        if (fotoCp != null && !fotoCp.trim().isEmpty()) {
-            // Validar que la ruta sea válida (no vacía y con formato correcto)
-            if (fotoCp.length() > 200) {
-                throw new ValidationException("La ruta del archivo del comprobante excede el límite de 200 caracteres");
-            }
-            cabecera.setFotoCp(fotoCp);
-            log.debug("Archivo de comprobante actualizado: {}", fotoCp);
-        }
-
-        // Actualizar fotoAbono si se proporciona
-        if (fotoAbono != null && !fotoAbono.trim().isEmpty()) {
-            // Validar que la ruta sea válida
-            if (fotoAbono.length() > 200) {
-                throw new ValidationException("La ruta del archivo del abono excede el límite de 200 caracteres");
-            }
-            cabecera.setFotoAbono(fotoAbono);
-            log.debug("Archivo de abono actualizado: {}", fotoAbono);
-        }
-
-        cabRepository.save(cabecera);
-        log.info("Archivos actualizados exitosamente para comprobante: {}", nroCp);
+        // Las imágenes ahora se manejan como BLOB a través de endpoints separados
+        // Este método solo retorna el DTO actual sin modificar las imágenes
+        log.warn("updateFiles: Las imágenes deben actualizarse usando los endpoints BLOB (uploadFotoCp/uploadFotoAbono)");
 
         return mapper.toDTO(cabecera);
+    }
+
+    // ==================== Métodos de imágenes BLOB ====================
+    // Feature: empleados-comprobantes-blob
+    // Requirements: 3.1, 3.2, 6.1, 6.2
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final java.util.List<String> ALLOWED_CONTENT_TYPES = java.util.List.of(
+        "image/jpeg", "image/png", "image/gif", "application/pdf"
+    );
+
+    /**
+     * Sube la imagen del comprobante (FotoCP) como BLOB
+     */
+    public void uploadFotoCp(Long codCia, Long codProveedor, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+        validateFile(file);
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        try {
+            cabecera.setFotoCp(file.getBytes());
+            cabRepository.save(cabecera);
+            log.info("FotoCp BLOB subida: codCia={}, codProveedor={}, nroCp={}", codCia, codProveedor, nroCp);
+        } catch (java.io.IOException e) {
+            throw new ValidationException("Error al procesar el archivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene la imagen del comprobante (FotoCP) desde BLOB
+     */
+    public byte[] getFotoCp(Long codCia, Long codProveedor, String nroCp) {
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        if (cabecera.getFotoCp() == null) {
+            throw new ResourceNotFoundException("El comprobante no tiene imagen de comprobante");
+        }
+        return cabecera.getFotoCp();
+    }
+
+    /**
+     * Elimina la imagen del comprobante (FotoCP)
+     */
+    public void deleteFotoCp(Long codCia, Long codProveedor, String nroCp) {
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        cabecera.setFotoCp(null);
+        cabRepository.save(cabecera);
+        log.info("FotoCp BLOB eliminada: codCia={}, codProveedor={}, nroCp={}", codCia, codProveedor, nroCp);
+    }
+
+    /**
+     * Sube la imagen del abono (FotoAbono) como BLOB
+     */
+    public void uploadFotoAbono(Long codCia, Long codProveedor, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+        validateFile(file);
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        try {
+            cabecera.setFotoAbono(file.getBytes());
+            cabRepository.save(cabecera);
+            log.info("FotoAbono BLOB subida: codCia={}, codProveedor={}, nroCp={}", codCia, codProveedor, nroCp);
+        } catch (java.io.IOException e) {
+            throw new ValidationException("Error al procesar el archivo: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene la imagen del abono (FotoAbono) desde BLOB
+     */
+    public byte[] getFotoAbono(Long codCia, Long codProveedor, String nroCp) {
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        if (cabecera.getFotoAbono() == null) {
+            throw new ResourceNotFoundException("El comprobante no tiene imagen de abono");
+        }
+        return cabecera.getFotoAbono();
+    }
+
+    /**
+     * Elimina la imagen del abono (FotoAbono)
+     */
+    public void deleteFotoAbono(Long codCia, Long codProveedor, String nroCp) {
+        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+                .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
+
+        cabecera.setFotoAbono(null);
+        cabRepository.save(cabecera);
+        log.info("FotoAbono BLOB eliminada: codCia={}, codProveedor={}, nroCp={}", codCia, codProveedor, nroCp);
+    }
+
+    private void validateFile(org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ValidationException("El archivo está vacío");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new ValidationException("El archivo excede el límite de 10MB");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new ValidationException("Tipo de archivo no permitido. Use jpg, png, gif o pdf");
+        }
     }
 }

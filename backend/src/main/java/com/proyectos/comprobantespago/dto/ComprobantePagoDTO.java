@@ -123,17 +123,18 @@ public class ComprobantePagoDTO {
     @DecimalMin(value = "0.0", message = "El importe total debe ser mayor o igual a 0")
     private BigDecimal impTotalMn;
 
-    @NotBlank
+    // Campos de imagen - ahora opcionales (se manejan por endpoints separados de BLOB)
     private String fotoCp;
 
-    @NotBlank
     private String fotoAbono;
 
-    @NotNull
     private LocalDate fecAbono;
 
-    @NotBlank
     private String desAbono;
+
+    // Flags para indicar si tiene imágenes BLOB (sin cargar los bytes)
+    private Boolean tieneFotoCp;
+    private Boolean tieneFotoAbono;
 
     @NotNull
     private Integer semilla;

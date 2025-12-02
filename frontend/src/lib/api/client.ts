@@ -1,11 +1,22 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+// Asegurar que siempre tengamos una URL base válida con /api/v1
+const getApiUrl = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl) {
+    // Asegurar que termine con /api/v1 si no lo tiene
+    return envUrl.endsWith('/api/v1') ? envUrl : `${envUrl}/api/v1`;
+  }
+  return 'http://localhost:6969/api/v1';
+};
+
+const API_URL = getApiUrl();
 
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    console.log('[ApiClient] Initializing with baseURL:', API_URL);
     this.client = axios.create({
       baseURL: API_URL,
       headers: {

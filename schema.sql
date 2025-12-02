@@ -4,6 +4,8 @@ DROP TABLE IF EXISTS PROYECTO CASCADE CONSTRAINTS;
 DROP TABLE IF EXISTS PERSONA CASCADE CONSTRAINTS;
 DROP TABLE IF EXISTS PROVEEDOR CASCADE CONSTRAINTS;
 DROP TABLE IF EXISTS CLIENTE CASCADE CONSTRAINTS;
+DROP TABLE IF EXISTS EMPLEADO CASCADE CONSTRAINTS;
+DROP TABLE IF EXISTS COMP_PAGOEMPLEADO CASCADE CONSTRAINTS;
 DROP TABLE IF EXISTS PARTIDA CASCADE CONSTRAINTS;
 DROP TABLE IF EXISTS PARTIDA_MEZCLA CASCADE CONSTRAINTS;
 DROP TABLE IF EXISTS PROY_PARTIDA_MEZCLA CASCADE CONSTRAINTS;
@@ -169,6 +171,27 @@ Vigente VARCHAR2(1) NOT NULL,
 
                 CONSTRAINT CLIENTE_PK PRIMARY KEY (CodCia, CodCliente)
 
+);
+
+--EMPLEADO: Datos extendidos de empleados (extiende PERSONA)
+CREATE TABLE EMPLEADO (
+    CodCIA NUMBER(6) NOT NULL,
+    CodEmpleado NUMBER(6) NOT NULL,
+    Direcc VARCHAR2(100) NOT NULL,
+    Celular VARCHAR2(33) NOT NULL,
+    Hobby VARCHAR2(2000),
+    Foto BLOB,
+    FecNac DATE NOT NULL,
+    DNI VARCHAR2(20) NOT NULL,
+    NroCIP VARCHAR2(10),
+    FecCIPVig DATE,
+    LicCond VARCHAR2(1),
+    FlgEmplIEA VARCHAR2(1),
+    Observac VARCHAR2(300),
+    CodCargo NUMBER(4),
+    Email VARCHAR2(100) NOT NULL,
+    Vigente VARCHAR2(1) NOT NULL,
+    CONSTRAINT EMPLEADO_PK PRIMARY KEY (CodCIA, CodEmpleado)
 );
 
 
@@ -415,13 +438,13 @@ CREATE TABLE COMP_PAGOCAB (
 
                 ImpTotalMn NUMBER(10,2) NOT NULL,
 
-                FotoCP VARCHAR2(200) NOT NULL,
+                FotoCP BLOB,
 
-                FotoAbono VARCHAR2(200) NOT NULL,
+                FotoAbono BLOB,
 
-                FecAbono DATE NOT NULL,
+                FecAbono DATE,
 
-                DesAbono VARCHAR2(1000) NOT NULL,
+                DesAbono VARCHAR2(1000),
 
                 Semilla NUMBER(5) NOT NULL,
 
@@ -431,6 +454,33 @@ CREATE TABLE COMP_PAGOCAB (
 
                 CONSTRAINT COMP_PAGOCAB_PK PRIMARY KEY (CodCIA,CodProveedor,NroCP)
 
+);
+
+--COMP_PAGOEMPLEADO: Comprobantes de pago a empleados (recibos por honorarios, etc.)
+CREATE TABLE COMP_PAGOEMPLEADO (
+    CodCIA NUMBER(6) NOT NULL,
+    CodEmpleado NUMBER(6) NOT NULL,
+    NroCP VARCHAR2(20) NOT NULL,
+    CodPyto NUMBER(6) NOT NULL,
+    NroPago NUMBER(3) NOT NULL,
+    TCompPago VARCHAR2(3) NOT NULL,
+    ECompPago VARCHAR2(3) NOT NULL,
+    FecCP DATE NOT NULL,
+    TMoneda VARCHAR2(3) NOT NULL,
+    EMoneda VARCHAR2(3) NOT NULL,
+    TipCambio NUMBER(7,4) NOT NULL,
+    ImpMO NUMBER(9,2) NOT NULL,
+    ImpNetoMN NUMBER(9,2) NOT NULL,
+    ImpIGVMN NUMBER(9,2) NOT NULL,
+    ImpTotalMn NUMBER(10,2) NOT NULL,
+    FotoCP BLOB,
+    FotoAbono BLOB,
+    FecAbono DATE,
+    DesAbono VARCHAR2(1000),
+    Semilla NUMBER(5) NOT NULL,
+    TabEstado VARCHAR2(3) NOT NULL,
+    CodEstado VARCHAR2(3) NOT NULL,
+    CONSTRAINT COMP_PAGOEMPLEADO_PK PRIMARY KEY (CodCIA, CodEmpleado, NroCP)
 );
 
 
@@ -495,13 +545,13 @@ CREATE TABLE VTACOMP_PAGOCAB (
 
                 ImpTotalMN NUMBER(10,2) NOT NULL,
 
-                FotoCP VARCHAR2(200) NOT NULL,
+                FotoCP BLOB,
 
-                FotoAbono VARCHAR2(200) NOT NULL,
+                FotoAbono BLOB,
 
-                FecAbono DATE NOT NULL,
+                FecAbono DATE,
 
-                DesAbono VARCHAR2(1000) NOT NULL,
+                DesAbono VARCHAR2(1000),
 
                 Semilla NUMBER(5) NOT NULL,
 
@@ -577,6 +627,18 @@ ALTER TABLE CLIENTE ADD CONSTRAINT PERSONA_CLIENTE_FK
 FOREIGN KEY (CodCia,CodCliente)
 
 REFERENCES PERSONA (CodCia,CodPersona);
+
+/*==============================================================*/
+
+/* EMPLEADO                                                     */
+
+/*==============================================================*/
+
+ALTER TABLE EMPLEADO ADD CONSTRAINT PERSONA_EMPLEADO_FK
+
+FOREIGN KEY (CodCIA, CodEmpleado)
+
+REFERENCES PERSONA (CodCIA, CodPersona);
 
 
 /*==============================================================*/
@@ -795,6 +857,35 @@ FOREIGN KEY (CodCIA,IngEgr,CodPartida)
 
 REFERENCES PARTIDA (CodCIA,IngEgr,CodPartida);
 
+/*==============================================================*/
+
+/* COMP_PAGOEMPLEADO                                            */
+
+/*==============================================================*/
+
+ALTER TABLE COMP_PAGOEMPLEADO ADD CONSTRAINT COMP_PAGOEMPLEADO_EMPLEADO_FK
+
+FOREIGN KEY (CodCIA, CodEmpleado)
+
+REFERENCES EMPLEADO (CodCIA, CodEmpleado);
+
+ALTER TABLE COMP_PAGOEMPLEADO ADD CONSTRAINT COMP_PAGOEMPLEADO_ELEMENTOS_FK
+
+FOREIGN KEY (TMoneda, EMoneda)
+
+REFERENCES ELEMENTOS (CodTab, CodElem);
+
+ALTER TABLE COMP_PAGOEMPLEADO ADD CONSTRAINT COMP_PAGOEMPLEADO_ELEMENTOS_2_FK
+
+FOREIGN KEY (TCompPago, ECompPago)
+
+REFERENCES ELEMENTOS (CodTab, CodElem);
+
+ALTER TABLE COMP_PAGOEMPLEADO ADD CONSTRAINT COMP_PAGOEMPLEADO_PROYECTO_FK
+
+FOREIGN KEY (CodCIA, CodPyto)
+
+REFERENCES PROYECTO (CodCIA, CodPyto);
 
 
 /*==============================================================*/
@@ -1093,6 +1184,16 @@ create sequence SEC_DPROY_PARTIDA_MEZCLA_SEMILLA_E
 
 
 create sequence SEC_NRO_PAGO_VTA
+
+  start with 1
+
+  increment by 1
+
+  maxvalue 99999
+
+  minvalue 1;
+
+create sequence SEC_EMPLEADO
 
   start with 1
 
@@ -1479,6 +1580,7 @@ SELECT * FROM DPROY_PARTIDA_MEZCLA;
 SELECT * FROM COMP_PAGOCAB;
 
 -- 14. Ver tabla COMP_PAGODET
+-- 14. Ver tabla COMP_PAGODET
 SELECT * FROM COMP_PAGODET;
 
 -- 15. Ver tabla VTACOMP_PAGOCAB
@@ -1486,3 +1588,46 @@ SELECT * FROM VTACOMP_PAGOCAB;
 
 -- 16. Ver tabla VTACOMP_PAGODET
 SELECT * FROM VTACOMP_PAGODET;
+
+-- ============================================================================
+-- 17. TABLA EMPLEADO - Datos de empleados (extiende PERSONA)
+-- ============================================================================
+INSERT INTO EMPLEADO VALUES (1, 1001, 'Av. Principal 2500, Lima', '992184753', 'Lectura, Proyectos de Ingeniería', NULL, DATE '1972-05-15', '41829305', 'CIP418293', DATE '2025-12-31', '1', 'S', 'Gerente General', 1, 'juan.perez@consandina.pe', 'S');
+INSERT INTO EMPLEADO VALUES (1, 1002, 'Calle Los Andes 450, San Isidro', '954821039', 'Diseño asistido por computadora, Fútbol', NULL, DATE '1982-08-22', '75031298', 'CIP750312', DATE '2025-06-30', '1', 'S', 'Especialista en proyectos de infraestructura', 2, 'maria.rodriguez@consandina.pe', 'S');
+
+-- ============================================================================
+-- 18. TABLA COMP_PAGOEMPLEADO - Comprobantes de pago a empleados
+-- ============================================================================
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1001, 'CPE-001', 101, 1, '003', 'REC', DATE '2023-02-28',
+  '001', 'PEN', 1.0000, 15000.00, 15000.00, 2700.00, 17700.00,
+  NULL, NULL, DATE '2023-03-05', 'Pago de honorarios - Supervisión de proyecto - Febrero 2023',
+  1, '004', 'PAG'
+);
+
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1001, 'CPE-002', 101, 2, '003', 'REC', DATE '2023-03-28',
+  '001', 'PEN', 1.0000, 15000.00, 15000.00, 2700.00, 17700.00,
+  NULL, NULL, DATE '2023-04-05', 'Pago de honorarios - Supervisión de proyecto - Marzo 2023',
+  2, '004', 'PAG'
+);
+
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1002, 'CPE-003', 101, 1, '003', 'REC', DATE '2023-02-28',
+  '001', 'PEN', 1.0000, 12000.00, 12000.00, 2160.00, 14160.00,
+  NULL, NULL, DATE '2023-03-05', 'Pago de honorarios - Ingeniería de diseño - Febrero 2023',
+  3, '004', 'PAG'
+);
+
+INSERT INTO COMP_PAGOEMPLEADO VALUES (
+  1, 1002, 'CPE-004', 102, 1, '003', 'REC', DATE '2023-04-28',
+  '001', 'PEN', 1.0000, 11000.00, 11000.00, 1980.00, 12980.00,
+  NULL, NULL, DATE '2023-05-05', 'Pago de honorarios - Control de calidad - Abril 2023',
+  4, '004', 'REG'
+);
+
+-- 17. Ver tabla EMPLEADO
+SELECT * FROM EMPLEADO;
+
+-- 18. Ver tabla COMP_PAGOEMPLEADO
+SELECT * FROM COMP_PAGOEMPLEADO;

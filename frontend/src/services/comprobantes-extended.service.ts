@@ -279,11 +279,11 @@ export const comprobantesExtendedService = {
       // Agregar URLs de descarga si existen archivos
       const data = response.data.data;
       if (data.fotoCp) {
-        data.fotoCpUrl = `/api/v1/files/download/${data.fotoCp}`;
+        data.fotoCpUrl = `/files/download/${data.fotoCp}`;
         data.hasFotoCp = true;
       }
       if (data.fotoAbono) {
-        data.fotoAbonoUrl = `/api/v1/files/download/${data.fotoAbono}`;
+        data.fotoAbonoUrl = `/files/download/${data.fotoAbono}`;
         data.hasFotoAbono = true;
       }
 
@@ -308,11 +308,11 @@ export const comprobantesExtendedService = {
       // Agregar URLs de descarga si existen archivos
       const data = response.data.data;
       if (data.fotoCp) {
-        data.fotoCpUrl = `/api/v1/files/download/${data.fotoCp}`;
+        data.fotoCpUrl = `/files/download/${data.fotoCp}`;
         data.hasFotoCp = true;
       }
       if (data.fotoAbono) {
-        data.fotoAbonoUrl = `/api/v1/files/download/${data.fotoAbono}`;
+        data.fotoAbonoUrl = `/files/download/${data.fotoAbono}`;
         data.hasFotoAbono = true;
       }
 

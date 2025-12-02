@@ -113,3 +113,21 @@ export function canAnular(codigo: string): boolean {
 export function canMarcarPagado(codigo: string): boolean {
   return isRegistrado(codigo);
 }
+
+/**
+ * Mapea códigos de estado de la base de datos a códigos de componentes UI
+ * Base de datos: '001', '002', '003'
+ * Componentes UI: 'REG', 'PAG', 'ANU'
+ */
+export function mapEstadoToUI(codigo: string): 'REG' | 'PAG' | 'ANU' {
+  const mapping: Record<string, 'REG' | 'PAG' | 'ANU'> = {
+    '001': 'REG',
+    '002': 'PAG',
+    '003': 'ANU',
+    // También soportar los códigos UI directamente
+    'REG': 'REG',
+    'PAG': 'PAG',
+    'ANU': 'ANU',
+  };
+  return mapping[codigo] || 'REG';
+}

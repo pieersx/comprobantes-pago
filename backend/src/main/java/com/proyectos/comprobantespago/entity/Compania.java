@@ -49,12 +49,12 @@ public class Compania implements Serializable {
 
     @Builder.Default
     @Column(name = "VIGENTE", nullable = false, length = 1)
-    private String vigente = "S";
+    private String vigente = "1";
 
     @PrePersist
     protected void onCreate() {
         if (vigente == null) {
-            vigente = "S";
+            vigente = "1";
         }
     }
 }

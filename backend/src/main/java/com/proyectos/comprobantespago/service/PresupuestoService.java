@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -130,14 +129,14 @@ public class PresupuestoService {
         }
 
         ValidacionPresupuestoDTO resultado = ValidacionPresupuestoDTO.builder()
-                .valido(todosValidos)
+                .valido(true) // CAMBIO: Siempre válido, solo mostrar advertencias
                 .mensajeError(todosValidos ? null : mensajeError.toString())
                 .detalles(detallesValidacion)
                 .alertas(alertas)
                 .build();
 
         if (!todosValidos) {
-            log.warn("Validación de egreso rechazada: {}", mensajeError);
+            log.warn("Validación de egreso con advertencias (se permite guardar): {}", mensajeError);
         } else {
             log.info("Validación de egreso aprobada con {} alertas", alertas.size());
         }

@@ -55,6 +55,7 @@ import { useEffect, useState } from 'react';
 interface Comprobante {
   nroCP: string;
   codProveedor: number;
+  codEmpleado?: number; // Feature: empleados-comprobantes-blob
   proveedor: string;
   codPyto: number;
   proyecto: string;
@@ -95,9 +96,15 @@ export default function ComprobantesPage() {
   }, []);
 
   // Función para generar el ID del comprobante
+  // Feature: empleados-comprobantes-blob - Soporte para comprobantes de empleados
   const getComprobanteId = (comprobante: Comprobante) => {
     if (comprobante.tipo === 'EGRESO') {
-      return `egreso-${comprobante.codProveedor}-${comprobante.nroCP}`;
+      // Validar que codProveedor sea un número válido
+      const codProv = comprobante.codProveedor || 0;
+      return `egreso-${codProv}-${comprobante.nroCP}`;
+    } else if (comprobante.tipo === 'EGRESO_EMPLEADO') {
+      const codEmp = (comprobante as any).codEmpleado || 0;
+      return `egreso-empleado-${codEmp}-${comprobante.nroCP}`;
     } else {
       return `ingreso-${comprobante.nroCP}`;
     }
@@ -162,9 +169,20 @@ export default function ComprobantesPage() {
       header: 'Tipo',
       cell: ({ row }) => {
         const tipo = row.getValue('tipo') as string;
+        // Feature: empleados-comprobantes-blob - Soporte para tipo EGRESO_EMPLEADO
+        const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
+          'INGRESO': 'default',
+          'EGRESO': 'secondary',
+          'EGRESO_EMPLEADO': 'outline',
+        };
+        const labels: Record<string, string> = {
+          'INGRESO': 'INGRESO',
+          'EGRESO': 'EGRESO',
+          'EGRESO_EMPLEADO': 'EGRESO EMP.',
+        };
         return (
-          <Badge variant={tipo === 'INGRESO' ? 'default' : 'secondary'}>
-            {tipo}
+          <Badge variant={variants[tipo] || 'secondary'}>
+            {labels[tipo] || tipo}
           </Badge>
         );
       },
@@ -249,8 +267,9 @@ export default function ComprobantesPage() {
       cell: ({ row }) => {
         const comprobante = row.original;
         const comprobanteId = getComprobanteId(comprobante);
-        const puedeEditar = comprobante.estado !== 'PAG' && comprobante.estado !== 'ANU';
-        const puedeAnular = comprobante.estado !== 'ANU';
+        // Estados normalizados: '001' = Registrado, '002' = Pagado, '003' = Anulado
+        const puedeEditar = comprobante.estado !== '002' && comprobante.estado !== '003';
+        const puedeAnular = comprobante.estado !== '003';
 
         return (
           <DropdownMenu>

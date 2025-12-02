@@ -9,9 +9,10 @@ import { EstadoBadge } from './EstadoBadge';
 import { RegistrarPagoModal } from './RegistrarPagoModal';
 
 interface AbonoInfoProps {
-  tipo: 'egreso' | 'ingreso';
+  tipo: 'egreso' | 'ingreso' | 'egreso-empleado';
   codCia: number;
   codProveedor?: number;
+  codEmpleado?: number;
   nroCP: string;
   estado: 'REG' | 'PAG' | 'ANU';
   onEstadoChange?: () => void;
@@ -21,6 +22,7 @@ export function AbonoInfo({
   tipo,
   codCia,
   codProveedor,
+  codEmpleado,
   nroCP,
   estado,
   onEstadoChange,
@@ -31,7 +33,7 @@ export function AbonoInfo({
 
   useEffect(() => {
     cargarAbono();
-  }, [codCia, codProveedor, nroCP, tipo]);
+  }, [codCia, codProveedor, codEmpleado, nroCP, tipo]);
 
   const cargarAbono = async () => {
     setLoading(true);
@@ -42,6 +44,8 @@ export function AbonoInfo({
         data = await abonosService.consultarAbonoEgreso(codCia, codProveedor, nroCP);
       } else if (tipo === 'ingreso') {
         data = await abonosService.consultarAbonoIngreso(codCia, nroCP);
+      } else if (tipo === 'egreso-empleado' && codEmpleado) {
+        data = await abonosService.consultarAbonoEmpleado(codCia, codEmpleado, nroCP);
       }
 
       setAbono(data);
@@ -133,6 +137,7 @@ export function AbonoInfo({
         tipo={tipo}
         codCia={codCia}
         codProveedor={codProveedor}
+        codEmpleado={codEmpleado}
         nroCP={nroCP}
         onSuccess={handleSuccess}
       />

@@ -31,7 +31,7 @@ public interface ProyPartidaRepository extends JpaRepository<ProyPartida, ProyPa
          * Obtener partidas de ingreso de un proyecto
          */
         @Query("SELECT pp FROM ProyPartida pp WHERE pp.codCia = :codCia AND pp.codPyto = :codPyto " +
-                        "AND pp.nroVersion = :nroVersion AND pp.ingEgr = 'I' AND pp.vigente = 'S' ORDER BY pp.nivel")
+                        "AND pp.nroVersion = :nroVersion AND pp.ingEgr = 'I' AND pp.vigente = '1' ORDER BY pp.nivel")
         List<ProyPartida> findPartidasIngreso(
                         @Param("codCia") Long codCia,
                         @Param("codPyto") Long codPyto,
@@ -41,7 +41,7 @@ public interface ProyPartidaRepository extends JpaRepository<ProyPartida, ProyPa
          * Obtener partidas de egreso de un proyecto
          */
         @Query("SELECT pp FROM ProyPartida pp WHERE pp.codCia = :codCia AND pp.codPyto = :codPyto " +
-                        "AND pp.nroVersion = :nroVersion AND pp.ingEgr = 'E' AND pp.vigente = 'S' ORDER BY pp.nivel")
+                        "AND pp.nroVersion = :nroVersion AND pp.ingEgr = 'E' AND pp.vigente = '1' ORDER BY pp.nivel")
         List<ProyPartida> findPartidasEgreso(
                         @Param("codCia") Long codCia,
                         @Param("codPyto") Long codPyto,
@@ -64,7 +64,7 @@ public interface ProyPartidaRepository extends JpaRepository<ProyPartida, ProyPa
          * Según el profesor: Solo partidas de nivel 3 se usan en comprobantes
          */
         @Query("SELECT pp FROM ProyPartida pp WHERE pp.codCia = :codCia AND pp.codPyto = :codPyto " +
-                        "AND pp.ingEgr = :ingEgr AND pp.nivel = 3 AND pp.vigente = 'S' " +
+                        "AND pp.ingEgr = :ingEgr AND pp.nivel = 3 AND pp.vigente = '1' " +
                         "ORDER BY pp.codPartidas")
         List<ProyPartida> findPartidasNivel3ByProyecto(
                         @Param("codCia") Long codCia,
@@ -76,7 +76,7 @@ public interface ProyPartidaRepository extends JpaRepository<ProyPartida, ProyPa
          * Nuevo requerimiento: El usuario puede seleccionar cualquier nivel
          */
         @Query("SELECT pp FROM ProyPartida pp WHERE pp.codCia = :codCia AND pp.codPyto = :codPyto " +
-                        "AND pp.ingEgr = :ingEgr AND pp.vigente = 'S' " +
+                        "AND pp.ingEgr = :ingEgr AND pp.vigente = '1' " +
                         "ORDER BY pp.nivel, pp.codPartidas")
         List<ProyPartida> findTodasPartidasByProyecto(
                         @Param("codCia") Long codCia,
@@ -94,7 +94,7 @@ public interface ProyPartidaRepository extends JpaRepository<ProyPartida, ProyPa
          */
         @Query("SELECT CASE WHEN COUNT(pp) > 0 THEN true ELSE false END FROM ProyPartida pp " +
                         "WHERE pp.codCia = :codCia AND pp.codPyto = :codPyto AND pp.ingEgr = :ingEgr " +
-                        "AND pp.codPartida = :codPartida AND pp.nivel = 3 AND pp.vigente = 'S'")
+                        "AND pp.codPartida = :codPartida AND pp.nivel = 3 AND pp.vigente = '1'")
         boolean existsPartidaNivel3InProyecto(
                         @Param("codCia") Long codCia,
                         @Param("codPyto") Long codPyto,

@@ -32,6 +32,6 @@ public interface TabsRepository extends JpaRepository<Tabs, String> {
     /**
      * Obtener todas las tabs vigentes ordenadas
      */
-    @Query("SELECT t FROM Tabs t WHERE t.vigente = 'S' ORDER BY t.denTab")
+    @Query("SELECT t FROM Tabs t WHERE t.vigente = '1' ORDER BY t.denTab")
     List<Tabs> findAllVigentesSorted();
 }

@@ -39,7 +39,7 @@ export default function NuevoEgresoPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Nuevo Comprobante de Egreso</h1>
         <p className="text-muted-foreground mt-2">
-          Registre un nuevo comprobante de pago a proveedor
+          Registre un nuevo comprobante de pago a proveedor o empleado
         </p>
       </div>
 

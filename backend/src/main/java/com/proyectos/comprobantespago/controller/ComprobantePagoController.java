@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -241,5 +242,85 @@ public class ComprobantePagoController {
                 fotoAbono);
 
         return ResponseEntity.ok(ApiResponse.success("Archivos actualizados correctamente", actualizado));
+    }
+
+    // ==================== Endpoints de Imágenes BLOB ====================
+    // Feature: empleados-comprobantes-blob
+    // Requirements: 6.1, 6.2, 6.3, 6.4
+
+    @PostMapping("/{codCia}/{codProveedor}/{nroCp}/foto-cp")
+    @Operation(summary = "Subir imagen comprobante (BLOB)", description = "Sube la imagen del comprobante como BLOB (máx 10MB, jpg/png/pdf)")
+    public ResponseEntity<ApiResponse<Void>> uploadFotoCp(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+
+        comprobantePagoService.uploadFotoCp(codCia, codProveedor, nroCp, file);
+        return ResponseEntity.ok(ApiResponse.success("Imagen de comprobante subida exitosamente", null));
+    }
+
+    @GetMapping("/{codCia}/{codProveedor}/{nroCp}/foto-cp")
+    @Operation(summary = "Obtener imagen comprobante (BLOB)", description = "Obtiene la imagen del comprobante desde BLOB")
+    public ResponseEntity<byte[]> getFotoCp(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp) {
+
+        byte[] foto = comprobantePagoService.getFotoCp(codCia, codProveedor, nroCp);
+        return createImageResponse(foto);
+    }
+
+    @DeleteMapping("/{codCia}/{codProveedor}/{nroCp}/foto-cp")
+    @Operation(summary = "Eliminar imagen comprobante (BLOB)", description = "Elimina la imagen del comprobante")
+    public ResponseEntity<ApiResponse<Void>> deleteFotoCp(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp) {
+
+        comprobantePagoService.deleteFotoCp(codCia, codProveedor, nroCp);
+        return ResponseEntity.ok(ApiResponse.success("Imagen de comprobante eliminada", null));
+    }
+
+    @PostMapping("/{codCia}/{codProveedor}/{nroCp}/foto-abono")
+    @Operation(summary = "Subir imagen abono (BLOB)", description = "Sube la imagen del abono como BLOB (máx 10MB, jpg/png/pdf)")
+    public ResponseEntity<ApiResponse<Void>> uploadFotoAbono(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+
+        comprobantePagoService.uploadFotoAbono(codCia, codProveedor, nroCp, file);
+        return ResponseEntity.ok(ApiResponse.success("Imagen de abono subida exitosamente", null));
+    }
+
+    @GetMapping("/{codCia}/{codProveedor}/{nroCp}/foto-abono")
+    @Operation(summary = "Obtener imagen abono (BLOB)", description = "Obtiene la imagen del abono desde BLOB")
+    public ResponseEntity<byte[]> getFotoAbono(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp) {
+
+        byte[] foto = comprobantePagoService.getFotoAbono(codCia, codProveedor, nroCp);
+        return createImageResponse(foto);
+    }
+
+    @DeleteMapping("/{codCia}/{codProveedor}/{nroCp}/foto-abono")
+    @Operation(summary = "Eliminar imagen abono (BLOB)", description = "Elimina la imagen del abono")
+    public ResponseEntity<ApiResponse<Void>> deleteFotoAbono(
+            @PathVariable Long codCia,
+            @PathVariable Long codProveedor,
+            @PathVariable String nroCp) {
+
+        comprobantePagoService.deleteFotoAbono(codCia, codProveedor, nroCp);
+        return ResponseEntity.ok(ApiResponse.success("Imagen de abono eliminada", null));
+    }
+
+    private ResponseEntity<byte[]> createImageResponse(byte[] data) {
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentLength(data.length);
+        headers.setCacheControl("max-age=3600");
+        return new ResponseEntity<>(data, headers, HttpStatus.OK);
     }
 }

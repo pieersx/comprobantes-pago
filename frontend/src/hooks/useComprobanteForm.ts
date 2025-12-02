@@ -71,7 +71,8 @@ export interface ComprobanteFormState {
   codCia: number;
   nroCp: string;
   codPyto: number;
-  codProveedor?: number; // Solo egresos
+  codProveedor?: number; // Solo egresos a proveedores
+  codEmpleado?: number; // Feature: empleados-comprobantes-blob - Solo egresos a empleados
   codCliente?: number; // Solo ingresos
   fecCp: string;
   tMoneda: string;
@@ -123,6 +124,7 @@ export function useComprobanteForm(
     nroCp: initialData?.nroCp || '',
     codPyto: initialData?.codPyto || 0,
     codProveedor: tipo === 'egreso' ? (initialData as CompPagoCab)?.codProveedor : undefined,
+    codEmpleado: undefined, // Feature: empleados-comprobantes-blob
     codCliente: tipo === 'ingreso' ? (initialData as VtaCompPagoCab)?.codCliente : undefined,
     fecCp: initialData?.fecCp || new Date().toISOString().split('T')[0],
     tMoneda: initialData?.tMoneda || 'PEN',
@@ -273,8 +275,15 @@ export function useComprobanteForm(
       errores.codPyto = 'El proyecto es obligatorio';
     }
 
-    if (tipo === 'egreso' && (!formState.codProveedor || formState.codProveedor === 0)) {
-      errores.codProveedor = 'El proveedor es obligatorio';
+    // Feature: empleados-comprobantes-blob - Validar proveedor O empleado para egresos
+    if (tipo === 'egreso') {
+      const tieneProveedor = formState.codProveedor && formState.codProveedor > 0;
+      const tieneEmpleado = formState.codEmpleado && formState.codEmpleado > 0;
+
+      if (!tieneProveedor && !tieneEmpleado) {
+        errores.codProveedor = 'Debe seleccionar un proveedor o empleado';
+        errores.codEmpleado = 'Debe seleccionar un proveedor o empleado';
+      }
     }
 
     if (tipo === 'ingreso' && (!formState.codCliente || formState.codCliente === 0)) {
@@ -356,6 +365,7 @@ export function useComprobanteForm(
       nroCp: initialData?.nroCp || '',
       codPyto: initialData?.codPyto || 0,
       codProveedor: tipo === 'egreso' ? (initialData as CompPagoCab)?.codProveedor : undefined,
+      codEmpleado: undefined, // Feature: empleados-comprobantes-blob
       codCliente: tipo === 'ingreso' ? (initialData as VtaCompPagoCab)?.codCliente : undefined,
       fecCp: initialData?.fecCp || new Date().toISOString().split('T')[0],
       tMoneda: initialData?.tMoneda || 'PEN',

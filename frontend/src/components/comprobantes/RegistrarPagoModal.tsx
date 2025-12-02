@@ -18,17 +18,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { apiClient } from '@/lib/api';
 import { abonosService, type AbonoData } from '@/services/abonos.service';
+import { FileImage, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { FileUploader } from './FileUploader';
 
 interface RegistrarPagoModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tipo: 'egreso' | 'ingreso';
+  tipo: 'egreso' | 'ingreso' | 'egreso-empleado';
   codCia: number;
   codProveedor?: number;
+  codEmpleado?: number;
   nroCP: string;
   onSuccess?: () => void;
 }
@@ -49,6 +51,7 @@ export function RegistrarPagoModal({
   tipo,
   codCia,
   codProveedor,
+  codEmpleado,
   nroCP,
   onSuccess,
 }: RegistrarPagoModalProps) {
@@ -59,6 +62,29 @@ export function RegistrarPagoModal({
     fotoAbono: '',
   });
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Subir imagen como BLOB al comprobante
+  const uploadFotoAbono = async (file: File) => {
+    const formDataFile = new FormData();
+    formDataFile.append('file', file);
+
+    let endpoint = '';
+    if (tipo === 'egreso' && codProveedor) {
+      endpoint = `/comprobantes-pago/${codCia}/${codProveedor}/${nroCP}/foto-abono`;
+    } else if (tipo === 'ingreso') {
+      endpoint = `/comprobantes-venta/${codCia}/${nroCP}/foto-abono`;
+    } else if (tipo === 'egreso-empleado' && codEmpleado) {
+      endpoint = `/comprobantes-empleado/${codCia}/${codEmpleado}/${nroCP}/foto-abono`;
+    }
+
+    if (endpoint) {
+      await apiClient.post(endpoint, formDataFile, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +97,7 @@ export function RegistrarPagoModal({
     setLoading(true);
 
     try {
+      // 1. Registrar el abono (fecha, medio de pago, monto)
       if (tipo === 'egreso' && codProveedor) {
         await abonosService.registrarAbonoEgreso(
           codCia,
@@ -80,9 +107,25 @@ export function RegistrarPagoModal({
         );
       } else if (tipo === 'ingreso') {
         await abonosService.registrarAbonoIngreso(codCia, nroCP, formData);
+      } else if (tipo === 'egreso-empleado' && codEmpleado) {
+        await abonosService.registrarAbonoEmpleado(codCia, codEmpleado, nroCP, formData);
       }
 
-      toast.success('Pago registrado exitosamente');
+      // 2. Si hay archivo seleccionado, subirlo como BLOB
+      if (selectedFile) {
+        setUploadingImage(true);
+        try {
+          await uploadFotoAbono(selectedFile);
+          toast.success('Pago e imagen registrados exitosamente');
+        } catch (imgError) {
+          console.error('Error al subir imagen:', imgError);
+          toast.warning('Pago registrado, pero hubo un error al subir la imagen');
+        }
+        setUploadingImage(false);
+      } else {
+        toast.success('Pago registrado exitosamente');
+      }
+
       onSuccess?.();
       handleClose();
     } catch (error: any) {
@@ -93,12 +136,25 @@ export function RegistrarPagoModal({
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tamaño (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('El archivo no debe superar los 10MB');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
   const handleClose = () => {
     setFormData({
       fechaAbono: new Date().toISOString().split('T')[0],
       descripcionMedioPago: '',
       fotoAbono: '',
     });
+    setSelectedFile(null);
     onOpenChange(false);
   };
 
@@ -165,26 +221,39 @@ export function RegistrarPagoModal({
             />
           </div>
 
-          <FileUploader
-            label="Voucher del Pago (FotoAbono)"
-            tipo="abono"
-            onUploadSuccess={(path) =>
-              setFormData({ ...formData, fotoAbono: path })
-            }
-            currentFile={formData.fotoAbono}
-            accept=".pdf,.jpg,.jpeg,.png"
-            maxSizeMB={10}
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            💡 Suba el voucher de pago (transferencia, Yape, depósito, etc.)
-          </p>
+          <div className="space-y-2">
+            <Label htmlFor="fotoAbono">Voucher del Pago (opcional)</Label>
+            <Input
+              id="fotoAbono"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleFileSelect}
+              className="cursor-pointer"
+            />
+            {selectedFile && (
+              <p className="text-sm text-green-600 flex items-center gap-1">
+                <FileImage className="h-4 w-4" />
+                {selectedFile.name}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              💡 Suba el voucher de pago (transferencia, Yape, depósito, etc.). Máx 10MB
+            </p>
+          </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={loading || uploadingImage}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Guardando...' : 'Registrar Pago'}
+            <Button type="submit" disabled={loading || uploadingImage}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {uploadingImage ? 'Subiendo imagen...' : 'Guardando...'}
+                </>
+              ) : (
+                'Registrar Pago'
+              )}
             </Button>
           </DialogFooter>
         </form>

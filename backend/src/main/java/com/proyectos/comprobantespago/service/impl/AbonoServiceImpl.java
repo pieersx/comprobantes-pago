@@ -5,10 +5,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.proyectos.comprobantespago.dto.AbonoDTO;
 import com.proyectos.comprobantespago.entity.ComprobantePagoCab;
+import com.proyectos.comprobantespago.entity.ComprobantePagoEmpleado;
 import com.proyectos.comprobantespago.entity.VtaCompPagoCab;
 import com.proyectos.comprobantespago.enums.EstadoComprobante;
 import com.proyectos.comprobantespago.exception.ResourceNotFoundException;
 import com.proyectos.comprobantespago.repository.ComprobantePagoCabRepository;
+import com.proyectos.comprobantespago.repository.ComprobantePagoEmpleadoRepository;
 import com.proyectos.comprobantespago.repository.VtaCompPagoCabRepository;
 import com.proyectos.comprobantespago.service.AbonoService;
 
@@ -22,6 +24,7 @@ public class AbonoServiceImpl implements AbonoService {
 
     private final ComprobantePagoCabRepository comprobantePagoCabRepository;
     private final VtaCompPagoCabRepository vtaCompPagoCabRepository;
+    private final ComprobantePagoEmpleadoRepository comprobantePagoEmpleadoRepository;
 
     private static final String TAB_ESTADO = "004"; // Tabla de estados
 
@@ -39,7 +42,7 @@ public class AbonoServiceImpl implements AbonoService {
         // Actualizar campos de abono
         comprobante.setFecAbono(abonoDTO.getFechaAbono());
         comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
-        comprobante.setFotoAbono(abonoDTO.getFotoAbono() != null ? abonoDTO.getFotoAbono() : "");
+        // FotoAbono se maneja por endpoints BLOB separados, no se actualiza aquí
 
         // Cambiar estado a PAGADO
         comprobante.setTabEstado(TAB_ESTADO);
@@ -62,7 +65,7 @@ public class AbonoServiceImpl implements AbonoService {
         // Actualizar campos de abono
         comprobante.setFecAbono(abonoDTO.getFechaAbono());
         comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
-        comprobante.setFotoAbono(abonoDTO.getFotoAbono() != null ? abonoDTO.getFotoAbono() : "");
+        // FotoAbono se maneja por endpoints BLOB separados, no se actualiza aquí
 
         // Cambiar estado a PAGADO
         comprobante.setTabEstado(TAB_ESTADO);
@@ -119,7 +122,7 @@ public class AbonoServiceImpl implements AbonoService {
         return AbonoDTO.builder()
                 .fechaAbono(comprobante.getFecAbono())
                 .descripcionMedioPago(comprobante.getDesAbono())
-                .fotoAbono(comprobante.getFotoAbono())
+                .tieneFotoAbono(comprobante.getFotoAbono() != null && comprobante.getFotoAbono().length > 0)
                 .build();
     }
 
@@ -138,7 +141,68 @@ public class AbonoServiceImpl implements AbonoService {
         return AbonoDTO.builder()
                 .fechaAbono(comprobante.getFecAbono())
                 .descripcionMedioPago(comprobante.getDesAbono())
-                .fotoAbono(comprobante.getFotoAbono())
+                .tieneFotoAbono(comprobante.getFotoAbono() != null && comprobante.getFotoAbono().length > 0)
+                .build();
+    }
+
+    // ==================== Métodos para Empleados ====================
+
+    @Override
+    @Transactional
+    public void registrarAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP, AbonoDTO abonoDTO) {
+        log.info("Registrando abono para empleado: codCia={}, codEmpleado={}, nroCP={}",
+                codCia, codEmpleado, nroCP);
+
+        ComprobantePagoEmpleado comprobante = comprobantePagoEmpleadoRepository
+                .findByCodCiaAndCodEmpleadoAndNroCp(codCia, codEmpleado, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de empleado no encontrado: " + nroCP));
+
+        // Actualizar campos de abono
+        comprobante.setFecAbono(abonoDTO.getFechaAbono());
+        comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
+        // FotoAbono se maneja por endpoints BLOB separados
+
+        // Cambiar estado a PAGADO
+        comprobante.setTabEstado(TAB_ESTADO);
+        comprobante.setCodEstado(EstadoComprobante.PAGADO.getCodigo());
+
+        comprobantePagoEmpleadoRepository.save(comprobante);
+        log.info("Abono registrado exitosamente para empleado: {}", nroCP);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarEstadoEmpleado(Long codCia, Long codEmpleado, String nroCP, EstadoComprobante nuevoEstado) {
+        log.info("Cambiando estado de empleado {} a {}", nroCP, nuevoEstado);
+
+        ComprobantePagoEmpleado comprobante = comprobantePagoEmpleadoRepository
+                .findByCodCiaAndCodEmpleadoAndNroCp(codCia, codEmpleado, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de empleado no encontrado: " + nroCP));
+
+        comprobante.setTabEstado(TAB_ESTADO);
+        comprobante.setCodEstado(nuevoEstado.getCodigo());
+
+        comprobantePagoEmpleadoRepository.save(comprobante);
+    }
+
+    @Override
+    public AbonoDTO getAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP) {
+        ComprobantePagoEmpleado comprobante = comprobantePagoEmpleadoRepository
+                .findByCodCiaAndCodEmpleadoAndNroCp(codCia, codEmpleado, nroCP)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Comprobante de empleado no encontrado: " + nroCP));
+
+        // Si no tiene fecha de abono, no hay abono registrado
+        if (comprobante.getFecAbono() == null) {
+            return null;
+        }
+
+        return AbonoDTO.builder()
+                .fechaAbono(comprobante.getFecAbono())
+                .descripcionMedioPago(comprobante.getDesAbono())
+                .tieneFotoAbono(comprobante.getFotoAbono() != null && comprobante.getFotoAbono().length > 0)
                 .build();
     }
 }

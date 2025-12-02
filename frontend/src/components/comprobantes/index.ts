@@ -13,6 +13,7 @@ export { TaxCalculator } from './TaxCalculator';
 
 // Componentes de gestión de abonos y estados
 export { AbonoInfo } from './AbonoInfo';
+export { BlobImageUploader } from './BlobImageUploader';
 export { EstadoBadge } from './EstadoBadge';
 export { FileUploader } from './FileUploader';
 export { RegistrarPagoModal } from './RegistrarPagoModal';

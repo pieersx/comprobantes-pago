@@ -1,37 +1,95 @@
-import { comprobantesEgresoService, comprobantesIngresoService } from './comprobantes.service';
+import { comprobantesEmpleadoService } from './comprobantes-empleado.service';
+import {
+    clientesService,
+    comprobantesEgresoService,
+    comprobantesIngresoService,
+    proveedoresService,
+    proyectosService,
+} from './comprobantes.service';
 
 export interface ComprobanteUnificado {
   nroCP: string;
   codProveedor: number;
+  codEmpleado?: number; // Feature: empleados-comprobantes-blob
   proveedor: string;
   codPyto: number;
   proyecto: string;
   fecCP: string;
   impTotalMn: number;
   estado: string;
-  tipo: 'INGRESO' | 'EGRESO';
+  tipo: 'INGRESO' | 'EGRESO' | 'EGRESO_EMPLEADO'; // Feature: empleados-comprobantes-blob
   tCompPago?: string; // Tipo de comprobante: FAC, BOL, REC, OTR
   fotoCp?: string; // Ruta del archivo del comprobante
   fotoAbono?: string; // Ruta del archivo del abono
 }
 
+/**
+ * Normaliza el código de estado a un formato consistente
+ * Estados de la BD: '001' = Registrado, '002' = Pagado, '003' = Anulado
+ * Estados legacy: PAG, PEN, REG, ANU
+ */
+const normalizarEstado = (codEstado: string | undefined): string => {
+  if (!codEstado) return '001'; // Default: Registrado
+
+  const estado = codEstado.toUpperCase();
+
+  // Mapear estados legacy a nuevos códigos
+  const mapeoLegacy: Record<string, string> = {
+    'PAG': '002',
+    'PAGADO': '002',
+    'PEN': '001',
+    'PENDIENTE': '001',
+    'REG': '001',
+    'REGISTRADO': '001',
+    'ANU': '003',
+    'ANULADO': '003',
+  };
+
+  // Si es un estado legacy, convertirlo
+  if (mapeoLegacy[estado]) {
+    return mapeoLegacy[estado];
+  }
+
+  // Si ya es un código válido (001, 002, 003), devolverlo
+  if (['001', '002', '003', '1', '2', '3'].includes(estado)) {
+    // Normalizar '1', '2', '3' a '001', '002', '003'
+    if (estado.length === 1) {
+      return estado.padStart(3, '0');
+    }
+    return estado;
+  }
+
+  // Default
+  return '001';
+};
+
 class ComprobantesUnifiedService {
   async getAll(codCia: number = 1): Promise<ComprobanteUnificado[]> {
     try {
-      const [ingresos, egresos] = await Promise.all([
+      // Cargar comprobantes y catálogos en paralelo para obtener nombres reales
+      const [ingresos, egresos, egresosEmpleado, clientes, proyectos, proveedores] = await Promise.all([
         comprobantesIngresoService.getAll(codCia),
-        comprobantesEgresoService.getAll(codCia),
+        comprobantesEgresoService.getAll(codCia).catch(() => []), // Graceful fallback
+        comprobantesEmpleadoService.getAll(codCia).catch(() => []), // Graceful fallback
+        clientesService.getAll(codCia).catch(() => []),
+        proyectosService.getAll(codCia).catch(() => []),
+        proveedoresService.getAll(codCia).catch(() => []),
       ]);
+
+      // Crear mapas para búsqueda rápida de nombres
+      const clientesMap = new Map(clientes.map(c => [c.codCliente, c.desPersona || c.desCorta || `Cliente ${c.codCliente}`]));
+      const proyectosMap = new Map(proyectos.map(p => [p.codPyto, p.nombPyto || `Proyecto ${p.codPyto}`]));
+      const proveedoresMap = new Map(proveedores.map(p => [p.codProveedor, p.desPersona || p.desCorta || `Proveedor ${p.codProveedor}`]));
 
       const ingresosUnificados: ComprobanteUnificado[] = ingresos.map((ing) => ({
         nroCP: ing.nroCp || '',
         codProveedor: ing.codCliente || 0,
-        proveedor: `Cliente ${ing.codCliente}`,
+        proveedor: clientesMap.get(ing.codCliente) || `Cliente ${ing.codCliente}`,
         codPyto: ing.codPyto || 0,
-        proyecto: `Proyecto ${ing.codPyto}`,
+        proyecto: proyectosMap.get(ing.codPyto) || `Proyecto ${ing.codPyto}`,
         fecCP: ing.fecCp || '',
         impTotalMn: ing.impTotalMn || 0,
-        estado: ing.codEstado || '',
+        estado: normalizarEstado(ing.codEstado),
         tipo: 'INGRESO' as const,
         tCompPago: ing.tCompPago,
         fotoCp: ing.fotoCp,
@@ -41,70 +99,39 @@ class ComprobantesUnifiedService {
       const egresosUnificados: ComprobanteUnificado[] = egresos.map((egr) => ({
         nroCP: egr.nroCp || '',
         codProveedor: egr.codProveedor || 0,
-        proveedor: `Proveedor ${egr.codProveedor}`,
+        proveedor: proveedoresMap.get(egr.codProveedor) || `Proveedor ${egr.codProveedor}`,
         codPyto: egr.codPyto || 0,
-        proyecto: `Proyecto ${egr.codPyto}`,
+        proyecto: proyectosMap.get(egr.codPyto) || `Proyecto ${egr.codPyto}`,
         fecCP: egr.fecCp || '',
         impTotalMn: egr.impTotalMn || 0,
-        estado: egr.codEstado || '',
+        estado: normalizarEstado(egr.codEstado),
         tipo: 'EGRESO' as const,
         tCompPago: egr.tCompPago,
         fotoCp: egr.fotoCp,
         fotoAbono: egr.fotoAbono,
       }));
 
-      return [...ingresosUnificados, ...egresosUnificados].sort(
+      // Feature: empleados-comprobantes-blob - Mapear comprobantes de empleados
+      const egresosEmpleadoUnificados: ComprobanteUnificado[] = egresosEmpleado.map((emp) => ({
+        nroCP: emp.nroCp || '',
+        codProveedor: 0,
+        codEmpleado: emp.codEmpleado || 0,
+        proveedor: emp.nombreEmpleado || `Empleado ${emp.codEmpleado}`,
+        codPyto: emp.codPyto || 0,
+        proyecto: emp.nombreProyecto || proyectosMap.get(emp.codPyto) || `Proyecto ${emp.codPyto}`,
+        fecCP: emp.fecCp || '',
+        impTotalMn: emp.impTotalMn || 0,
+        estado: normalizarEstado(emp.codEstado),
+        tipo: 'EGRESO_EMPLEADO' as const,
+        tCompPago: emp.eCompPago,
+      }));
+
+      return [...ingresosUnificados, ...egresosUnificados, ...egresosEmpleadoUnificados].sort(
         (a, b) => new Date(b.fecCP).getTime() - new Date(a.fecCP).getTime()
       );
     } catch (error) {
-      // Mock data for development
-      // Estados según la base de datos: '001' = Registrado, '002' = Pagado, '003' = Anulado
-      return [
-        {
-          nroCP: 'CP-001',
-          codProveedor: 7001,
-          proveedor: 'Cementos Andinos SA',
-          codPyto: 101,
-          proyecto: 'Proyecto Hidroeléctrico Andino',
-          fecCP: '2024-01-15',
-          impTotalMn: 85000,
-          estado: '002', // Pagado
-          tipo: 'EGRESO',
-        },
-        {
-          nroCP: 'CP-002',
-          codProveedor: 7002,
-          proveedor: 'Aceros Nacionales SA',
-          codPyto: 101,
-          proyecto: 'Proyecto Hidroeléctrico Andino',
-          fecCP: '2024-01-20',
-          impTotalMn: 47200,
-          estado: '002', // Pagado
-          tipo: 'EGRESO',
-        },
-        {
-          nroCP: 'VCP-001',
-          codProveedor: 5001,
-          proveedor: 'Empresa Eléctrica Sur',
-          codPyto: 101,
-          proyecto: 'Proyecto Hidroeléctrico Andino',
-          fecCP: '2024-02-01',
-          impTotalMn: 120000,
-          estado: '002', // Pagado
-          tipo: 'INGRESO',
-        },
-        {
-          nroCP: 'CP-003',
-          codProveedor: 7003,
-          proveedor: 'Equipos Industriales',
-          codPyto: 102,
-          proyecto: 'Construcción Planta Energética',
-          fecCP: '2024-02-10',
-          impTotalMn: 29500,
-          estado: '001', // Registrado (Pendiente)
-          tipo: 'EGRESO',
-        },
-      ];
+      console.error('Error al cargar comprobantes unificados:', error);
+      return [];
     }
   }
 
