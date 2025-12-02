@@ -9,8 +9,8 @@ Write-Host "Instalando dependencias del Frontend..." -ForegroundColor Yellow
 cd frontend; pnpm install; cd ..
 
 # Scripts de ejecucion (modo desarrollo)
-"cd backend; mvn spring-boot:run" | Out-File backend.ps1
-"cd frontend; pnpm dev" | Out-File frontend.ps1
+"cd `"$PSScriptRoot\backend`"; mvn spring-boot:run" | Out-File backend.ps1
+"cd `"$PSScriptRoot\frontend`"; pnpm dev" | Out-File frontend.ps1
 
 Write-Host "=== LISTO ===" -ForegroundColor Green
 Write-Host ""
