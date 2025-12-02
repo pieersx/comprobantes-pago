@@ -16,69 +16,147 @@ TRUNCATE TABLE FLUJOCAJA;
 TRUNCATE TABLE PARTIDA;
 
 -- ============================================================================
--- VERIFICAR Y CREAR PROYECTOS SI NO EXISTEN
+-- VERIFICAR Y CREAR DATOS BASE SI NO EXISTEN
 -- ============================================================================
--- Este bloque inserta los proyectos necesarios si no fueron creados
--- por datos-profesor.sql o si la base de datos fue reiniciada
+-- Este bloque inserta CIA, CLIENTES, EMPLEADOS y PROYECTOS si no fueron
+-- creados por datos-profesor.sql o si la base de datos fue reiniciada.
+-- USA LOS MISMOS DATOS DEL PROFESOR para mantener consistencia.
 -- ============================================================================
 
--- Verificar si existen los proyectos requeridos
 DECLARE
     v_count_proyecto NUMBER;
     v_count_cia NUMBER;
     v_count_cliente NUMBER;
     v_count_empleado NUMBER;
 BEGIN
-    -- Verificar si existe la CIA
+    -- ========================================
+    -- 1. VERIFICAR/INSERTAR CIA
+    -- ========================================
     SELECT COUNT(*) INTO v_count_cia FROM CIA WHERE CodCia = 1;
     IF v_count_cia = 0 THEN
-        INSERT INTO CIA VALUES (1, 'MAGNA CONSTRUCTORES S.A.C.', 'MAGNA', '1');
-        DBMS_OUTPUT.PUT_LINE('CIA insertada correctamente');
+        INSERT INTO CIA VALUES (1, 'CONSTRUCTORA MAGNA PERÚ SAC', 'CMAG', '1');
+        DBMS_OUTPUT.PUT_LINE('CIA insertada: CONSTRUCTORA MAGNA PERÚ SAC');
     ELSE
         DBMS_OUTPUT.PUT_LINE('CIA ya existe');
     END IF;
 
-    -- Verificar si existe el cliente 12 (necesario para VTACOMP_PAGOCAB)
+    -- ========================================
+    -- 2. VERIFICAR/INSERTAR CLIENTES 12, 13, 14
+    -- ========================================
+    -- Cliente 12: MUNICIPALIDAD DE LIMA METROPOLITANA
     SELECT COUNT(*) INTO v_count_cliente FROM CLIENTE WHERE CodCia = 1 AND CodCliente = 12;
     IF v_count_cliente = 0 THEN
-        -- Verificar si existe la persona 12
         BEGIN
-            INSERT INTO PERSONA VALUES (1, 12, '2', 'CLIENTE PROYECTO', 'CLI-G06', 'Cliente', 'CLIG06', '1');
-        EXCEPTION WHEN OTHERS THEN NULL; -- Si ya existe, ignorar
-        END;
-        BEGIN
-            INSERT INTO CLIENTE VALUES (1, 12, '20123456789', '1');
+            INSERT INTO PERSONA VALUES (1, 12, '2', 'MUNICIPALIDAD DE LIMA METROPOLITANA', 'MUN LIMA', 'Municipalidad de Lima', 'MUNLIMA', '1');
         EXCEPTION WHEN OTHERS THEN NULL;
         END;
-        DBMS_OUTPUT.PUT_LINE('Cliente 12 insertado o verificado');
+        BEGIN
+            INSERT INTO CLIENTE VALUES (1, 12, '15000000001', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Cliente 12 insertado: MUNICIPALIDAD DE LIMA');
     ELSE
         DBMS_OUTPUT.PUT_LINE('Cliente 12 ya existe');
     END IF;
 
-    -- Verificar si existe el empleado 1 (necesario para EmplJefeProy)
+    -- Cliente 13: MINISTERIO DE TRANSPORTES Y COMUNICACIONES
+    SELECT COUNT(*) INTO v_count_cliente FROM CLIENTE WHERE CodCia = 1 AND CodCliente = 13;
+    IF v_count_cliente = 0 THEN
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 13, '2', 'MINISTERIO DE TRANSPORTES Y COMUNICACIONES', 'MTC', 'Ministerio Transportes', 'MTC', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO CLIENTE VALUES (1, 13, '15000000002', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Cliente 13 insertado: MTC');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Cliente 13 ya existe');
+    END IF;
+
+    -- Cliente 14: GOBIERNO REGIONAL CUSCO
+    SELECT COUNT(*) INTO v_count_cliente FROM CLIENTE WHERE CodCia = 1 AND CodCliente = 14;
+    IF v_count_cliente = 0 THEN
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 14, '2', 'GOBIERNO REGIONAL CUSCO', 'GR CUSCO', 'Gobierno Regional Cusco', 'GRC', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO CLIENTE VALUES (1, 14, '15000000003', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Cliente 14 insertado: GR CUSCO');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Cliente 14 ya existe');
+    END IF;
+
+    -- ========================================
+    -- 3. VERIFICAR/INSERTAR EMPLEADOS 1, 2, 3
+    -- ========================================
+    -- Empleado 1: Juan Pablo Martínez López (Gerente General)
     SELECT COUNT(*) INTO v_count_empleado FROM EMPLEADO WHERE CodCia = 1 AND CodEmpleado = 1;
     IF v_count_empleado = 0 THEN
-        -- Insertar persona y empleado básico
         BEGIN
-            INSERT INTO PERSONA VALUES (1, 1, '1', 'JEFE PROYECTO', 'JEFE-G06', 'Jefe', 'JEFEG06', '1');
+            INSERT INTO PERSONA VALUES (1, 1, '1', 'Juan Pablo Martínez López', 'J. Martínez', 'Juan Pablo Martínez López', 'J.P.M.L', '1');
         EXCEPTION WHEN OTHERS THEN NULL;
         END;
         BEGIN
-            INSERT INTO EMPLEADO VALUES (1, 1, 'Direccion', '999999999', 'N/A', NULL, TO_DATE('1990-01-01','YYYY-MM-DD'), '12345678', NULL, NULL, NULL, '1', NULL, NULL, 'jefe@email.com', '1');
+            INSERT INTO EMPLEADO VALUES (1, 1, 'Av. Principal 2500, Lima', '992184753', 'Lectura, Proyectos de Ingeniería', NULL,
+                TO_DATE('1972-05-15','YYYY-MM-DD'), '41829305', 'CIP418293', TO_DATE('2025-12-31','YYYY-MM-DD'),
+                NULL, '1', 'S', 'Gerente General', 'juan.martinez@cmag.pe', '1');
         EXCEPTION WHEN OTHERS THEN NULL;
         END;
-        DBMS_OUTPUT.PUT_LINE('Empleado 1 insertado o verificado');
+        DBMS_OUTPUT.PUT_LINE('Empleado 1 insertado: Juan Pablo Martínez López');
     ELSE
         DBMS_OUTPUT.PUT_LINE('Empleado 1 ya existe');
     END IF;
 
-    -- Verificar si existen los proyectos 1, 2, 3
+    -- Empleado 2: Luis Enrique Torres Vega
+    SELECT COUNT(*) INTO v_count_empleado FROM EMPLEADO WHERE CodCia = 1 AND CodEmpleado = 2;
+    IF v_count_empleado = 0 THEN
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 2, '1', 'Luis Enrique Torres Vega', 'L. Torres', 'Luis Enrique Torres Vega', 'L.E.T.V', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO EMPLEADO VALUES (1, 2, 'Calle Los Andes 450, San Isidro', '954821039', 'Diseño asistido por computadora, Fútbol', NULL,
+                TO_DATE('1982-08-22','YYYY-MM-DD'), '75031298', 'CIP750312', TO_DATE('2025-06-30','YYYY-MM-DD'),
+                NULL, '1', 'S', 'Especialista en proyectos de infraestructura', 'luis.torres@cmag.pe', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Empleado 2 insertado: Luis Enrique Torres Vega');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Empleado 2 ya existe');
+    END IF;
+
+    -- Empleado 3: María Fernanda Gómez Ruiz
+    SELECT COUNT(*) INTO v_count_empleado FROM EMPLEADO WHERE CodCia = 1 AND CodEmpleado = 3;
+    IF v_count_empleado = 0 THEN
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 3, '1', 'María Fernanda Gómez Ruiz', 'M. Gómez', 'María Fernanda Gómez Ruiz', 'M.F.G.R', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO EMPLEADO VALUES (1, 3, 'Av. Javier Prado 1200, Magdalena', '976204815', 'Viajes, Fotografía de obras', NULL,
+                TO_DATE('1985-03-10','YYYY-MM-DD'), '52938471', 'CIP529384', TO_DATE('2025-09-15','YYYY-MM-DD'),
+                NULL, '1', 'S', 'Ingeniera especializada en control de calidad', 'maria.gomez@cmag.pe', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Empleado 3 insertado: María Fernanda Gómez Ruiz');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Empleado 3 ya existe');
+    END IF;
+
+    -- ========================================
+    -- 4. VERIFICAR/INSERTAR PROYECTOS 1, 2, 3
+    -- ========================================
     SELECT COUNT(*) INTO v_count_proyecto FROM PROYECTO WHERE CodCia = 1 AND CodPyto IN (1, 2, 3);
 
     IF v_count_proyecto < 3 THEN
         DBMS_OUTPUT.PUT_LINE('Insertando proyectos faltantes...');
 
-        -- Proyecto 1
+        -- Proyecto 1: CONSTRUCCIÓN DEL PUENTE INTEGRAL LIMA-CALLAO - TRAMO SUR
         BEGIN
             INSERT INTO PROYECTO (
                 CodCIA, CodPyto, NombPyto, EmplJefeProy, CodCia1, CiaContrata, CodCC, CodCliente,
@@ -88,17 +166,18 @@ BEGIN
                 CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
                 CodEstado, Observac, Vigente
             ) VALUES (
-                1, 1, 'PROYECTO HIDROELECTRICO', 1, -999, 1, -999, 12, '-', '-',
+                1, 1, 'CONSTRUCCIÓN DEL PUENTE INTEGRAL LIMA-CALLAO - TRAMO SUR', 1, -999, 1, -999, 12, '-', '-',
                 TO_DATE('2023-01-15', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 1, TO_DATE('2024-06-30', 'YYYY-MM-DD'),
                 25000000.00, -999, -999, -999, -999, 25000000.00, 4500000.00, 29500000.00, -999, '-', '-', '-',
-                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1', 'Proyecto 1', '1'
+                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1',
+                'Proyecto de infraestructura de alto impacto económico', '1'
             );
-            DBMS_OUTPUT.PUT_LINE('Proyecto 1 insertado');
+            DBMS_OUTPUT.PUT_LINE('Proyecto 1 insertado: PUENTE INTEGRAL LIMA-CALLAO');
         EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
             DBMS_OUTPUT.PUT_LINE('Proyecto 1 ya existe');
         END;
 
-        -- Proyecto 2
+        -- Proyecto 2: REHABILITACIÓN DE CARRETERA PANAMERICANA NORTE - TRAMO HUARAL
         BEGIN
             INSERT INTO PROYECTO (
                 CodCIA, CodPyto, NombPyto, EmplJefeProy, CodCia1, CiaContrata, CodCC, CodCliente,
@@ -108,17 +187,18 @@ BEGIN
                 CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
                 CodEstado, Observac, Vigente
             ) VALUES (
-                1, 2, 'PLANTA ENERGETICA', 1, -999, 1, -999, 12, '-', '-',
+                1, 2, 'REHABILITACIÓN DE CARRETERA PANAMERICANA NORTE - TRAMO HUARAL', 2, -999, 1, -999, 13, '-', '-',
                 TO_DATE('2023-03-20', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 2, TO_DATE('2024-05-15', 'YYYY-MM-DD'),
                 18000000.00, -999, -999, -999, -999, 18000000.00, 3240000.00, 21240000.00, -999, '-', '-', '-',
-                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1', 'Proyecto 2', '1'
+                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2024, 0, NULL, '-1', '1',
+                'Proyecto vial crítico para conectividad nacional', '1'
             );
-            DBMS_OUTPUT.PUT_LINE('Proyecto 2 insertado');
+            DBMS_OUTPUT.PUT_LINE('Proyecto 2 insertado: CARRETERA PANAMERICANA NORTE');
         EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
             DBMS_OUTPUT.PUT_LINE('Proyecto 2 ya existe');
         END;
 
-        -- Proyecto 3
+        -- Proyecto 3: CONSTRUCCIÓN DE SISTEMA DE RIEGO INTEGRAL CUSCO
         BEGIN
             INSERT INTO PROYECTO (
                 CodCIA, CodPyto, NombPyto, EmplJefeProy, CodCia1, CiaContrata, CodCC, CodCliente,
@@ -128,17 +208,63 @@ BEGIN
                 CodProv, CodDist, FecViab, RutaDoc, AnnoIni, AnnoFin, CodObjC, LogoProy, TabEstado,
                 CodEstado, Observac, Vigente
             ) VALUES (
-                1, 3, 'RED ELECTRICA', 1, -999, 1, -999, 12, '-', '-',
+                1, 3, 'CONSTRUCCIÓN DE SISTEMA DE RIEGO INTEGRAL CUSCO', 3, -999, 1, -999, 14, '-', '-',
                 TO_DATE('2023-02-10', 'YYYY-MM-DD'), 0, 0, '-', 0, 0, 0, 2, TO_DATE('2024-04-30', 'YYYY-MM-DD'),
                 12000000.00, -999, -999, -999, -999, 12000000.00, 2160000.00, 14160000.00, -999, '-', '-', '-',
-                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2025, 0, NULL, '-1', '1', 'Proyecto 3', '1'
+                TO_DATE('2022-01-01', 'YYYY-MM-DD'), 'RUTA_DOC', 2023, 2025, 0, NULL, '-1', '1',
+                'Proyecto de irrigación para agricultura sostenible', '1'
             );
-            DBMS_OUTPUT.PUT_LINE('Proyecto 3 insertado');
+            DBMS_OUTPUT.PUT_LINE('Proyecto 3 insertado: SISTEMA DE RIEGO CUSCO');
         EXCEPTION WHEN DUP_VAL_ON_INDEX THEN
             DBMS_OUTPUT.PUT_LINE('Proyecto 3 ya existe');
         END;
     ELSE
         DBMS_OUTPUT.PUT_LINE('Todos los proyectos (1, 2, 3) ya existen');
+    END IF;
+
+    COMMIT;
+END;
+/
+
+-- ============================================================================
+-- VERIFICAR/INSERTAR PROVEEDORES 16 Y 17
+-- ============================================================================
+-- Estos proveedores son usados en COMP_PAGOCAB (comprobantes de egresos)
+-- ============================================================================
+
+DECLARE
+    v_count_proveedor NUMBER;
+BEGIN
+    -- Proveedor 16: CEMENTO LIMA SAC
+    SELECT COUNT(*) INTO v_count_proveedor FROM PROVEEDOR WHERE CodCia = 1 AND CodProveedor = 16;
+    IF v_count_proveedor = 0 THEN
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 16, '3', 'CEMENTO LIMA SAC', 'CEMENT LIMA', 'Cemento Lima', 'CL', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO PROVEEDOR VALUES (1, 16, '20123456789', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Proveedor 16 insertado: CEMENTO LIMA SAC');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Proveedor 16 ya existe');
+    END IF;
+
+    -- Proveedor 17: ACEROS Y ESTRUCTURAS PERU EIRL
+    SELECT COUNT(*) INTO v_count_proveedor FROM PROVEEDOR WHERE CodCia = 1 AND CodProveedor = 17;
+    IF v_count_proveedor = 0 THEN
+        BEGIN
+            INSERT INTO PERSONA VALUES (1, 17, '3', 'ACEROS Y ESTRUCTURAS PERU EIRL', 'ACERO PERU', 'Aceros Perú', 'AP', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        BEGIN
+            INSERT INTO PROVEEDOR VALUES (1, 17, '20234567890', '1');
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+        DBMS_OUTPUT.PUT_LINE('Proveedor 17 insertado: ACEROS Y ESTRUCTURAS PERU');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Proveedor 17 ya existe');
     END IF;
 
     COMMIT;

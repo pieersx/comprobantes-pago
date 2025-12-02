@@ -75,12 +75,8 @@ public class VtaCompPagoCabService {
                         dto.getCodPyto()))
                 .orElseThrow(() -> new RuntimeException("No existe el proyecto: " + dto.getCodPyto()));
 
-        // Validar que el cliente sea el contratante del proyecto (Requirement 2.2)
-        if (!proyecto.getCodCliente().equals(dto.getCodCliente())) {
-            throw new RuntimeException(String.format(
-                    "El cliente %d no es el contratante del proyecto %d. Cliente esperado: %d",
-                    dto.getCodCliente(), dto.getCodPyto(), proyecto.getCodCliente()));
-        }
+        // Nota: Se permite seleccionar cualquier cliente válido, no necesariamente el
+        // contratante del proyecto
 
         // Validar que las partidas sean de tipo "I" (Ingreso) (Requirement 2.3)
         if (dto.getDetalles() != null && !dto.getDetalles().isEmpty()) {

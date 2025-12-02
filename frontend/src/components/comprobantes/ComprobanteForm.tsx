@@ -645,15 +645,6 @@ export function ComprobanteForm({
                 onValueChange={(value) => {
                   const codPyto = parseInt(value);
                   updateField('codPyto', codPyto);
-
-                  // Para ingresos: auto-seleccionar el cliente del proyecto
-                  if (tipo === 'ingreso') {
-                    const proyectoSeleccionado = proyectos.find(p => p.codPyto === codPyto);
-                    if (proyectoSeleccionado?.codCliente) {
-                      updateField('codCliente', proyectoSeleccionado.codCliente);
-                      console.log('✅ Cliente auto-seleccionado:', proyectoSeleccionado.codCliente);
-                    }
-                  }
                 }}
               >
                 <SelectTrigger
@@ -776,7 +767,7 @@ export function ComprobanteForm({
               </div>
             )}
 
-            {/* Cliente (solo ingresos) - Auto-seleccionado según el proyecto */}
+            {/* Cliente (solo ingresos) */}
             {tipo === 'ingreso' && (
               <div className="space-y-2">
                 <Label
@@ -785,37 +776,27 @@ export function ComprobanteForm({
                 >
                   Cliente *
                 </Label>
-                {formState.codPyto ? (
-                  // Cliente auto-seleccionado (readonly)
-                  <div className="space-y-2">
-                    <Input
-                      id="codCliente"
-                      value={(() => {
-                        const cliente = clientes.find(c => c.codCliente === formState.codCliente);
-                        return cliente?.desPersona || cliente?.nroRuc || 'Cargando...';
-                      })()}
-                      disabled
-                      className="bg-muted"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      ℹ️ El cliente se asigna automáticamente según el proyecto seleccionado
-                    </p>
-                  </div>
-                ) : (
-                  // Sin proyecto seleccionado - mostrar mensaje
-                  <div className="space-y-2">
-                    <Input
-                      id="codCliente"
-                      value=""
-                      disabled
-                      placeholder="Primero seleccione un proyecto"
-                      className="bg-muted"
-                    />
-                    <p className="text-sm text-amber-600">
-                      ⚠️ Seleccione un proyecto para asignar el cliente automáticamente
-                    </p>
-                  </div>
-                )}
+                <Select
+                  value={formState.codCliente ? formState.codCliente.toString() : ''}
+                  onValueChange={(value) => updateField('codCliente', parseInt(value))}
+                >
+                  <SelectTrigger
+                    id="codCliente"
+                    className={hasError('codCliente') ? 'border-destructive' : ''}
+                  >
+                    <SelectValue placeholder="Seleccione un cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientes.map((cliente) => (
+                      <SelectItem
+                        key={`${cliente.codCia}-${cliente.codCliente}`}
+                        value={cliente.codCliente.toString()}
+                      >
+                        {cliente.desPersona || cliente.nroRuc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {hasError('codCliente') && (
                   <p className="text-sm text-destructive">{getError('codCliente')}</p>
                 )}

@@ -1060,7 +1060,7 @@ INSERT INTO ELEMENTOS VALUES ('003', '003', 'Euros', 'EUR', '1');
 
 INSERT INTO ELEMENTOS VALUES ('004', '001', 'Factura', 'Fact', '1');
 INSERT INTO ELEMENTOS VALUES ('004', '002', 'Recibo por Honorarios', 'RxH', '1');
-INSERT INTO ELEMENTOS VALUES ('004', '003', 'Voucher', 'Vou', '1');
+INSERT INTO ELEMENTOS VALUES ('004', '003', 'Boleta', 'Bol', '1');
 
 INSERT INTO ELEMENTOS VALUES ('005', '001', 'Bachiller', 'BACH', '1');
 INSERT INTO ELEMENTOS VALUES ('005', '002', 'Licenciatura', 'LIC', '1');
