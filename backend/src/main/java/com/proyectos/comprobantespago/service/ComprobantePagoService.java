@@ -42,7 +42,7 @@ public class ComprobantePagoService {
 
     public List<ComprobantePagoDTO> findAllByCompania(Long codCia) {
         log.debug("Buscando comprobantes de la compañía: {}", codCia);
-        List<ComprobantePagoCab> comprobantes = cabRepository.findByCodCia(codCia);
+        List<ComprobantePagoCab> comprobantes = cabRepository.findByCodCiaWithRelaciones(codCia);
         return mapper.toDTOList(comprobantes);
     }
 
@@ -73,10 +73,11 @@ public class ComprobantePagoService {
     public ComprobantePagoDTO findById(Long codCia, Long codProveedor, String nroCp) {
         log.debug("Buscando comprobante: {}", nroCp);
 
-        ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
+        ComprobantePagoCab cabecera = cabRepository.findByIdWithRelaciones(codCia, codProveedor, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
 
-        List<ComprobantePagoDet> detalles = detRepository.findDetallesByComprobante(codCia, codProveedor, nroCp);
+        List<ComprobantePagoDet> detalles = detRepository.findDetallesByComprobanteWithPartida(codCia, codProveedor,
+                nroCp);
 
         ComprobantePagoDTO dto = mapper.toDTO(cabecera);
         dto.setDetalles(mapper.toDetalleDTOList(detalles));
@@ -120,8 +121,8 @@ public class ComprobantePagoService {
         cabecera.setTMoneda(dto.getTMoneda());
         cabecera.setEMoneda(dto.getEMoneda());
 
-        cabecera.setTabEstado("001"); // Tabla de estados
-        cabecera.setCodEstado("001"); // Estado inicial: Registrado (código '001')
+        cabecera.setTabEstado("014"); // Tabla de estados de comprobante
+        cabecera.setCodEstado("REG"); // Estado inicial: Registrado
         cabecera = cabRepository.save(cabecera);
 
         // 6. Guardar detalles
@@ -251,14 +252,14 @@ public class ComprobantePagoService {
         ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
 
-        // Validar si está en estado PAG (código '002') y no se confirmó
-        if ("002".equals(cabecera.getCodEstado()) && !confirmarPagado) {
+        // Validar si está en estado PAG (Pagado) y no se confirmó
+        if ("PAG".equals(cabecera.getCodEstado()) && !confirmarPagado) {
             throw new ValidationException(
                     "Este comprobante ya fue pagado. Debe confirmar la anulación explícitamente.");
         }
 
-        // Cambiar estado a ANU (Anulado - código '003')
-        cabecera.setCodEstado("003");
+        // Cambiar estado a ANU (Anulado)
+        cabecera.setCodEstado("ANU");
         cabRepository.save(cabecera);
 
         // Generar alertas para actualizar el presupuesto disponible
@@ -658,7 +659,8 @@ public class ComprobantePagoService {
     }
 
     /**
-     * Actualiza los archivos adjuntos de un comprobante (deprecated - usar endpoints BLOB)
+     * Actualiza los archivos adjuntos de un comprobante (deprecated - usar
+     * endpoints BLOB)
      * Feature: comprobantes-jerarquicos
      * Requirements: 4.1, 4.2
      *
@@ -681,7 +683,8 @@ public class ComprobantePagoService {
 
         // Las imágenes ahora se manejan como BLOB a través de endpoints separados
         // Este método solo retorna el DTO actual sin modificar las imágenes
-        log.warn("updateFiles: Las imágenes deben actualizarse usando los endpoints BLOB (uploadFotoCp/uploadFotoAbono)");
+        log.warn(
+                "updateFiles: Las imágenes deben actualizarse usando los endpoints BLOB (uploadFotoCp/uploadFotoAbono)");
 
         return mapper.toDTO(cabecera);
     }
@@ -692,13 +695,13 @@ public class ComprobantePagoService {
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final java.util.List<String> ALLOWED_CONTENT_TYPES = java.util.List.of(
-        "image/jpeg", "image/png", "image/gif", "application/pdf"
-    );
+            "image/jpeg", "image/png", "image/gif", "application/pdf");
 
     /**
      * Sube la imagen del comprobante (FotoCP) como BLOB
      */
-    public void uploadFotoCp(Long codCia, Long codProveedor, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+    public void uploadFotoCp(Long codCia, Long codProveedor, String nroCp,
+            org.springframework.web.multipart.MultipartFile file) {
         validateFile(file);
         ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));
@@ -740,7 +743,8 @@ public class ComprobantePagoService {
     /**
      * Sube la imagen del abono (FotoAbono) como BLOB
      */
-    public void uploadFotoAbono(Long codCia, Long codProveedor, String nroCp, org.springframework.web.multipart.MultipartFile file) {
+    public void uploadFotoAbono(Long codCia, Long codProveedor, String nroCp,
+            org.springframework.web.multipart.MultipartFile file) {
         validateFile(file);
         ComprobantePagoCab cabecera = cabRepository.findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado"));

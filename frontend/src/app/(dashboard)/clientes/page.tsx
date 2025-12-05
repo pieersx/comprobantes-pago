@@ -17,10 +17,11 @@ import { useState } from "react";
 
 export default function ClientesPage() {
  const [searchTerm, setSearchTerm] = useState("");
+ const codCia = 1; // TODO: Obtener de useAppStore o contexto
 
  const { data: clientes = [], isLoading } = useQuery({
- queryKey: ["clientes"],
- queryFn: () => clientesService.getAll(),
+ queryKey: ["clientes", codCia],
+ queryFn: () => clientesService.getAll(codCia),
  });
 
  const filteredClientes = clientes.filter(

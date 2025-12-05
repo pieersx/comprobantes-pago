@@ -156,38 +156,38 @@ export function PartidaSelector({
           ) : (
             partidas.map((partida) => {
               const partidaValue = String(partida.codPartida);
-              // NUEVO: Permitir seleccionar cualquier nivel (1, 2 o 3)
-              const esSeleccionable = true;
+              // Calcular indentación según el nivel
+              const indentacion = (partida.nivel || 1) - 1;
+              const paddingLeft = indentacion * 16; // 16px por nivel
+
+              // Solo las partidas de nivel 3 son seleccionables
+              // Niveles 1 y 2 son encabezados/categorías
+              const esSeleccionable = partida.nivel === 3;
 
               return (
                 <SelectItem
                   key={partida.codPartida}
                   value={partidaValue}
                   disabled={!esSeleccionable}
+                  className={!esSeleccionable ? 'opacity-70 cursor-default' : ''}
                 >
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1" style={{ paddingLeft: `${paddingLeft}px` }}>
                     <div className="flex items-center gap-2">
                       <Badge variant={getNivelBadgeVariant(partida.nivel)} className="text-xs px-2 py-0.5">
-                        Nivel {partida.nivel || '?'}
+                        N{partida.nivel || '?'}
                       </Badge>
-                      <span className="font-medium">
+                      <span className={`font-medium ${!esSeleccionable ? 'text-muted-foreground' : ''}`}>
                         {partida.codPartida} - {partida.desPartida}
                       </span>
+                      {!esSeleccionable && (
+                        <span className="text-xs text-muted-foreground">(categoría)</span>
+                      )}
                     </div>
-                    {partida.hierarchyPath && (
+                    {partida.hierarchyPath && partida.nivel === 3 && (
                       <div className="text-xs text-muted-foreground pl-1">
                         📁 {partida.hierarchyPath}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className={getNivelAlertaColor(partida.nivelAlerta)}>
-                        Disponible: {formatearMonto(partida.presupuestoDisponible)}
-                      </span>
-                      <span className="text-muted-foreground">
-                        ({partida.porcentajeEjecucion.toFixed(1)}% ejecutado)
-                      </span>
-                    </div>
-
                   </div>
                 </SelectItem>
               );

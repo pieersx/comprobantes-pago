@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -145,10 +146,12 @@ public class ComprobantePagoCab implements Serializable {
     private BigDecimal impTotalMn;
 
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     @Column(name = "FOTOCP")
     private byte[] fotoCp;
 
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     @Column(name = "FOTOABONO")
     private byte[] fotoAbono;
 

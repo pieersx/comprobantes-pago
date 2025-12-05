@@ -10,6 +10,7 @@ import {
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { useToast } from '@/components/ui/use-toast';
+import { comprobantesEmpleadoService } from '@/services/comprobantes-empleado.service';
 import {
     comprobantesEgresoService,
     comprobantesIngresoService,
@@ -22,6 +23,7 @@ import { useEffect, useState } from 'react';
 /**
  * Página para editar un comprobante existente
  * Carga los datos del comprobante y valida que pueda ser editado
+ * Soporta: egreso, ingreso y egreso-empleado
  */
 export default function EditarComprobantePage() {
   const params = useParams();
@@ -32,11 +34,14 @@ export default function EditarComprobantePage() {
 
   const [loading, setLoading] = useState(true);
   const [comprobante, setComprobante] = useState<any>(null);
-  const [tipo, setTipo] = useState<'ingreso' | 'egreso'>('egreso');
+  const [tipo, setTipo] = useState<'ingreso' | 'egreso' | 'egreso-empleado'>('egreso');
   const [error, setError] = useState<string | null>(null);
 
   // Extraer ID del comprobante de la URL
-  // Formato esperado: [id] = "tipo-codProveedor-nroCp" o "tipo-nroCp"
+  // Formatos esperados:
+  // - egreso-{codProveedor}-{nroCp}
+  // - ingreso-{nroCp}
+  // - egreso-empleado-{codEmpleado}-{nroCp}
   const comprobanteId = params.id as string;
 
   useEffect(() => {
@@ -45,17 +50,49 @@ export default function EditarComprobantePage() {
         setLoading(true);
         setError(null);
 
-        // Parsear el ID del comprobante
-        const parts = comprobanteId.split('-');
-        const tipoComprobante = parts[0]; // 'egreso' o 'ingreso'
-
-        if (tipoComprobante === 'egreso') {
-          // Para egresos: egreso-codProveedor-nroCp
-          if (parts.length < 3) {
-            throw new Error('ID de comprobante inválido');
+        // Detectar el tipo de comprobante basado en el prefijo del ID
+        if (comprobanteId.startsWith('egreso-empleado-')) {
+          // Comprobante de empleado: egreso-empleado-{codEmpleado}-{nroCp}
+          const withoutPrefix = comprobanteId.replace('egreso-empleado-', '');
+          const parts = withoutPrefix.split('-');
+          if (parts.length < 2) {
+            throw new Error('ID de comprobante de empleado inválido');
           }
-          const codProveedor = parseInt(parts[1]);
-          const nroCp = parts.slice(2).join('-'); // El resto es el número de comprobante
+          const codEmpleado = parseInt(parts[0]);
+          const nroCp = parts.slice(1).join('-');
+
+          if (isNaN(codEmpleado) || codEmpleado <= 0) {
+            throw new Error('Código de empleado inválido');
+          }
+
+          setTipo('egreso-empleado');
+          const data = await comprobantesEmpleadoService.getById(codCia, codEmpleado, nroCp);
+
+          // Validar que el comprobante no esté en estado PAG
+          if (data.codEstado === 'PAG') {
+            setError('No se puede editar un comprobante que ya ha sido pagado');
+            toast({
+              title: 'No se puede editar',
+              description: 'Este comprobante ya ha sido pagado y no puede ser modificado',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          setComprobante(data);
+        } else if (comprobanteId.startsWith('egreso-')) {
+          // Comprobante de egreso (proveedor): egreso-{codProveedor}-{nroCp}
+          const withoutPrefix = comprobanteId.replace('egreso-', '');
+          const parts = withoutPrefix.split('-');
+          if (parts.length < 2) {
+            throw new Error('ID de comprobante de egreso inválido');
+          }
+          const codProveedor = parseInt(parts[0]);
+          const nroCp = parts.slice(1).join('-');
+
+          if (isNaN(codProveedor) || codProveedor <= 0) {
+            throw new Error('Código de proveedor inválido');
+          }
 
           setTipo('egreso');
           const data = await comprobantesEgresoService.getById(codCia, codProveedor, nroCp);
@@ -72,12 +109,9 @@ export default function EditarComprobantePage() {
           }
 
           setComprobante(data);
-        } else if (tipoComprobante === 'ingreso') {
-          // Para ingresos: ingreso-nroCp
-          if (parts.length < 2) {
-            throw new Error('ID de comprobante inválido');
-          }
-          const nroCp = parts.slice(1).join('-'); // El resto es el número de comprobante
+        } else if (comprobanteId.startsWith('ingreso-')) {
+          // Comprobante de ingreso: ingreso-{nroCp}
+          const nroCp = comprobanteId.replace('ingreso-', '');
 
           setTipo('ingreso');
           const data = await comprobantesIngresoService.getById(codCia, nroCp);
@@ -183,18 +217,19 @@ export default function EditarComprobantePage() {
       {/* Título */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Editar Comprobante {tipo === 'egreso' ? 'de Egreso' : 'de Ingreso'}
+          Editar Comprobante {tipo === 'egreso' ? 'de Egreso' : tipo === 'ingreso' ? 'de Ingreso' : 'de Empleado'}
         </h1>
         <p className="text-muted-foreground mt-2">
           Modificar comprobante {comprobante.nroCp}
         </p>
       </div>
 
-      {/* Formulario */}
+      {/* Formulario con datos precargados */}
       <ComprobanteForm
-        tipo={tipo}
+        tipo={tipo === 'egreso-empleado' ? 'egreso' : tipo}
         modo="editar"
         comprobanteId={comprobanteId}
+        initialData={comprobante}
         onSuccess={() => router.push(`/comprobantes/${comprobanteId}`)}
       />
     </div>

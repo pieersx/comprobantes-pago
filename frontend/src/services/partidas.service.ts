@@ -297,9 +297,9 @@ export const partidasService = {
         ingEgr: p.ingEgr || ingEgr,
         nivel: p.nivel || 1, // Nivel puede ser 1, 2 o 3
         codPartidas: p.codPartidas,
-        // Información de jerarquía
+        // Información de jerarquía (puede venir como jerarquiaCompleta o hierarchyPath)
         padCodPartida: p.padCodPartida,
-        hierarchyPath: p.hierarchyPath, // Ruta completa: "NIVEL1 > NIVEL2 > NIVEL3"
+        hierarchyPath: p.jerarquiaCompleta || p.hierarchyPath || p.fullPath,
         // Información de presupuesto si viene del backend
         presupuestoOriginal: p.presupuestoOriginal || 0,
         presupuestoEjecutado: p.presupuestoEjecutado || 0,
@@ -309,6 +309,418 @@ export const partidasService = {
       }));
     } catch (error) {
       console.error('Error al obtener todas las partidas por proyecto:', error);
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  // ========================================
+  // CRUD COMPLETO DE PARTIDAS
+  // ========================================
+
+  /**
+   * Obtiene todas las partidas de una compañía
+   */
+  getAll: async (codCia?: number): Promise<any[]> => {
+    try {
+      const url = codCia ? `/partidas?codCia=${codCia}` : '/partidas';
+      const response = await apiClient.get<any>(url);
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene una partida por su ID compuesto
+   */
+  getById: async (codCia: number, ingEgr: string, codPartida: number): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/partidas/${codCia}/${ingEgr}/${codPartida}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Crea una nueva partida
+   */
+  create: async (partida: any): Promise<any> => {
+    try {
+      const response = await apiClient.post('/partidas', partida);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Actualiza una partida existente
+   */
+  update: async (codCia: number, ingEgr: string, codPartida: number, partida: any): Promise<any> => {
+    try {
+      const response = await apiClient.put(`/partidas/${codCia}/${ingEgr}/${codPartida}`, partida);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Elimina una partida
+   */
+  delete: async (codCia: number, ingEgr: string, codPartida: number): Promise<void> => {
+    try {
+      await apiClient.delete(`/partidas/${codCia}/${ingEgr}/${codPartida}`);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+};
+
+// ========================================
+// PARTIDA_MEZCLA - Composición General
+// ========================================
+export const partidaMezclaService = {
+  /**
+   * Obtiene todas las partidas mezcla
+   */
+  getAll: async (): Promise<any[]> => {
+    try {
+      const response = await apiClient.get('/partida-mezcla');
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene partidas mezcla por compañía
+   */
+  getByCia: async (codCia: number): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/partida-mezcla/cia/${codCia}`);
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene una partida mezcla por su ID compuesto
+   */
+  getById: async (codCia: number, ingEgr: string, codPartida: number, corr: number): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/partida-mezcla/${codCia}/${ingEgr}/${codPartida}/${corr}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene las mezclas de una partida específica
+   */
+  getByPartida: async (codCia: number, ingEgr: string, codPartida: number): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/partida-mezcla/partida/${codCia}/${ingEgr}/${codPartida}`);
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Crea una nueva partida mezcla
+   */
+  create: async (partidaMezcla: any): Promise<any> => {
+    try {
+      const response = await apiClient.post('/partida-mezcla', partidaMezcla);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Actualiza una partida mezcla existente
+   */
+  update: async (
+    codCia: number,
+    ingEgr: string,
+    codPartida: number,
+    corr: number,
+    partidaMezcla: any
+  ): Promise<any> => {
+    try {
+      const response = await apiClient.put(
+        `/partida-mezcla/${codCia}/${ingEgr}/${codPartida}/${corr}`,
+        partidaMezcla
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Elimina una partida mezcla
+   */
+  delete: async (codCia: number, ingEgr: string, codPartida: number, corr: number): Promise<void> => {
+    try {
+      await apiClient.delete(`/partida-mezcla/${codCia}/${ingEgr}/${codPartida}/${corr}`);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+};
+
+// ========================================
+// PROY_PARTIDA - Partidas por Proyecto
+// ========================================
+export const proyPartidaService = {
+  /**
+   * Obtiene todas las partidas de proyecto
+   */
+  getAll: async (): Promise<any[]> => {
+    try {
+      const response = await apiClient.get('/proy-partida');
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene partidas por proyecto
+   */
+  getByProyecto: async (codCia: number, codPyto: number): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/proy-partida/proyecto/${codCia}/${codPyto}`);
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene partidas por proyecto y versión
+   */
+  getByProyectoVersion: async (codCia: number, codPyto: number, nroVersion: number): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/proy-partida/proyecto/${codCia}/${codPyto}/version/${nroVersion}`);
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene una partida de proyecto por su ID compuesto
+   */
+  getById: async (
+    codCia: number,
+    codPyto: number,
+    nroVersion: number,
+    ingEgr: string,
+    codPartida: number
+  ): Promise<any> => {
+    try {
+      const response = await apiClient.get(
+        `/proy-partida/${codCia}/${codPyto}/${nroVersion}/${ingEgr}/${codPartida}`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Crea una nueva partida de proyecto
+   */
+  create: async (proyPartida: any): Promise<any> => {
+    try {
+      const response = await apiClient.post('/proy-partida', proyPartida);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Actualiza una partida de proyecto
+   */
+  update: async (
+    codCia: number,
+    codPyto: number,
+    nroVersion: number,
+    ingEgr: string,
+    codPartida: number,
+    proyPartida: any
+  ): Promise<any> => {
+    try {
+      const response = await apiClient.put(
+        `/proy-partida/${codCia}/${codPyto}/${nroVersion}/${ingEgr}/${codPartida}`,
+        proyPartida
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Elimina una partida de proyecto
+   */
+  delete: async (
+    codCia: number,
+    codPyto: number,
+    nroVersion: number,
+    ingEgr: string,
+    codPartida: number
+  ): Promise<void> => {
+    try {
+      await apiClient.delete(`/proy-partida/${codCia}/${codPyto}/${nroVersion}/${ingEgr}/${codPartida}`);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+};
+
+// ========================================
+// PROY_PARTIDA_MEZCLA - Composición por Proyecto
+// ========================================
+export const proyPartidaMezclaService = {
+  /**
+   * Obtiene todas las partidas mezcla de proyecto
+   */
+  getAll: async (): Promise<any[]> => {
+    try {
+      const response = await apiClient.get('/proy-partida-mezcla');
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene partidas mezcla por proyecto
+   */
+  getByProyecto: async (codCia: number, codPyto: number): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(`/proy-partida-mezcla/proyecto/${codCia}/${codPyto}`);
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene partidas mezcla por proyecto y versión
+   */
+  getByProyectoVersion: async (codCia: number, codPyto: number, nroVersion: number): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(
+        `/proy-partida-mezcla/proyecto/${codCia}/${codPyto}/version/${nroVersion}`
+      );
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene partidas mezcla por proyecto, versión y partida
+   */
+  getByProyectoPartida: async (
+    codCia: number,
+    codPyto: number,
+    nroVersion: number,
+    ingEgr: string,
+    codPartida: number
+  ): Promise<any[]> => {
+    try {
+      const response = await apiClient.get(
+        `/proy-partida-mezcla/proyecto/${codCia}/${codPyto}/version/${nroVersion}/partida/${ingEgr}/${codPartida}`
+      );
+      return Array.isArray(response.data) ? response.data : response.data?.data || [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Obtiene una partida mezcla de proyecto por su ID compuesto
+   */
+  getById: async (
+    codCia: number,
+    codPyto: number,
+    ingEgr: string,
+    nroVersion: number,
+    codPartida: number,
+    corr: number
+  ): Promise<any> => {
+    try {
+      const response = await apiClient.get(
+        `/proy-partida-mezcla/${codCia}/${codPyto}/${ingEgr}/${nroVersion}/${codPartida}/${corr}`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Crea una nueva partida mezcla de proyecto
+   */
+  create: async (proyPartidaMezcla: any): Promise<any> => {
+    try {
+      const response = await apiClient.post('/proy-partida-mezcla', proyPartidaMezcla);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Actualiza una partida mezcla de proyecto
+   */
+  update: async (
+    codCia: number,
+    codPyto: number,
+    ingEgr: string,
+    nroVersion: number,
+    codPartida: number,
+    corr: number,
+    proyPartidaMezcla: any
+  ): Promise<any> => {
+    try {
+      const response = await apiClient.put(
+        `/proy-partida-mezcla/${codCia}/${codPyto}/${ingEgr}/${nroVersion}/${codPartida}/${corr}`,
+        proyPartidaMezcla
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Elimina una partida mezcla de proyecto
+   */
+  delete: async (
+    codCia: number,
+    codPyto: number,
+    ingEgr: string,
+    nroVersion: number,
+    codPartida: number,
+    corr: number
+  ): Promise<void> => {
+    try {
+      await apiClient.delete(
+        `/proy-partida-mezcla/${codCia}/${codPyto}/${ingEgr}/${nroVersion}/${codPartida}/${corr}`
+      );
+    } catch (error) {
       throw new Error(handleApiError(error));
     }
   },

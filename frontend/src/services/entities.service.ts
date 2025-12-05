@@ -6,11 +6,12 @@ import { Cliente, Partida, Proveedor, Proyecto } from '@/types/voucher';
 // ===================================
 export const clientesService = {
   /**
-   * GET /clientes?vigente=S
-   * Lista todos los clientes (opcionalmente filtrados por vigencia)
+   * GET /clientes?codCia={codCia}&vigente={vigente}
+   * Lista todos los clientes de una compañía (opcionalmente filtrados por vigencia)
    */
-  getAll: async (vigente?: string): Promise<Cliente[]> => {
-    const params = vigente ? `?vigente=${vigente}` : '';
+  getAll: async (codCia: number, vigente?: string): Promise<Cliente[]> => {
+    let params = `?codCia=${codCia}`;
+    if (vigente) params += `&vigente=${vigente}`;
     return await apiClient.get<Cliente[]>(`/clientes${params}`);
   },
 
@@ -68,12 +69,11 @@ export const clientesService = {
 // ===================================
 export const proveedoresService = {
   /**
-   * GET /proveedores?vigente=S
-   * Lista todos los proveedores (opcionalmente filtrados por vigencia)
+   * GET /proveedores?codCia={codCia}
+   * Lista todos los proveedores de una compañía (solo vigentes por defecto)
    */
-  getAll: async (vigente?: string): Promise<Proveedor[]> => {
-    const params = vigente ? `?vigente=${vigente}` : '';
-    return await apiClient.get<Proveedor[]>(`/proveedores${params}`);
+  getAll: async (codCia: number): Promise<Proveedor[]> => {
+    return await apiClient.get<Proveedor[]>(`/proveedores?codCia=${codCia}`);
   },
 
   /**

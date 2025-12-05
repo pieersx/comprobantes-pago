@@ -136,8 +136,30 @@ export default function DetalleComprobantePage() {
   const [anulando, setAnulando] = useState(false);
   const [subirFacturaDialogOpen, setSubirFacturaDialogOpen] = useState(false);
   const [fotoCP, setFotoCP] = useState<string>('');
+  // Estado para forzar recarga de imágenes después de subir
+  const [imageTimestamp, setImageTimestamp] = useState<number>(Date.now());
 
   const comprobanteId = params.id as string;
+
+  // Función para refrescar datos del comprobante sin recargar la página
+  const refrescarComprobante = async () => {
+    try {
+      if (tipo === 'egreso-empleado' && comprobante?.codEmpleado) {
+        const data = await comprobantesEmpleadoService.getById(codCia, comprobante.codEmpleado, comprobante.nroCp);
+        setComprobante(data);
+      } else if (tipo === 'egreso' && comprobante?.codProveedor) {
+        const data = await comprobantesEgresoService.getById(codCia, comprobante.codProveedor, comprobante.nroCp);
+        setComprobante(data);
+      } else if (tipo === 'ingreso') {
+        const data = await comprobantesIngresoService.getById(codCia, comprobante.nroCp);
+        setComprobante(data);
+      }
+      // Actualizar timestamp para forzar recarga de imágenes
+      setImageTimestamp(Date.now());
+    } catch (err) {
+      console.error('Error al refrescar comprobante:', err);
+    }
+  };
 
   useEffect(() => {
     const cargarComprobante = async () => {
@@ -489,7 +511,9 @@ export default function DetalleComprobantePage() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Proyecto</p>
-              <p className="text-lg font-semibold mt-1">Proyecto {comprobante.codPyto}</p>
+              <p className="text-lg font-semibold mt-1">
+                {comprobante.nombreProyecto || comprobante.nomProyecto || `Proyecto ${comprobante.codPyto}`}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -497,15 +521,18 @@ export default function DetalleComprobantePage() {
               </p>
               <p className="text-lg font-semibold mt-1">
                 {tipo === 'egreso'
-                  ? `Proveedor ${comprobante.codProveedor}`
+                  ? comprobante.nombreProveedor || `Proveedor ${comprobante.codProveedor}`
                   : tipo === 'egreso-empleado'
                   ? comprobante.nombreEmpleado || `Empleado ${comprobante.codEmpleado}`
-                  : `Cliente ${comprobante.codCliente}`}
+                  : comprobante.nomCliente || `Cliente ${comprobante.codCliente}`}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Moneda</p>
-              <p className="text-lg font-semibold mt-1">{comprobante.tMoneda}</p>
+              <p className="text-lg font-semibold mt-1">
+                {comprobante.monedaDesc || comprobante.descMoneda || comprobante.descripcionMoneda ||
+                 (comprobante.eMoneda === '001' ? 'Soles' : comprobante.eMoneda === '002' ? 'Dólares' : comprobante.tMoneda)}
+              </p>
             </div>
             {comprobante.tMoneda === 'USD' && (
               <div>
@@ -615,7 +642,7 @@ export default function DetalleComprobantePage() {
                 <>
                   {comprobante.tieneFotoCp ? (
                     <ImageViewer
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-cp`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-cp?t=${imageTimestamp}`}
                       alt="Comprobante"
                       title="Imagen del Comprobante"
                       thumbnailSize="lg"
@@ -635,14 +662,14 @@ export default function DetalleComprobantePage() {
                     codCia={codCia}
                     codProveedor={comprobante.codProveedor}
                     nroCP={comprobante.nroCp}
-                    onUploadSuccess={() => window.location.reload()}
+                    onUploadSuccess={refrescarComprobante}
                   />
                 </>
               ) : tipo === 'egreso-empleado' && comprobante.codEmpleado ? (
                 <>
                   {comprobante.tieneFotoCp ? (
                     <ImageViewer
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-cp`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-cp?t=${imageTimestamp}`}
                       alt="Comprobante"
                       title="Imagen del Comprobante"
                       thumbnailSize="lg"
@@ -662,14 +689,14 @@ export default function DetalleComprobantePage() {
                     codCia={codCia}
                     codEmpleado={comprobante.codEmpleado}
                     nroCP={comprobante.nroCp}
-                    onUploadSuccess={() => window.location.reload()}
+                    onUploadSuccess={refrescarComprobante}
                   />
                 </>
               ) : tipo === 'ingreso' ? (
                 <>
-                  {comprobante.fotoCp ? (
+                  {comprobante.tieneFotoCp ? (
                     <ImageViewer
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/files/download?path=${encodeURIComponent(comprobante.fotoCp)}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${comprobante.nroCp}/foto-cp?t=${imageTimestamp}`}
                       alt="Comprobante"
                       title="Imagen del Comprobante"
                       thumbnailSize="lg"
@@ -688,7 +715,7 @@ export default function DetalleComprobantePage() {
                     tipoImagen="foto-cp"
                     codCia={codCia}
                     nroCP={comprobante.nroCp}
-                    onUploadSuccess={() => window.location.reload()}
+                    onUploadSuccess={refrescarComprobante}
                   />
                 </>
               ) : (
@@ -703,7 +730,7 @@ export default function DetalleComprobantePage() {
                 <>
                   {comprobante.tieneFotoAbono ? (
                     <ImageViewer
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-abono`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-pago/${codCia}/${comprobante.codProveedor}/${comprobante.nroCp}/foto-abono?t=${imageTimestamp}`}
                       alt="Abono"
                       title="Imagen del Abono"
                       thumbnailSize="lg"
@@ -723,14 +750,14 @@ export default function DetalleComprobantePage() {
                     codCia={codCia}
                     codProveedor={comprobante.codProveedor}
                     nroCP={comprobante.nroCp}
-                    onUploadSuccess={() => window.location.reload()}
+                    onUploadSuccess={refrescarComprobante}
                   />
                 </>
               ) : tipo === 'egreso-empleado' && comprobante.codEmpleado ? (
                 <>
                   {comprobante.tieneFotoAbono ? (
                     <ImageViewer
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-abono`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-empleado/${codCia}/${comprobante.codEmpleado}/${comprobante.nroCp}/foto-abono?t=${imageTimestamp}`}
                       alt="Abono"
                       title="Imagen del Abono"
                       thumbnailSize="lg"
@@ -750,14 +777,14 @@ export default function DetalleComprobantePage() {
                     codCia={codCia}
                     codEmpleado={comprobante.codEmpleado}
                     nroCP={comprobante.nroCp}
-                    onUploadSuccess={() => window.location.reload()}
+                    onUploadSuccess={refrescarComprobante}
                   />
                 </>
               ) : tipo === 'ingreso' ? (
                 <>
-                  {comprobante.fotoAbono ? (
+                  {comprobante.tieneFotoAbono ? (
                     <ImageViewer
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/files/download?path=${encodeURIComponent(comprobante.fotoAbono)}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/comprobantes-venta/${codCia}/${comprobante.nroCp}/foto-abono?t=${imageTimestamp}`}
                       alt="Abono"
                       title="Imagen del Abono"
                       thumbnailSize="lg"
@@ -776,7 +803,7 @@ export default function DetalleComprobantePage() {
                     tipoImagen="foto-abono"
                     codCia={codCia}
                     nroCP={comprobante.nroCp}
-                    onUploadSuccess={() => window.location.reload()}
+                    onUploadSuccess={refrescarComprobante}
                   />
                 </>
               ) : (

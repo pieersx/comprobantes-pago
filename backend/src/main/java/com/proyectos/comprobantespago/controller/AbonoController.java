@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.proyectos.comprobantespago.dto.AbonoDTO;
+import com.proyectos.comprobantespago.dto.AbonoUpdateDTO;
 import com.proyectos.comprobantespago.enums.EstadoComprobante;
 import com.proyectos.comprobantespago.service.AbonoService;
 
@@ -139,5 +140,45 @@ public class AbonoController {
         EstadoComprobante nuevoEstado = EstadoComprobante.fromCodigo(estado);
         abonoService.cambiarEstadoEmpleado(codCia, codEmpleado, nroCP, nuevoEstado);
         return ResponseEntity.ok("Estado actualizado exitosamente");
+    }
+
+    // ==================== Endpoints para Actualizar Abonos ====================
+
+    @PutMapping("/egreso/{codCia}/{codProveedor}/{nroCP}")
+    @Operation(summary = "Actualizar abono de comprobante de egreso", description = "Actualiza la fecha y/o medio de pago de un abono existente sin cambiar el estado")
+    public ResponseEntity<String> actualizarAbonoEgreso(
+            @PathVariable @Parameter(description = "Código de compañía") Long codCia,
+            @PathVariable @Parameter(description = "Código del proveedor") Long codProveedor,
+            @PathVariable @Parameter(description = "Número de comprobante") String nroCP,
+            @Valid @RequestBody AbonoUpdateDTO abonoDTO) {
+
+        log.info("PUT /api/v1/abonos/egreso/{}/{}/{}", codCia, codProveedor, nroCP);
+        abonoService.actualizarAbonoEgreso(codCia, codProveedor, nroCP, abonoDTO);
+        return ResponseEntity.ok("Abono actualizado exitosamente");
+    }
+
+    @PutMapping("/ingreso/{codCia}/{nroCP}")
+    @Operation(summary = "Actualizar abono de comprobante de ingreso", description = "Actualiza la fecha y/o medio de pago de un abono existente sin cambiar el estado")
+    public ResponseEntity<String> actualizarAbonoIngreso(
+            @PathVariable @Parameter(description = "Código de compañía") Long codCia,
+            @PathVariable @Parameter(description = "Número de comprobante") String nroCP,
+            @Valid @RequestBody AbonoUpdateDTO abonoDTO) {
+
+        log.info("PUT /api/v1/abonos/ingreso/{}/{}", codCia, nroCP);
+        abonoService.actualizarAbonoIngreso(codCia, nroCP, abonoDTO);
+        return ResponseEntity.ok("Abono actualizado exitosamente");
+    }
+
+    @PutMapping("/empleado/{codCia}/{codEmpleado}/{nroCP}")
+    @Operation(summary = "Actualizar abono de comprobante de empleado", description = "Actualiza la fecha y/o medio de pago de un abono existente sin cambiar el estado")
+    public ResponseEntity<String> actualizarAbonoEmpleado(
+            @PathVariable @Parameter(description = "Código de compañía") Long codCia,
+            @PathVariable @Parameter(description = "Código del empleado") Long codEmpleado,
+            @PathVariable @Parameter(description = "Número de comprobante") String nroCP,
+            @Valid @RequestBody AbonoUpdateDTO abonoDTO) {
+
+        log.info("PUT /api/v1/abonos/empleado/{}/{}/{}", codCia, codEmpleado, nroCP);
+        abonoService.actualizarAbonoEmpleado(codCia, codEmpleado, nroCP, abonoDTO);
+        return ResponseEntity.ok("Abono actualizado exitosamente");
     }
 }

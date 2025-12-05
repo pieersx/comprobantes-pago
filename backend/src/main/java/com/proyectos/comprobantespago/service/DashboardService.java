@@ -59,10 +59,10 @@ public class DashboardService {
 
             // Comprobantes pendientes (registrados pero no pagados = estado '001')
             long egresosPendientes = egresos.stream()
-                    .filter(c -> "001".equals(c.getCodEstado()))
+                    .filter(c -> "REG".equals(c.getCodEstado()))
                     .count();
             long ingresosPendientes = ingresos.stream()
-                    .filter(c -> "001".equals(c.getCodEstado()))
+                    .filter(c -> "REG".equals(c.getCodEstado()))
                     .count();
             stats.put("comprobantesPendientes", egresosPendientes + ingresosPendientes);
 
@@ -95,13 +95,13 @@ public class DashboardService {
 
             // Estados de EGRESOS - usar exactamente los códigos de la BD
             long egresosRegistrados = egresos.stream()
-                    .filter(c -> "001".equals(c.getCodEstado()))
+                    .filter(c -> "REG".equals(c.getCodEstado()))
                     .count();
             long egresosPagados = egresos.stream()
-                    .filter(c -> "002".equals(c.getCodEstado()))
+                    .filter(c -> "PAG".equals(c.getCodEstado()))
                     .count();
             long egresosAnulados = egresos.stream()
-                    .filter(c -> "003".equals(c.getCodEstado()))
+                    .filter(c -> "ANU".equals(c.getCodEstado()))
                     .count();
 
             // Estados de INGRESOS (filtrar por compañía)
@@ -112,13 +112,13 @@ public class DashboardService {
                     : ingresos;
 
             long ingresosRegistrados = ingresosFiltrados.stream()
-                    .filter(c -> "001".equals(c.getCodEstado()))
+                    .filter(c -> "REG".equals(c.getCodEstado()))
                     .count();
             long ingresosPagados = ingresosFiltrados.stream()
-                    .filter(c -> "002".equals(c.getCodEstado()))
+                    .filter(c -> "PAG".equals(c.getCodEstado()))
                     .count();
             long ingresosAnulados = ingresosFiltrados.stream()
-                    .filter(c -> "003".equals(c.getCodEstado()))
+                    .filter(c -> "ANU".equals(c.getCodEstado()))
                     .count();
 
             // Totales combinados
@@ -138,9 +138,9 @@ public class DashboardService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // El presupuesto ejecutado es la suma de TODOS los egresos (excepto anulados)
-            // Estado '001' = Registrado, '002' = Pagado, '003' = Anulado
+            // Estado 'REG' = Registrado, 'PAG' = Pagado, 'ANU' = Anulado
             BigDecimal presupuestoEjecutado = egresos.stream()
-                    .filter(c -> !"003".equals(c.getCodEstado())) // Excluir solo anulados (código '003')
+                    .filter(c -> !"ANU".equals(c.getCodEstado())) // Excluir solo anulados (código 'ANU')
                     .map(c -> c.getImpTotalMn() != null ? c.getImpTotalMn() : BigDecimal.ZERO)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -157,9 +157,9 @@ public class DashboardService {
                 List<ComprobantePagoCab> comprobantesProyecto = comprobanteRepository
                         .findByCodCiaAndCodPyto(proyecto.getCodCia(), proyecto.getCodPyto());
 
-                // Calcular gastado: TODOS los egresos excepto anulados (código '003')
+                // Calcular gastado: TODOS los egresos excepto anulados (código 'ANU')
                 BigDecimal gastadoProyecto = comprobantesProyecto.stream()
-                        .filter(c -> !"003".equals(c.getCodEstado()))
+                        .filter(c -> !"ANU".equals(c.getCodEstado()))
                         .map(c -> c.getImpTotalMn() != null ? c.getImpTotalMn() : BigDecimal.ZERO)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -306,9 +306,9 @@ public class DashboardService {
                         .findByCodCiaAndCodPyto(proyecto.getCodCia(), proyecto.getCodPyto());
 
                 // Calcular gastado: sumar TODOS los egresos (no solo pagados)
-                // Estado '001' = Registrado, '002' = Pagado, '003' = Anulado
+                // Estado 'REG' = Registrado, 'PAG' = Pagado, 'ANU' = Anulado
                 BigDecimal gastado = comprobantes.stream()
-                        .filter(c -> !"003".equals(c.getCodEstado())) // Excluir solo anulados (código '003')
+                        .filter(c -> !"ANU".equals(c.getCodEstado())) // Excluir solo anulados (código 'ANU')
                         .map(c -> c.getImpTotalMn() != null ? c.getImpTotalMn() : BigDecimal.ZERO)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 

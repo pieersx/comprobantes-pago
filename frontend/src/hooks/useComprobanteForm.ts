@@ -118,6 +118,12 @@ export function useComprobanteForm(
   tipo: 'ingreso' | 'egreso',
   initialData?: Partial<CompPagoCab | VtaCompPagoCab>
 ) {
+  // Obtener fecha local en formato YYYY-MM-DD
+  const obtenerFechaLocal = () => {
+    const hoy = new Date();
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  };
+
   // Estado inicial del formulario
   const [formState, setFormState] = useState<ComprobanteFormState>({
     codCia: initialData?.codCia || 0,
@@ -126,10 +132,10 @@ export function useComprobanteForm(
     codProveedor: tipo === 'egreso' ? (initialData as CompPagoCab)?.codProveedor : undefined,
     codEmpleado: undefined, // Feature: empleados-comprobantes-blob
     codCliente: tipo === 'ingreso' ? (initialData as VtaCompPagoCab)?.codCliente : undefined,
-    fecCp: initialData?.fecCp || new Date().toISOString().split('T')[0],
-    tMoneda: initialData?.tMoneda || 'PEN',
+    fecCp: initialData?.fecCp || obtenerFechaLocal(), // Usar fecha local, no UTC
+    tMoneda: initialData?.eMoneda || '001', // Código de elemento de moneda: 001=Soles, 002=Dólares
     tipCambio: initialData?.tipCambio || 1.0,
-    tCompPago: initialData?.tCompPago || '',
+    tCompPago: initialData?.eCompPago || '',
     detalles: [],
     impNetoMn: initialData?.impNetoMn || 0,
     impIgvMn: initialData?.impIgvMn || 0,
@@ -294,10 +300,12 @@ export function useComprobanteForm(
       errores.fecCp = 'La fecha de emisión es obligatoria';
     } else {
       // Validar que la fecha no sea futura (Requirement 7.2)
-      const fechaEmision = new Date(formState.fecCp);
+      // Comparar solo strings de fecha para evitar problemas de zona horaria
+      const fechaEmisionStr = formState.fecCp; // formato: "YYYY-MM-DD"
       const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-      if (fechaEmision > hoy) {
+      const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+
+      if (fechaEmisionStr > hoyStr) {
         errores.fecCp = 'La fecha de emisión no puede ser futura';
       }
     }
@@ -306,9 +314,11 @@ export function useComprobanteForm(
       errores.tMoneda = 'El tipo de moneda es obligatorio';
     }
 
-    // Validar tipo de cambio para USD (Requirement 7.4)
-    if (formState.tMoneda === 'USD' && (!formState.tipCambio || formState.tipCambio <= 0)) {
-      errores.tipCambio = 'El tipo de cambio es obligatorio para moneda USD';
+    // Validar tipo de cambio para monedas distintas a Soles (001/PEN)
+    // Códigos: 001=Soles, 002=Dólares, 003=Euros
+    const esSoles = formState.tMoneda === '001' || formState.tMoneda === 'PEN';
+    if (!esSoles && (!formState.tipCambio || formState.tipCambio <= 0)) {
+      errores.tipCambio = 'El tipo de cambio es obligatorio para monedas extranjeras';
     }
 
     // Validar que haya al menos una partida (Requirement 7.5)
@@ -367,7 +377,7 @@ export function useComprobanteForm(
       codProveedor: tipo === 'egreso' ? (initialData as CompPagoCab)?.codProveedor : undefined,
       codEmpleado: undefined, // Feature: empleados-comprobantes-blob
       codCliente: tipo === 'ingreso' ? (initialData as VtaCompPagoCab)?.codCliente : undefined,
-      fecCp: initialData?.fecCp || new Date().toISOString().split('T')[0],
+      fecCp: initialData?.fecCp || obtenerFechaLocal(),
       tMoneda: initialData?.tMoneda || 'PEN',
       tipCambio: initialData?.tipCambio || 1.0,
       tCompPago: initialData?.tCompPago || '',
@@ -379,6 +389,62 @@ export function useComprobanteForm(
       isDirty: false,
     });
   }, [initialData, tipo]);
+
+  /**
+   * Establece todos los datos del formulario (para edición)
+   */
+  const setFormData = useCallback((data: any) => {
+    // Convertir fecha si viene en formato ISO
+    const convertirFecha = (fecha: string): string => {
+      if (!fecha) return obtenerFechaLocal();
+      // Si viene como ISO (2023-08-30T00:00:00), extraer solo la fecha
+      if (fecha.includes('T')) {
+        return fecha.split('T')[0];
+      }
+      return fecha;
+    };
+
+    // Transformar detalles del backend al formato del formulario
+    const transformarDetalles = (detalles: any[]): DetallePartidaForm[] => {
+      if (!detalles || !Array.isArray(detalles)) return [];
+      return detalles.map((d: any) => ({
+        sec: d.sec || 0,
+        codPartida: d.codPartida || 0,
+        nombrePartida: d.nombrePartida || d.desPartida || '',
+        impNetoMn: d.impNetoMn || 0,
+        impIgvMn: d.impIgvMn || 0,
+        impTotalMn: d.impTotalMn || d.total || 0,
+        presupuestoDisponible: d.presupuestoDisponible,
+        porcentajeEjecucion: d.porcentajeEjecucion,
+        nivelAlerta: d.nivelAlerta,
+      }));
+    };
+
+    setFormState((prev: ComprobanteFormState) => ({
+      ...prev,
+      codCia: data.codCia || prev.codCia,
+      nroCp: data.nroCp || data.nroCp || prev.nroCp,
+      codPyto: data.codPyto || prev.codPyto,
+      codProveedor: data.codProveedor || prev.codProveedor,
+      codEmpleado: data.codEmpleado || prev.codEmpleado,
+      codCliente: data.codCliente || prev.codCliente,
+      fecCp: convertirFecha(data.fecCp || data.fecCp),
+      // Manejar variantes de capitalización del backend (eMoneda vs emoneda)
+      tMoneda: data.eMoneda || data.emoneda || data.tMoneda || data.tmoneda || prev.tMoneda,
+      tipCambio: data.tipCambio || prev.tipCambio,
+      // Manejar variantes de capitalización del backend (eCompPago vs ecompPago)
+      tCompPago: data.eCompPago || data.ecompPago || data.tCompPago || data.tcompPago || prev.tCompPago,
+      impNetoMn: data.impNetoMn || prev.impNetoMn,
+      impIgvMn: data.impIgvMn || data.impIgvmn || prev.impIgvMn,
+      impTotalMn: data.impTotalMn || prev.impTotalMn,
+      fotoCp: data.fotoCp || prev.fotoCp,
+      fotoAbono: data.fotoAbono || prev.fotoAbono,
+      fecAbono: data.fecAbono || prev.fecAbono,
+      desAbono: data.desAbono || prev.desAbono,
+      detalles: transformarDetalles(data.detalles), // Cargar detalles del backend
+      isDirty: false, // No está dirty porque son datos cargados
+    }));
+  }, []);
 
   /**
    * Limpia los errores de validación del formulario
@@ -436,6 +502,7 @@ export function useComprobanteForm(
 
     // Funciones de actualización
     updateField,
+    setFormData,
 
     // Gestión de partidas
     agregarPartida,

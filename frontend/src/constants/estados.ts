@@ -4,40 +4,48 @@
  * IMPORTANTE: Estos códigos deben coincidir exactamente con los valores
  * almacenados en la tabla ELEMENTOS de la base de datos.
  *
- * TabEstado = '001' (Tabla de estados)
- * CodEstado = Código específico del estado
+ * TabEstado = '014' (Tabla de estados de comprobante)
+ * CodEstado = Código específico del estado (REG, PAG, ANU, PEN)
  */
 
 export const ESTADOS_COMPROBANTE = {
-  REGISTRADO: '001',
-  PAGADO: '002',
-  ANULADO: '003',
+  REGISTRADO: 'REG',
+  PENDIENTE: 'PEN',
+  PAGADO: 'PAG',
+  ANULADO: 'ANU',
 } as const;
 
 export const ESTADOS_LABELS = {
-  '001': 'Registrado',
-  '002': 'Pagado',
-  '003': 'Anulado',
+  'REG': 'Registrado',
+  'PEN': 'Pendiente',
+  'PAG': 'Pagado',
+  'ANU': 'Anulado',
 } as const;
 
 export const ESTADOS_VARIANTS = {
-  '001': 'outline' as const,      // Registrado - Amarillo/Outline
-  '002': 'default' as const,      // Pagado - Verde/Default
-  '003': 'destructive' as const,  // Anulado - Rojo/Destructive
+  'REG': 'outline' as const,      // Registrado - Amarillo/Outline
+  'PEN': 'secondary' as const,    // Pendiente - Gris/Secondary
+  'PAG': 'default' as const,      // Pagado - Verde/Default
+  'ANU': 'destructive' as const,  // Anulado - Rojo/Destructive
 } as const;
 
 export const ESTADOS_COLORS = {
-  '001': {
+  'REG': {
     bg: 'bg-yellow-100',
     text: 'text-yellow-800',
     border: 'border-yellow-300',
   },
-  '002': {
+  'PEN': {
+    bg: 'bg-gray-100',
+    text: 'text-gray-800',
+    border: 'border-gray-300',
+  },
+  'PAG': {
     bg: 'bg-green-100',
     text: 'text-green-800',
     border: 'border-green-300',
   },
-  '003': {
+  'ANU': {
     bg: 'bg-red-100',
     text: 'text-red-800',
     border: 'border-red-300',
@@ -116,18 +124,12 @@ export function canMarcarPagado(codigo: string): boolean {
 
 /**
  * Mapea códigos de estado de la base de datos a códigos de componentes UI
- * Base de datos: '001', '002', '003'
- * Componentes UI: 'REG', 'PAG', 'ANU'
+ * Base de datos y UI ahora usan los mismos códigos: 'REG', 'PEN', 'PAG', 'ANU'
  */
-export function mapEstadoToUI(codigo: string): 'REG' | 'PAG' | 'ANU' {
-  const mapping: Record<string, 'REG' | 'PAG' | 'ANU'> = {
-    '001': 'REG',
-    '002': 'PAG',
-    '003': 'ANU',
-    // También soportar los códigos UI directamente
-    'REG': 'REG',
-    'PAG': 'PAG',
-    'ANU': 'ANU',
-  };
-  return mapping[codigo] || 'REG';
+export function mapEstadoToUI(codigo: string): 'REG' | 'PEN' | 'PAG' | 'ANU' {
+  const validCodigos = ['REG', 'PEN', 'PAG', 'ANU'];
+  if (validCodigos.includes(codigo)) {
+    return codigo as 'REG' | 'PEN' | 'PAG' | 'ANU';
+  }
+  return 'REG';
 }

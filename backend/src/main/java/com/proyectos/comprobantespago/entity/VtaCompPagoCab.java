@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinColumns;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -104,14 +106,16 @@ public class VtaCompPagoCab implements Serializable {
         @Column(name = "IMPTOTALMN", nullable = false, precision = 10, scale = 2)
         private BigDecimal impTotalMn;
 
-        // En grupo06, FotoCP y FotoAbono son VARCHAR2(60) para guardar rutas de archivo
-        @Size(max = 60)
-        @Column(name = "FOTOCP", length = 60)
-        private String fotoCp;
+        // BLOB fields - Lazy loading para evitar cargarlos en cada consulta
+        @Lob
+        @Basic(fetch = FetchType.LAZY)
+        @Column(name = "FOTOCP")
+        private byte[] fotoCp;
 
-        @Size(max = 60)
-        @Column(name = "FOTOABONO", length = 60)
-        private String fotoAbono;
+        @Lob
+        @Basic(fetch = FetchType.LAZY)
+        @Column(name = "FOTOABONO")
+        private byte[] fotoAbono;
 
         @Column(name = "FECABONO")
         private LocalDate fecAbono;

@@ -560,10 +560,7 @@ export const clientesService = {
   getAll: async (codCia: number): Promise<Cliente[]> => {
     try {
       const response = await apiClient.get<ApiResponse<Cliente[]> | Cliente[]>(
-        `/clientes`,
-        {
-          params: { vigente: '1' } // Solo clientes activos (el profesor usa '1' en lugar de 'S')
-        }
+        `/clientes?codCia=${codCia}`
       );
 
       // El backend puede devolver directamente un array o dentro de ApiResponse
@@ -575,8 +572,7 @@ export const clientesService = {
         throw new Error('La API no devolvió clientes.');
       }
 
-      // Filtrar por compañía en el frontend
-      return payload.filter((cliente: Cliente) => cliente.codCia === codCia);
+      return payload;
     } catch (error) {
       throw new Error(handleApiError(error));
     }
@@ -591,10 +587,7 @@ export const proveedoresService = {
   getAll: async (codCia: number): Promise<Proveedor[]> => {
     try {
       const response = await apiClient.get<ApiResponse<Proveedor[]> | Proveedor[]>(
-        `/proveedores`,
-        {
-          params: { vigente: '1' } // Solo proveedores activos (profesor usa '1' en lugar de 'S')
-        }
+        `/proveedores?codCia=${codCia}`
       );
 
       // El backend puede devolver directamente un array o dentro de ApiResponse
@@ -606,8 +599,7 @@ export const proveedoresService = {
         throw new Error('La API no devolvió proveedores.');
       }
 
-      // Filtrar por compañía en el frontend
-      return payload.filter((proveedor: Proveedor) => proveedor.codCia === codCia);
+      return payload;
     } catch (error) {
       throw new Error(handleApiError(error));
     }

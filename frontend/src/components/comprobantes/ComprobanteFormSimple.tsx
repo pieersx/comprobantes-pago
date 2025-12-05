@@ -35,7 +35,11 @@ export function ComprobanteFormSimple({
   // Estado del formulario
   const [tipoComprobante, setTipoComprobante] = useState<string>('');
   const [nroComprobante, setNroComprobante] = useState('');
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const obtenerFechaLocal = () => {
+    const hoy = new Date();
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  };
+  const [fecha, setFecha] = useState(obtenerFechaLocal());
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {

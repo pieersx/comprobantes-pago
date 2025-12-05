@@ -44,6 +44,7 @@ interface ComprobanteFormProps {
   tipo: 'ingreso' | 'egreso';
   modo: 'crear' | 'editar';
   comprobanteId?: string;
+  initialData?: any; // Datos del comprobante para edición
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -55,6 +56,7 @@ interface ComprobanteFormProps {
  * @param tipo - Tipo de comprobante: 'ingreso' o 'egreso'
  * @param modo - Modo del formulario: 'crear' o 'editar'
  * @param comprobanteId - ID del comprobante (solo para edición)
+ * @param initialData - Datos iniciales del comprobante (para edición)
  * @param onSuccess - Callback ejecutado al guardar exitosamente
  * @param onCancel - Callback ejecutado al cancelar
  */
@@ -62,6 +64,7 @@ export function ComprobanteForm({
   tipo,
   modo,
   comprobanteId,
+  initialData,
   onSuccess,
   onCancel,
 }: ComprobanteFormProps) {
@@ -70,6 +73,7 @@ export function ComprobanteForm({
   const {
     formState,
     updateField,
+    setFormData,
     agregarPartida,
     editarPartida,
     eliminarPartida,
@@ -101,6 +105,21 @@ export function ComprobanteForm({
 
   // Feature: empleados-comprobantes-blob - Tipo de beneficiario para egresos
   const [tipoBeneficiario, setTipoBeneficiario] = useState<'proveedor' | 'empleado'>('proveedor');
+
+  // Cargar datos iniciales si estamos en modo edición
+  useEffect(() => {
+    if (modo === 'editar' && initialData) {
+      console.log('📝 Cargando datos para edición:', initialData);
+      setFormData(initialData);
+
+      // Detectar tipo de beneficiario basado en los datos
+      if (initialData.codEmpleado && !initialData.codProveedor) {
+        setTipoBeneficiario('empleado');
+      } else {
+        setTipoBeneficiario('proveedor');
+      }
+    }
+  }, [modo, initialData, setFormData]);
 
   // Cargar catálogos al montar el componente
   useEffect(() => {
@@ -142,8 +161,10 @@ export function ComprobanteForm({
           setClientes(clientesData);
         }
 
-        // Establecer compañía en el formulario
-        updateField('codCia', codCia);
+        // Establecer compañía en el formulario (solo si no es edición)
+        if (modo === 'crear') {
+          updateField('codCia', codCia);
+        }
         console.log('✅ Catálogos cargados exitosamente');
       } catch (error) {
         console.error('❌ Error al cargar catálogos:', error);
@@ -154,7 +175,7 @@ export function ComprobanteForm({
     };
 
     cargarCatalogos();
-  }, [tipo, handleError, updateField]);
+  }, [tipo, modo, handleError, updateField]);
 
   // Manejar guardado del formulario
   const handleSubmit = async () => {
@@ -207,7 +228,10 @@ export function ComprobanteForm({
       if (tipo === 'egreso') {
         // Convertir fecha a formato ISO (yyyy-MM-dd) si viene en formato DD/MM/YYYY
         const convertirFecha = (fecha: string): string => {
-          if (!fecha) return new Date().toISOString().split('T')[0]; // Fecha actual si está vacío
+          if (!fecha) {
+            const hoy = new Date();
+            return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+          }
           if (fecha.includes('/')) {
             const [dia, mes, año] = fecha.split('/');
             return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
@@ -260,8 +284,8 @@ export function ComprobanteForm({
             return tipoSeleccionado?.denEle?.toLowerCase().includes('recibo') ? formState.porcentajeImpuesto : undefined;
           })(),
           semilla: 1,
-          tabEstado: '001', // Tabla de estados
-          codEstado: '001', // Estado inicial
+          tabEstado: '014', // Tabla de estados de comprobante
+          codEstado: 'REG', // Estado inicial: Registrado
           detalles: formState.detalles.map((d, index) => ({
             codCia: Number(formState.codCia),
             codProveedor: Number(formState.codProveedor!),
@@ -318,7 +342,7 @@ export function ComprobanteForm({
             tipCambio: Number(formState.tipCambio) || 1.00,
             impMo: Number(formState.impNetoMn), // Importe en moneda origen
             impNetoMn: Number(formState.impNetoMn),
-            impIgvmn: Number(formState.impIgvMn),
+            impIgvMn: Number(formState.impIgvMn), // Cambio: usar impIgvMn para coincidir con @JsonProperty del backend
             impTotalMn: Number(formState.impTotalMn),
             fecAbono: fechaISO,
             desAbono: `PAGO ${formState.nroCp}`,
@@ -423,8 +447,8 @@ export function ComprobanteForm({
             return tipoSeleccionado?.denEle?.toLowerCase().includes('recibo') ? formState.porcentajeImpuesto : undefined;
           })(),
           semilla: 1,
-          tabEstado: '001', // Tabla de estados
-          codEstado: '001', // Estado inicial
+          tabEstado: '014', // Tabla de estados de comprobante
+          codEstado: 'REG', // Estado inicial: Registrado
           detalles: formState.detalles.map((d, index) => ({
             codCia: Number(formState.codCia),
             nroCp: formState.nroCp,
@@ -683,6 +707,7 @@ export function ComprobanteForm({
                       updateField('codProveedor', undefined);
                     }
                   }}
+                  disabled={modo === 'editar'} // No permitir cambiar tipo en edición
                 >
                   <SelectTrigger id="tipoBeneficiario">
                     <SelectValue placeholder="Seleccione tipo" />
@@ -692,6 +717,11 @@ export function ComprobanteForm({
                     <SelectItem value="empleado">Empleado</SelectItem>
                   </SelectContent>
                 </Select>
+                {modo === 'editar' && (
+                  <p className="text-sm text-muted-foreground">
+                    El tipo de beneficiario no se puede cambiar al editar
+                  </p>
+                )}
               </div>
             )}
 
@@ -844,7 +874,13 @@ export function ComprobanteForm({
               </Label>
               <Select
                 value={formState.tMoneda || ''}
-                onValueChange={(value) => updateField('tMoneda', value)}
+                onValueChange={(value) => {
+                  updateField('tMoneda', value);
+                  // Si es Soles (codElem='001'), el tipo de cambio es 1
+                  if (value === '001') {
+                    updateField('tipCambio', 1);
+                  }
+                }}
               >
                 <SelectTrigger
                   id="tMoneda"
@@ -866,15 +902,7 @@ export function ComprobanteForm({
             </div>
 
             {/* Tipo de Cambio (solo si NO es Soles - moneda base) */}
-            {(() => {
-              const monedaSeleccionada = tiposMoneda.find(m => m.codElem === formState.tMoneda);
-              const esMonedaExtranjera = monedaSeleccionada?.denEle?.toLowerCase().includes('dólar') ||
-                                         monedaSeleccionada?.denEle?.toLowerCase().includes('dollar') ||
-                                         monedaSeleccionada?.denEle?.toLowerCase().includes('usd') ||
-                                         monedaSeleccionada?.denEle?.toLowerCase().includes('euro') ||
-                                         (formState.tMoneda && formState.tMoneda !== '001'); // Cualquier moneda que no sea Soles (001)
-              return esMonedaExtranjera;
-            })() && (
+            {formState.tMoneda && formState.tMoneda !== '001' && formState.tMoneda !== 'PEN' && (
               <div className="space-y-2">
                 <Label
                   htmlFor="tipCambio"

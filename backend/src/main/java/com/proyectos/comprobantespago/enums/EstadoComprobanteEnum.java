@@ -2,14 +2,14 @@ package com.proyectos.comprobantespago.enums;
 
 /**
  * Enum para estados de comprobantes de pago
- * Basado en la tabla ELEMENTOS con CODTAB='004'
+ * Basado en la tabla ELEMENTOS con CODTAB='014' (Estados Comprobante)
  */
 public enum EstadoComprobanteEnum {
 
-    REGISTRADO("001", "Registrado", "Comprobante registrado, sin abono"),
-    PARCIALMENTE_PAGADO("002", "Parcialmente Pagado", "Abono parcial registrado"),
-    TOTALMENTE_PAGADO("003", "Totalmente Pagado", "Pago completo realizado"),
-    ANULADO("004", "Anulado", "Comprobante anulado");
+    REGISTRADO("REG", "Registrado", "Comprobante registrado, sin abono"),
+    PARCIALMENTE_PAGADO("PEN", "Pendiente", "Abono parcial pendiente"),
+    TOTALMENTE_PAGADO("PAG", "Pagado", "Pago completo realizado"),
+    ANULADO("ANU", "Anulado", "Comprobante anulado");
 
     private final String codigo;
     private final String descripcion;

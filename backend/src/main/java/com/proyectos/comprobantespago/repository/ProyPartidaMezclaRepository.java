@@ -91,4 +91,16 @@ public interface ProyPartidaMezclaRepository
                         @Param("codPyto") Long codPyto,
                         @Param("nroVersion") Integer nroVersion,
                         @Param("ingEgr") String ingEgr);
+
+        /**
+         * Obtener todas las partidas de un proyecto por tipo (Ingreso/Egreso)
+         * Usado para mostrar las partidas jerárquicamente en el formulario
+         */
+        @Query("SELECT ppm FROM ProyPartidaMezcla ppm WHERE ppm.codCia = :codCia " +
+                        "AND ppm.codPyto = :codPyto AND ppm.ingEgr = :ingEgr " +
+                        "ORDER BY ppm.nivel, ppm.orden")
+        List<ProyPartidaMezcla> findByProyectoAndTipo(
+                        @Param("codCia") Long codCia,
+                        @Param("codPyto") Long codPyto,
+                        @Param("ingEgr") String ingEgr);
 }

@@ -3,11 +3,25 @@ package com.proyectos.comprobantespago.entity;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Entidad EMPLEADO - Datos extendidos de empleados (extiende PERSONA)
@@ -57,7 +71,6 @@ public class Empleado implements Serializable {
     @Column(name = "DNI", nullable = false, length = 20)
     private String dni;
 
-
     @Size(max = 10)
     @Column(name = "NROCIP", length = 10)
     private String nroCip;
@@ -92,8 +105,8 @@ public class Empleado implements Serializable {
     @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-        @JoinColumn(name = "CODCIA", referencedColumnName = "CODCIA", insertable = false, updatable = false),
-        @JoinColumn(name = "CODEMPLEADO", referencedColumnName = "CODPERSONA", insertable = false, updatable = false)
+            @JoinColumn(name = "CODCIA", referencedColumnName = "CODCIA", insertable = false, updatable = false),
+            @JoinColumn(name = "CODEMPLEADO", referencedColumnName = "CODPERSONA", insertable = false, updatable = false)
     })
     private Persona persona;
 

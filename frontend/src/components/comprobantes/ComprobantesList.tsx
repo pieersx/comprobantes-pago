@@ -88,6 +88,30 @@ export function ComprobantesList({
  return comprobante.nombreProyecto || comprobante.codPyto;
  };
 
+ const getMonedaLabel = (comprobante: ComprobanteItem) => {
+ // Intentar obtener descripción, si no hay, mostrar código mapeado
+ const desc = (comprobante as any).monedaDesc ||
+              (comprobante as any).descMoneda ||
+              (comprobante as any).descripcionMoneda;
+ if (desc) return desc;
+
+ // Fallback: mapear código a nombre
+ const monedaMap: Record<string, string> = { '001': 'Soles', '002': 'Dólares', '003': 'Euros' };
+ return monedaMap[comprobante.eMoneda] || comprobante.eMoneda;
+ };
+
+ const getTipoComprobanteLabel = (comprobante: ComprobanteItem) => {
+ // Intentar obtener descripción, si no hay, mostrar código mapeado
+ const desc = (comprobante as any).tipoComprobanteDesc ||
+              (comprobante as any).descTipoComprobante ||
+              (comprobante as any).descripcionTipoComprobante;
+ if (desc) return desc;
+
+ // Fallback: mapear código a nombre
+ const tipoMap: Record<string, string> = { '001': 'Factura', '002': 'R x H', '003': 'Voucher' };
+ return tipoMap[comprobante.eCompPago] || comprobante.eCompPago;
+ };
+
  if (isLoading) {
  return (
  <div className="flex items-center justify-center h-64">
@@ -137,8 +161,8 @@ export function ComprobantesList({
  </TableCell>
  <TableCell>{getProyectoLabel(comprobante)}</TableCell>
  <TableCell>{getEntidadLabel(comprobante)}</TableCell>
- <TableCell>{comprobante.eCompPago}</TableCell>
- <TableCell>{comprobante.eMoneda}</TableCell>
+ <TableCell>{getTipoComprobanteLabel(comprobante)}</TableCell>
+ <TableCell>{getMonedaLabel(comprobante)}</TableCell>
  <TableCell className="text-right font-medium">
  {formatCurrency(comprobante.impTotalMn)}
  </TableCell>

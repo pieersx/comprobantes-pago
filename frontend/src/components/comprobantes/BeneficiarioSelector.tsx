@@ -3,11 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { empleadosService } from "@/services/empleados.service";
@@ -49,10 +49,10 @@ export function BeneficiarioSelector({
   error,
   disabled = false,
 }: BeneficiarioSelectorProps) {
-  // Cargar proveedores (vigente='1' porque el profesor usa '1' en lugar de 'S')
+  // Cargar proveedores (ahora usa codCia)
   const { data: proveedores = [], isLoading: loadingProveedores } = useQuery({
     queryKey: ["proveedores", codCia],
-    queryFn: () => proveedoresService.getAll('1'),
+    queryFn: () => proveedoresService.getAll(codCia),
     enabled: tipoBeneficiario === "proveedor",
   });
 

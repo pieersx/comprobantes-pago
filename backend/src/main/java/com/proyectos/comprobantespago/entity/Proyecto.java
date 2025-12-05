@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -190,6 +191,7 @@ public class Proyecto implements Serializable {
     private Integer codObjC;
 
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     @Column(name = "LOGOPROY")
     private byte[] logoProy;
 

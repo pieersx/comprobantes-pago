@@ -15,6 +15,7 @@ import com.proyectos.comprobantespago.entity.VtaCompPagoCab;
 import com.proyectos.comprobantespago.entity.VtaCompPagoDet;
 import com.proyectos.comprobantespago.exception.ResourceNotFoundException;
 import com.proyectos.comprobantespago.repository.ClienteRepository;
+import com.proyectos.comprobantespago.repository.ElementosRepository;
 import com.proyectos.comprobantespago.repository.PartidaRepository;
 import com.proyectos.comprobantespago.repository.ProyectoRepository;
 import com.proyectos.comprobantespago.repository.VtaCompPagoCabRepository;
@@ -40,6 +41,7 @@ public class VtaCompPagoCabService {
     private final ClienteRepository clienteRepository;
     private final ProyectoRepository proyectoRepository;
     private final PartidaRepository partidaRepository;
+    private final ElementosRepository elementosRepository;
     private final PresupuestoService presupuestoService;
     private final PartidaHierarchyService partidaHierarchyService;
     private final TaxCalculationService taxCalculationService;
@@ -95,8 +97,8 @@ public class VtaCompPagoCabService {
         // Crear cabecera
         VtaCompPagoCab cabecera = convertirCabeceraAEntidad(dto);
         // Establecer estado inicial: Registrado (código '001')
-        cabecera.setTabEstado("001"); // Tabla de estados
-        cabecera.setCodEstado("001"); // Estado inicial: Registrado
+        cabecera.setTabEstado("014"); // Tabla de estados de comprobante
+        cabecera.setCodEstado("REG"); // Estado inicial: Registrado
         cabecera = vtaCompPagoCabRepository.save(cabecera);
 
         // Crear detalles si existen
@@ -260,9 +262,9 @@ public class VtaCompPagoCabService {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // Cambiar estado a anulado (código '003')
-        cabecera.setTabEstado("001"); // Tabla de estados
-        cabecera.setCodEstado("003"); // Código de anulado
+        // Cambiar estado a anulado (ANU)
+        cabecera.setTabEstado("014"); // Tabla de estados de comprobante
+        cabecera.setCodEstado("ANU"); // Código de anulado
         vtaCompPagoCabRepository.save(cabecera);
     }
 
@@ -278,14 +280,14 @@ public class VtaCompPagoCabService {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // Verificar que no esté ya anulado (código '003')
-        if ("003".equals(cabecera.getCodEstado())) {
+        // Verificar que no esté ya anulado (ANU)
+        if ("ANU".equals(cabecera.getCodEstado())) {
             throw new RuntimeException("El comprobante ya está anulado");
         }
 
-        // Cambiar estado a ANU (Anulado - código '003')
-        cabecera.setTabEstado("001"); // Tabla de estados
-        cabecera.setCodEstado("003"); // Código de anulado
+        // Cambiar estado a ANU (Anulado)
+        cabecera.setTabEstado("014"); // Tabla de estados de comprobante
+        cabecera.setCodEstado("ANU"); // Código de anulado
         cabecera = vtaCompPagoCabRepository.save(cabecera);
 
         // Actualizar flujo de caja del proyecto
@@ -485,6 +487,72 @@ public class VtaCompPagoCabService {
                 .map(this::convertirDetalleADTO)
                 .collect(Collectors.toList());
 
+        // Obtener nombres descriptivos de entidades relacionadas
+        String nomProyecto = null;
+        String nomCliente = null;
+        String descMoneda = null;
+        String descTipoComprobante = null;
+        String descEstado = null;
+
+        // Obtener nombre del proyecto
+        try {
+            proyectoRepository.findById(
+                    new com.proyectos.comprobantespago.entity.Proyecto.ProyectoId(cabecera.getCodCia(),
+                            cabecera.getCodPyto()))
+                    .ifPresent(p -> {
+                    });
+            var proyectoOpt = proyectoRepository.findById(
+                    new com.proyectos.comprobantespago.entity.Proyecto.ProyectoId(cabecera.getCodCia(),
+                            cabecera.getCodPyto()));
+            if (proyectoOpt.isPresent()) {
+                nomProyecto = proyectoOpt.get().getNombPyto();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener el nombre del proyecto: {}", e.getMessage());
+        }
+
+        // Obtener nombre del cliente (a través de Persona)
+        try {
+            var clienteOpt = clienteRepository.findById(
+                    new com.proyectos.comprobantespago.entity.Cliente.ClienteId(cabecera.getCodCia(),
+                            cabecera.getCodCliente()));
+            if (clienteOpt.isPresent() && clienteOpt.get().getPersona() != null) {
+                nomCliente = clienteOpt.get().getPersona().getDesPersona();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener el nombre del cliente: {}", e.getMessage());
+        }
+
+        // Obtener descripción de la moneda (codTab='003')
+        try {
+            var monedaOpt = elementosRepository.findByCodTabAndCodElemAndVigente("003", cabecera.getEMoneda(), "1");
+            if (monedaOpt.isPresent()) {
+                descMoneda = monedaOpt.get().getDenEle();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener la descripción de la moneda: {}", e.getMessage());
+        }
+
+        // Obtener descripción del tipo de comprobante (codTab='004')
+        try {
+            var tipoCompOpt = elementosRepository.findByCodTabAndCodElemAndVigente("004", cabecera.getECompPago(), "1");
+            if (tipoCompOpt.isPresent()) {
+                descTipoComprobante = tipoCompOpt.get().getDenEle();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener la descripción del tipo de comprobante: {}", e.getMessage());
+        }
+
+        // Obtener descripción del estado (codTab='014')
+        try {
+            var estadoOpt = elementosRepository.findByCodTabAndCodElemAndVigente("014", cabecera.getCodEstado(), "1");
+            if (estadoOpt.isPresent()) {
+                descEstado = estadoOpt.get().getDenEle();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener la descripción del estado: {}", e.getMessage());
+        }
+
         return VtaCompPagoCabDTO.builder()
                 .codCia(cabecera.getCodCia())
                 .nroCp(cabecera.getNroCp())
@@ -501,21 +569,43 @@ public class VtaCompPagoCabService {
                 .impNetoMn(cabecera.getImpNetoMn())
                 .impIgvMn(cabecera.getImpIgvMn())
                 .impTotalMn(cabecera.getImpTotalMn())
-                // FotoCp y FotoAbono son VARCHAR2(60) - rutas de archivo
-                .fotoCp(cabecera.getFotoCp())
-                .fotoAbono(cabecera.getFotoAbono())
-                .tieneFotoCp(cabecera.getFotoCp() != null && !cabecera.getFotoCp().isEmpty())
-                .tieneFotoAbono(cabecera.getFotoAbono() != null && !cabecera.getFotoAbono().isEmpty())
+                // FotoCp y FotoAbono son BLOB - no incluir bytes en DTO, solo indicar si
+                // existen
+                .fotoCp(null) // BLOB se maneja por endpoint separado
+                .fotoAbono(null) // BLOB se maneja por endpoint separado
+                .tieneFotoCp(cabecera.getFotoCp() != null && cabecera.getFotoCp().length > 0)
+                .tieneFotoAbono(cabecera.getFotoAbono() != null && cabecera.getFotoAbono().length > 0)
                 .fecAbono(cabecera.getFecAbono())
                 .desAbono(cabecera.getDesAbono())
                 .semilla(cabecera.getSemilla())
                 .tabEstado(cabecera.getTabEstado())
                 .codEstado(cabecera.getCodEstado())
+                // Campos descriptivos
+                .nomProyecto(nomProyecto)
+                .nomCliente(nomCliente)
+                .descMoneda(descMoneda)
+                .descTipoComprobante(descTipoComprobante)
+                .descEstado(descEstado)
                 .detalles(detallesDTO)
                 .build();
     }
 
     private VtaCompPagoDetDTO convertirDetalleADTO(VtaCompPagoDet detalle) {
+        // Obtener nombre de la partida
+        String desPartida = null;
+        try {
+            var partidaOpt = partidaRepository.findById(
+                    new com.proyectos.comprobantespago.entity.Partida.PartidaId(
+                            detalle.getCodCia(),
+                            detalle.getIngEgr(),
+                            detalle.getCodPartida()));
+            if (partidaOpt.isPresent()) {
+                desPartida = partidaOpt.get().getDesPartida();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener el nombre de la partida {}: {}", detalle.getCodPartida(), e.getMessage());
+        }
+
         return VtaCompPagoDetDTO.builder()
                 .codCia(detalle.getCodCia())
                 .nroCp(detalle.getNroCp())
@@ -526,6 +616,7 @@ public class VtaCompPagoCabService {
                 .impIgvMn(detalle.getImpIgvMn())
                 .impTotalMn(detalle.getImpTotalMn())
                 .semilla(detalle.getSemilla())
+                .desPartida(desPartida)
                 .build();
     }
 
@@ -569,57 +660,40 @@ public class VtaCompPagoCabService {
                 .build();
     }
 
-    // ==================== Métodos de imágenes VARCHAR (rutas de archivo)
-    // ====================
-    // Feature: empleados-comprobantes-file-path
+    // ==================== Métodos de imágenes BLOB ====================
+    // Feature: empleados-comprobantes-blob
     // Requirements: 3.1, 3.2, 6.1, 6.2
-    // NOTA: En grupo06, VTACOMP_PAGOCAB usa VARCHAR2(60) para FotoCp y FotoAbono
-    // (rutas de archivo)
-    // a diferencia de COMP_PAGOCAB que usa BLOB
+    // NOTA: VTACOMP_PAGOCAB usa BLOB para FotoCp y FotoAbono
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final java.util.List<String> ALLOWED_CONTENT_TYPES = java.util.List.of(
             "image/jpeg", "image/png", "image/gif", "application/pdf");
 
     /**
-     * Sube la imagen del comprobante (FotoCP) y guarda la ruta en la BD
-     * VTACOMP_PAGOCAB usa VARCHAR2(60) para almacenar la ruta del archivo
+     * Sube la imagen del comprobante (FotoCP) como BLOB
      */
-    public String uploadFotoCp(Long codCia, String nroCp, MultipartFile file) {
+    public void uploadFotoCp(Long codCia, String nroCp, MultipartFile file) {
         validateFile(file);
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // Obtener año y mes de la fecha del comprobante
-        int year = cabecera.getFecCp() != null ? cabecera.getFecCp().getYear() : LocalDate.now().getYear();
-        int month = cabecera.getFecCp() != null ? cabecera.getFecCp().getMonthValue() : LocalDate.now().getMonthValue();
-
-        // Guardar archivo en disco y obtener la ruta
-        String filePath = fileStorageService.storeComprobanteFile(
-                file, codCia.intValue(), year, month, "ingreso");
-
-        // Validar que la ruta cabe en VARCHAR2(60)
-        if (filePath.length() > 60) {
-            log.error("Ruta del archivo excede 60 caracteres ({}): {}", filePath.length(), filePath);
-            throw new RuntimeException("La ruta del archivo excede el límite de 60 caracteres");
+        try {
+            cabecera.setFotoCp(file.getBytes());
+            vtaCompPagoCabRepository.save(cabecera);
+            log.info("FotoCp guardada como BLOB para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error al leer el archivo: " + e.getMessage(), e);
         }
-        cabecera.setFotoCp(filePath);
-        vtaCompPagoCabRepository.save(cabecera);
-        log.info("FotoCp guardada para ingreso: codCia={}, nroCp={}, path={}", codCia, nroCp, filePath);
-
-        return filePath;
     }
 
     /**
-     * Obtiene la ruta de la imagen del comprobante (FotoCP)
-     *
-     * @return Ruta del archivo almacenado en el servidor
+     * Obtiene la imagen del comprobante (FotoCP) como bytes
      */
-    public String getFotoCpPath(Long codCia, String nroCp) {
+    public byte[] getFotoCp(Long codCia, String nroCp) {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado: " + nroCp));
 
-        if (cabecera.getFotoCp() == null || cabecera.getFotoCp().isEmpty()) {
+        if (cabecera.getFotoCp() == null || cabecera.getFotoCp().length == 0) {
             throw new ResourceNotFoundException("El comprobante no tiene imagen de comprobante");
         }
         return cabecera.getFotoCp();
@@ -632,51 +706,36 @@ public class VtaCompPagoCabService {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // TODO: Opcionalmente eliminar el archivo físico del disco
         cabecera.setFotoCp(null);
         vtaCompPagoCabRepository.save(cabecera);
         log.info("FotoCp eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);
     }
 
     /**
-     * Sube la imagen del abono (FotoAbono) y guarda la ruta en la BD
-     * VTACOMP_PAGOCAB usa VARCHAR2(60) para almacenar la ruta del archivo
+     * Sube la imagen del abono (FotoAbono) como BLOB
      */
-    public String uploadFotoAbono(Long codCia, String nroCp, MultipartFile file) {
+    public void uploadFotoAbono(Long codCia, String nroCp, MultipartFile file) {
         validateFile(file);
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // Obtener año y mes de la fecha del comprobante
-        int year = cabecera.getFecCp() != null ? cabecera.getFecCp().getYear() : LocalDate.now().getYear();
-        int month = cabecera.getFecCp() != null ? cabecera.getFecCp().getMonthValue() : LocalDate.now().getMonthValue();
-
-        // Guardar archivo en disco y obtener la ruta
-        String filePath = fileStorageService.storeAbonoFile(
-                file, codCia.intValue(), year, month);
-
-        // Validar que la ruta cabe en VARCHAR2(60)
-        if (filePath.length() > 60) {
-            log.error("Ruta del archivo excede 60 caracteres ({}): {}", filePath.length(), filePath);
-            throw new RuntimeException("La ruta del archivo excede el límite de 60 caracteres");
+        try {
+            cabecera.setFotoAbono(file.getBytes());
+            vtaCompPagoCabRepository.save(cabecera);
+            log.info("FotoAbono guardada como BLOB para ingreso: codCia={}, nroCp={}", codCia, nroCp);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Error al leer el archivo: " + e.getMessage(), e);
         }
-        cabecera.setFotoAbono(filePath);
-        vtaCompPagoCabRepository.save(cabecera);
-        log.info("FotoAbono guardada para ingreso: codCia={}, nroCp={}, path={}", codCia, nroCp, filePath);
-
-        return filePath;
     }
 
     /**
-     * Obtiene la ruta de la imagen del abono (FotoAbono)
-     *
-     * @return Ruta del archivo almacenado en el servidor
+     * Obtiene la imagen del abono (FotoAbono) como bytes
      */
-    public String getFotoAbonoPath(Long codCia, String nroCp) {
+    public byte[] getFotoAbono(Long codCia, String nroCp) {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new ResourceNotFoundException("Comprobante no encontrado: " + nroCp));
 
-        if (cabecera.getFotoAbono() == null || cabecera.getFotoAbono().isEmpty()) {
+        if (cabecera.getFotoAbono() == null || cabecera.getFotoAbono().length == 0) {
             throw new ResourceNotFoundException("El comprobante no tiene imagen de abono");
         }
         return cabecera.getFotoAbono();
@@ -689,7 +748,6 @@ public class VtaCompPagoCabService {
         VtaCompPagoCab cabecera = vtaCompPagoCabRepository.findByCodCiaAndNroCp(codCia, nroCp)
                 .orElseThrow(() -> new RuntimeException("Comprobante no encontrado: " + nroCp));
 
-        // TODO: Opcionalmente eliminar el archivo físico del disco
         cabecera.setFotoAbono(null);
         vtaCompPagoCabRepository.save(cabecera);
         log.info("FotoAbono eliminada para ingreso: codCia={}, nroCp={}", codCia, nroCp);

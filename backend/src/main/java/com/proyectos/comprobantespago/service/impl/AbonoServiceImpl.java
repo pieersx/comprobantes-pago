@@ -1,9 +1,12 @@
 package com.proyectos.comprobantespago.service.impl;
 
+import java.time.LocalDate;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.proyectos.comprobantespago.dto.AbonoDTO;
+import com.proyectos.comprobantespago.dto.AbonoUpdateDTO;
 import com.proyectos.comprobantespago.entity.ComprobantePagoCab;
 import com.proyectos.comprobantespago.entity.ComprobantePagoEmpleado;
 import com.proyectos.comprobantespago.entity.VtaCompPagoCab;
@@ -26,7 +29,7 @@ public class AbonoServiceImpl implements AbonoService {
         private final VtaCompPagoCabRepository vtaCompPagoCabRepository;
         private final ComprobantePagoEmpleadoRepository comprobantePagoEmpleadoRepository;
 
-        private static final String TAB_ESTADO = "004"; // Tabla de estados
+        private static final String TAB_ESTADO = "014"; // Tabla de estados de comprobante
 
         @Override
         @Transactional
@@ -88,6 +91,16 @@ public class AbonoServiceImpl implements AbonoService {
                 comprobante.setTabEstado(TAB_ESTADO);
                 comprobante.setCodEstado(nuevoEstado.getCodigo());
 
+                // Si se marca como PAGADO, sincronizar la fecha de pago
+                if (nuevoEstado == EstadoComprobante.PAGADO) {
+                        LocalDate hoy = LocalDate.now();
+                        // Si la fecha de pago está vacía o es futura, usar la fecha actual
+                        if (comprobante.getFecAbono() == null || comprobante.getFecAbono().isAfter(hoy)) {
+                                comprobante.setFecAbono(hoy);
+                                log.info("Fecha de pago sincronizada a {} para egreso {}", hoy, nroCP);
+                        }
+                }
+
                 comprobantePagoCabRepository.save(comprobante);
         }
 
@@ -103,6 +116,16 @@ public class AbonoServiceImpl implements AbonoService {
 
                 comprobante.setTabEstado(TAB_ESTADO);
                 comprobante.setCodEstado(nuevoEstado.getCodigo());
+
+                // Si se marca como PAGADO, sincronizar la fecha de pago
+                if (nuevoEstado == EstadoComprobante.PAGADO) {
+                        LocalDate hoy = LocalDate.now();
+                        // Si la fecha de pago está vacía o es futura, usar la fecha actual
+                        if (comprobante.getFecAbono() == null || comprobante.getFecAbono().isAfter(hoy)) {
+                                comprobante.setFecAbono(hoy);
+                                log.info("Fecha de pago sincronizada a {} para ingreso {}", hoy, nroCP);
+                        }
+                }
 
                 vtaCompPagoCabRepository.save(comprobante);
         }
@@ -143,7 +166,7 @@ public class AbonoServiceImpl implements AbonoService {
                                 .fechaAbono(comprobante.getFecAbono())
                                 .descripcionMedioPago(comprobante.getDesAbono())
                                 .tieneFotoAbono(comprobante.getFotoAbono() != null
-                                                && !comprobante.getFotoAbono().isEmpty())
+                                                && comprobante.getFotoAbono().length > 0)
                                 .build();
         }
 
@@ -186,6 +209,16 @@ public class AbonoServiceImpl implements AbonoService {
                 comprobante.setTabEstado(TAB_ESTADO);
                 comprobante.setCodEstado(nuevoEstado.getCodigo());
 
+                // Si se marca como PAGADO, sincronizar la fecha de pago
+                if (nuevoEstado == EstadoComprobante.PAGADO) {
+                        LocalDate hoy = LocalDate.now();
+                        // Si la fecha de pago está vacía o es futura, usar la fecha actual
+                        if (comprobante.getFecAbono() == null || comprobante.getFecAbono().isAfter(hoy)) {
+                                comprobante.setFecAbono(hoy);
+                                log.info("Fecha de pago sincronizada a {} para empleado {}", hoy, nroCP);
+                        }
+                }
+
                 comprobantePagoEmpleadoRepository.save(comprobante);
         }
 
@@ -207,5 +240,75 @@ public class AbonoServiceImpl implements AbonoService {
                                 .tieneFotoAbono(comprobante.getFotoAbono() != null
                                                 && comprobante.getFotoAbono().length > 0)
                                 .build();
+        }
+
+        // ==================== Métodos para Actualizar Abonos ====================
+
+        @Override
+        @Transactional
+        public void actualizarAbonoEgreso(Long codCia, Long codProveedor, String nroCP, AbonoUpdateDTO abonoDTO) {
+                log.info("Actualizando abono para egreso: codCia={}, codProveedor={}, nroCP={}",
+                                codCia, codProveedor, nroCP);
+
+                ComprobantePagoCab comprobante = comprobantePagoCabRepository
+                                .findByCodCiaAndCodProveedorAndNroCp(codCia, codProveedor, nroCP)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Comprobante de egreso no encontrado: " + nroCP));
+
+                // Solo actualizar campos de abono, NO cambiar estado
+                if (abonoDTO.getFechaAbono() != null) {
+                        comprobante.setFecAbono(abonoDTO.getFechaAbono());
+                }
+                if (abonoDTO.getDescripcionMedioPago() != null) {
+                        comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
+                }
+
+                comprobantePagoCabRepository.save(comprobante);
+                log.info("Abono actualizado exitosamente para egreso: {}", nroCP);
+        }
+
+        @Override
+        @Transactional
+        public void actualizarAbonoIngreso(Long codCia, String nroCP, AbonoUpdateDTO abonoDTO) {
+                log.info("Actualizando abono para ingreso: codCia={}, nroCP={}", codCia, nroCP);
+
+                VtaCompPagoCab comprobante = vtaCompPagoCabRepository
+                                .findByCodCiaAndNroCp(codCia, nroCP)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Comprobante de ingreso no encontrado: " + nroCP));
+
+                // Solo actualizar campos de abono, NO cambiar estado
+                if (abonoDTO.getFechaAbono() != null) {
+                        comprobante.setFecAbono(abonoDTO.getFechaAbono());
+                }
+                if (abonoDTO.getDescripcionMedioPago() != null) {
+                        comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
+                }
+
+                vtaCompPagoCabRepository.save(comprobante);
+                log.info("Abono actualizado exitosamente para ingreso: {}", nroCP);
+        }
+
+        @Override
+        @Transactional
+        public void actualizarAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP, AbonoUpdateDTO abonoDTO) {
+                log.info("Actualizando abono para empleado: codCia={}, codEmpleado={}, nroCP={}",
+                                codCia, codEmpleado, nroCP);
+
+                ComprobantePagoEmpleado comprobante = comprobantePagoEmpleadoRepository
+                                .findByCodCiaAndCodEmpleadoAndNroCp(codCia, codEmpleado, nroCP)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Comprobante de empleado no encontrado: " + nroCP));
+
+                // Solo actualizar campos de abono, NO cambiar estado
+                if (abonoDTO.getFechaAbono() != null) {
+                        comprobante.setFecAbono(abonoDTO.getFechaAbono());
+                }
+                if (abonoDTO.getDescripcionMedioPago() != null) {
+                        comprobante.setDesAbono(abonoDTO.getDescripcionMedioPago());
+                }
+
+                comprobantePagoEmpleadoRepository.save(comprobante);
+                log.info("Abono actualizado exitosamente para empleado: {}", nroCP);
         }
 }

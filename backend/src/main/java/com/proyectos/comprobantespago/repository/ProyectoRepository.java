@@ -20,15 +20,15 @@ public interface ProyectoRepository extends JpaRepository<Proyecto, Proyecto.Pro
 
     Optional<Proyecto> findByCodCiaAndCodPyto(Long codCia, Long codPyto);
 
-    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.vigente = '1' ORDER BY p.nombPyto")
+    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.vigente IN ('1', 'S') ORDER BY p.nombPyto")
     List<Proyecto> findAllActiveByCodCia(@Param("codCia") Long codCia);
 
-    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.emplJefeProy = :codEmpleado AND p.vigente = '1'")
+    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.emplJefeProy = :codEmpleado AND p.vigente IN ('1', 'S')")
     List<Proyecto> findByJefeProyecto(@Param("codCia") Long codCia, @Param("codEmpleado") Long codEmpleado);
 
-    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.codCliente = :codCliente AND p.vigente = '1'")
+    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.codCliente = :codCliente AND p.vigente IN ('1', 'S')")
     List<Proyecto> findByCliente(@Param("codCia") Long codCia, @Param("codCliente") Long codCliente);
 
-    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.annoIni <= :anio AND p.annoFin >= :anio AND p.vigente = '1'")
+    @Query("SELECT p FROM Proyecto p WHERE p.codCia = :codCia AND p.annoIni <= :anio AND p.annoFin >= :anio AND p.vigente IN ('1', 'S')")
     List<Proyecto> findByAnio(@Param("codCia") Long codCia, @Param("anio") Integer anio);
 }

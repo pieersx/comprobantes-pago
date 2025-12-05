@@ -1,6 +1,7 @@
 package com.proyectos.comprobantespago.service;
 
 import com.proyectos.comprobantespago.dto.AbonoDTO;
+import com.proyectos.comprobantespago.dto.AbonoUpdateDTO;
 import com.proyectos.comprobantespago.enums.EstadoComprobante;
 
 /**
@@ -104,4 +105,38 @@ public interface AbonoService {
      * @return Datos del abono o null si no tiene
      */
     AbonoDTO getAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP);
+
+    // ==================== Métodos para Actualizar Abonos ====================
+
+    /**
+     * Actualizar la fecha de abono de un comprobante de egreso
+     * (Solo modifica FecAbono y/o DesAbono, no cambia el estado)
+     *
+     * @param codCia       Código de compañía
+     * @param codProveedor Código del proveedor
+     * @param nroCP        Número de comprobante
+     * @param abonoDTO     Datos actualizados del abono
+     */
+    void actualizarAbonoEgreso(Long codCia, Long codProveedor, String nroCP, AbonoUpdateDTO abonoDTO);
+
+    /**
+     * Actualizar la fecha de abono de un comprobante de ingreso
+     * (Solo modifica FecAbono y/o DesAbono, no cambia el estado)
+     *
+     * @param codCia   Código de compañía
+     * @param nroCP    Número de comprobante
+     * @param abonoDTO Datos actualizados del abono
+     */
+    void actualizarAbonoIngreso(Long codCia, String nroCP, AbonoUpdateDTO abonoDTO);
+
+    /**
+     * Actualizar la fecha de abono de un comprobante de empleado
+     * (Solo modifica FecAbono y/o DesAbono, no cambia el estado)
+     *
+     * @param codCia      Código de compañía
+     * @param codEmpleado Código del empleado
+     * @param nroCP       Número de comprobante
+     * @param abonoDTO    Datos actualizados del abono
+     */
+    void actualizarAbonoEmpleado(Long codCia, Long codEmpleado, String nroCP, AbonoUpdateDTO abonoDTO);
 }

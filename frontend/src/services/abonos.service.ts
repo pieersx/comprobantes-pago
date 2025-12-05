@@ -14,6 +14,15 @@ export interface AbonoData {
  */
 class AbonosService {
   /**
+   * Validar que un valor numérico sea válido
+   */
+  private validarNumero(valor: number | undefined, nombre: string): void {
+    if (valor === undefined || valor === null || isNaN(valor) || valor <= 0) {
+      throw new Error(`${nombre} inválido: ${valor}`);
+    }
+  }
+
+  /**
    * Registrar abono para un comprobante de egreso
    */
   async registrarAbonoEgreso(
@@ -22,6 +31,8 @@ class AbonosService {
     nroCP: string,
     abonoData: AbonoData
   ): Promise<void> {
+    this.validarNumero(codCia, 'codCia');
+    this.validarNumero(codProveedor, 'codProveedor');
     const response = await apiClient.post(
       `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`,
       abonoData
@@ -52,6 +63,8 @@ class AbonosService {
     codProveedor: number,
     nroCP: string
   ): Promise<AbonoData | null> {
+    this.validarNumero(codCia, 'codCia');
+    this.validarNumero(codProveedor, 'codProveedor');
     try {
       const response = await apiClient.get(
         `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`
@@ -88,6 +101,8 @@ class AbonosService {
     nroCP: string,
     estado: 'REG' | 'PAG' | 'ANU'
   ): Promise<void> {
+    this.validarNumero(codCia, 'codCia');
+    this.validarNumero(codProveedor, 'codProveedor');
     const response = await apiClient.put(
       `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}/estado/${estado}`
     );
@@ -155,6 +170,55 @@ class AbonosService {
   ): Promise<void> {
     const response = await apiClient.put(
       `/abonos/empleado/${codCia}/${codEmpleado}/${nroCP}/estado/${estado}`
+    );
+    return response.data;
+  }
+
+  // ==================== Métodos para Actualizar Abonos ====================
+
+  /**
+   * Actualizar abono de un comprobante de egreso (modificar fecha/medio de pago)
+   */
+  async actualizarAbonoEgreso(
+    codCia: number,
+    codProveedor: number,
+    nroCP: string,
+    abonoData: Partial<AbonoData>
+  ): Promise<void> {
+    const response = await apiClient.put(
+      `/abonos/egreso/${codCia}/${codProveedor}/${nroCP}`,
+      abonoData
+    );
+    return response.data;
+  }
+
+  /**
+   * Actualizar abono de un comprobante de ingreso (modificar fecha/medio de pago)
+   */
+  async actualizarAbonoIngreso(
+    codCia: number,
+    nroCP: string,
+    abonoData: Partial<AbonoData>
+  ): Promise<void> {
+    const response = await apiClient.put(
+      `/abonos/ingreso/${codCia}/${nroCP}`,
+      abonoData
+    );
+    return response.data;
+  }
+
+  /**
+   * Actualizar abono de un comprobante de empleado (modificar fecha/medio de pago)
+   */
+  async actualizarAbonoEmpleado(
+    codCia: number,
+    codEmpleado: number,
+    nroCP: string,
+    abonoData: Partial<AbonoData>
+  ): Promise<void> {
+    const response = await apiClient.put(
+      `/abonos/empleado/${codCia}/${codEmpleado}/${nroCP}`,
+      abonoData
     );
     return response.data;
   }

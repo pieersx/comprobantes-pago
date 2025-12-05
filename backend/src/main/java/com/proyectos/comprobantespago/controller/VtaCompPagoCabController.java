@@ -157,28 +157,29 @@ public class VtaCompPagoCabController {
     // ====================
     // Feature: empleados-comprobantes-file-path
     // Requirements: 6.1, 6.2, 6.3, 6.4
-    // NOTA: Para VTACOMP_PAGOCAB se usa VARCHAR2(60) para almacenar rutas de
-    // archivo
+    // NOTA: Para VTACOMP_PAGOCAB se usa BLOB para almacenar las imágenes
 
-    @Operation(summary = "Subir imagen comprobante", description = "Sube la imagen del comprobante de ingreso y retorna la ruta")
+    @Operation(summary = "Subir imagen comprobante", description = "Sube la imagen del comprobante de ingreso")
     @PostMapping("/{codCia}/{nroCp}/foto-cp")
-    public ResponseEntity<ApiResponse<String>> uploadFotoCp(
+    public ResponseEntity<ApiResponse<Void>> uploadFotoCp(
             @PathVariable Long codCia,
             @PathVariable String nroCp,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
 
-        String filePath = vtaCompPagoCabService.uploadFotoCp(codCia, nroCp, file);
-        return ResponseEntity.ok(ApiResponse.success("Imagen de comprobante subida exitosamente", filePath));
+        vtaCompPagoCabService.uploadFotoCp(codCia, nroCp, file);
+        return ResponseEntity.ok(ApiResponse.success("Imagen de comprobante subida exitosamente", null));
     }
 
-    @Operation(summary = "Obtener ruta de imagen comprobante", description = "Obtiene la ruta de la imagen del comprobante de ingreso")
+    @Operation(summary = "Obtener imagen comprobante", description = "Obtiene la imagen del comprobante de ingreso como BLOB")
     @GetMapping("/{codCia}/{nroCp}/foto-cp")
-    public ResponseEntity<ApiResponse<String>> getFotoCpPath(
+    public ResponseEntity<byte[]> getFotoCp(
             @PathVariable Long codCia,
             @PathVariable String nroCp) {
 
-        String path = vtaCompPagoCabService.getFotoCpPath(codCia, nroCp);
-        return ResponseEntity.ok(ApiResponse.success("Ruta de imagen obtenida", path));
+        byte[] foto = vtaCompPagoCabService.getFotoCp(codCia, nroCp);
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_JPEG)
+                .body(foto);
     }
 
     @Operation(summary = "Eliminar imagen comprobante", description = "Elimina la imagen del comprobante de ingreso")
@@ -191,25 +192,27 @@ public class VtaCompPagoCabController {
         return ResponseEntity.ok(ApiResponse.success("Imagen de comprobante eliminada", null));
     }
 
-    @Operation(summary = "Subir imagen abono", description = "Sube la imagen del abono de ingreso y retorna la ruta")
+    @Operation(summary = "Subir imagen abono", description = "Sube la imagen del abono de ingreso")
     @PostMapping("/{codCia}/{nroCp}/foto-abono")
-    public ResponseEntity<ApiResponse<String>> uploadFotoAbono(
+    public ResponseEntity<ApiResponse<Void>> uploadFotoAbono(
             @PathVariable Long codCia,
             @PathVariable String nroCp,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
 
-        String filePath = vtaCompPagoCabService.uploadFotoAbono(codCia, nroCp, file);
-        return ResponseEntity.ok(ApiResponse.success("Imagen de abono subida exitosamente", filePath));
+        vtaCompPagoCabService.uploadFotoAbono(codCia, nroCp, file);
+        return ResponseEntity.ok(ApiResponse.success("Imagen de abono subida exitosamente", null));
     }
 
-    @Operation(summary = "Obtener ruta de imagen abono", description = "Obtiene la ruta de la imagen del abono de ingreso")
+    @Operation(summary = "Obtener imagen abono", description = "Obtiene la imagen del abono de ingreso como BLOB")
     @GetMapping("/{codCia}/{nroCp}/foto-abono")
-    public ResponseEntity<ApiResponse<String>> getFotoAbonoPath(
+    public ResponseEntity<byte[]> getFotoAbono(
             @PathVariable Long codCia,
             @PathVariable String nroCp) {
 
-        String path = vtaCompPagoCabService.getFotoAbonoPath(codCia, nroCp);
-        return ResponseEntity.ok(ApiResponse.success("Ruta de imagen obtenida", path));
+        byte[] foto = vtaCompPagoCabService.getFotoAbono(codCia, nroCp);
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_JPEG)
+                .body(foto);
     }
 
     @Operation(summary = "Eliminar imagen abono", description = "Elimina la imagen del abono de ingreso")

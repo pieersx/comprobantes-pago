@@ -1,10 +1,10 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, FileText, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, XCircle } from 'lucide-react';
 
 interface EstadoBadgeProps {
-  estado: 'REG' | 'PAG' | 'ANU';
+  estado: 'REG' | 'PEN' | 'PAG' | 'ANU';
   className?: string;
 }
 
@@ -15,6 +15,13 @@ export function EstadoBadge({ estado, className = '' }: EstadoBadgeProps) {
       label: 'Registrado',
       icon: <FileText className="h-3 w-3" />,
       description: 'Sin pago registrado',
+      colorClass: ''
+    },
+    'PEN': {
+      variant: 'outline' as const,
+      label: 'Pendiente',
+      icon: <Clock className="h-3 w-3" />,
+      description: 'Pago pendiente',
       colorClass: ''
     },
     'PAG': {

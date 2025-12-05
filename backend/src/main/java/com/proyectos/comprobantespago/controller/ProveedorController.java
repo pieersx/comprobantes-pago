@@ -37,16 +37,23 @@ public class ProveedorController {
 
     /**
      * GET /proveedores
-     * Lista todos los proveedores
+     * Lista todos los proveedores (filtrados por codCia y/o vigente)
      */
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<List<ProveedorDTO>> listarProveedores(
+            @RequestParam(required = false) Long codCia,
             @RequestParam(required = false) String vigente) {
 
         List<Proveedor> proveedores;
 
-        if (vigente != null) {
+        if (codCia != null && vigente != null) {
+            proveedores = proveedorRepository.findByCodCiaAndVigente(codCia, vigente);
+        } else if (codCia != null) {
+            // Buscar vigentes - soportar tanto '1' (nuevo formato) como 'S' (formato
+            // antiguo)
+            proveedores = proveedorRepository.findByCodCiaAndVigentes(codCia);
+        } else if (vigente != null) {
             proveedores = proveedorRepository.findByVigente(vigente);
         } else {
             proveedores = proveedorRepository.findAll();

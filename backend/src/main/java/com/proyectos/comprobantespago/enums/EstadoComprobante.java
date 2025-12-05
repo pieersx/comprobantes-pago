@@ -2,7 +2,7 @@ package com.proyectos.comprobantespago.enums;
 
 /**
  * Estados de los comprobantes de pago
- * Según especificaciones del profesor y tabla ELEMENTOS (CodTab = '004')
+ * Según especificaciones del profesor y tabla ELEMENTOS (CodTab = '014')
  */
 public enum EstadoComprobante {
     REGISTRADO("REG", "Registrado - Sin pago"),

@@ -44,9 +44,13 @@ export function AbonoForm({
   onSubmit,
   onCancel,
 }: AbonoFormProps) {
-  const [fechaAbono, setFechaAbono] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  // Obtener fecha local en formato YYYY-MM-DD
+  const obtenerFechaLocal = () => {
+    const hoy = new Date();
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  };
+
+  const [fechaAbono, setFechaAbono] = useState<string>(obtenerFechaLocal());
   const [descripcionMedioPago, setDescripcionMedioPago] = useState<string>('');
   const [montoAbono, setMontoAbono] = useState<number>(0);
   const [fotoAbono, setFotoAbono] = useState<string | undefined>();
@@ -158,7 +162,7 @@ export function AbonoForm({
           type="date"
           value={fechaAbono}
           onChange={(e) => setFechaAbono(e.target.value)}
-          max={new Date().toISOString().split('T')[0]}
+          max={obtenerFechaLocal()}
           required
         />
       </div>

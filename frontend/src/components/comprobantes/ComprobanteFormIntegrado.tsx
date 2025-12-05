@@ -188,6 +188,10 @@ export function ComprobanteFormIntegrado({
 
       // 6. Guardar comprobante
       if (modo === 'crear') {
+        // Mapear código de moneda: PEN->001, USD->002
+        const monedaMap: Record<string, string> = { 'PEN': '001', 'USD': '002', 'EUR': '003' };
+        const eMonedaCodigo = monedaMap[formState.tMoneda] || '001';
+
         if (tipo === 'egreso') {
           const comprobanteEgreso: any = {
             codCia: formState.codCia,
@@ -195,11 +199,11 @@ export function ComprobanteFormIntegrado({
             nroCp: formState.nroCp,
             codPyto: formState.codPyto,
             nroPago: 1,
-            tCompPago: formState.tCompPago || 'FAC',
+            tCompPago: '004', // Tabla de tipos de comprobante
             eCompPago: formState.tCompPago || 'FAC',
             fecCp: formState.fecCp,
-            tMoneda: formState.tMoneda,
-            eMoneda: formState.tMoneda,
+            tMoneda: '003', // Tabla de monedas
+            eMoneda: eMonedaCodigo,
             tipCambio: formState.tipCambio,
             impMo: formState.impTotalMn,
             impNetoMn: formState.impNetoMn,
@@ -208,8 +212,8 @@ export function ComprobanteFormIntegrado({
             fotoCp: fotoCpPath,
             fotoAbono: fotoAbonoPath,
             semilla: 1,
-            tabEstado: '001',
-            codEstado: '001',
+            tabEstado: '014',
+            codEstado: 'REG',
             detalles: detallesConSec
           };
 
@@ -225,11 +229,11 @@ export function ComprobanteFormIntegrado({
             codPyto: formState.codPyto,
             codCliente: formState.codCliente || 0,
             nroPago: 1,
-            tCompPago: formState.tCompPago || 'FAC',
+            tCompPago: '004', // Tabla de tipos de comprobante
             eCompPago: formState.tCompPago || 'FAC',
             fecCp: formState.fecCp,
-            tMoneda: formState.tMoneda,
-            eMoneda: formState.tMoneda,
+            tMoneda: '003', // Tabla de monedas
+            eMoneda: eMonedaCodigo,
             tipCambio: formState.tipCambio,
             impMo: formState.impTotalMn,
             impNetoMn: formState.impNetoMn,
@@ -238,8 +242,8 @@ export function ComprobanteFormIntegrado({
             fotoCp: fotoCpPath,
             fotoAbono: fotoAbonoPath,
             semilla: 1,
-            tabEstado: '001',
-            codEstado: '001',
+            tabEstado: '014',
+            codEstado: 'REG',
             detalles: detallesConSec
           };
 

@@ -20,6 +20,7 @@ import com.proyectos.comprobantespago.exception.ResourceNotFoundException;
 import com.proyectos.comprobantespago.exception.ValidationException;
 import com.proyectos.comprobantespago.repository.ComprobantePagoEmpleadoDetRepository;
 import com.proyectos.comprobantespago.repository.ComprobantePagoEmpleadoRepository;
+import com.proyectos.comprobantespago.repository.ElementosRepository;
 import com.proyectos.comprobantespago.repository.EmpleadoRepository;
 import com.proyectos.comprobantespago.repository.PartidaRepository;
 import com.proyectos.comprobantespago.repository.ProyectoRepository;
@@ -38,6 +39,7 @@ public class ComprobantePagoEmpleadoServiceImpl implements ComprobantePagoEmplea
     private final EmpleadoRepository empleadoRepository;
     private final ProyectoRepository proyectoRepository;
     private final PartidaRepository partidaRepository;
+    private final ElementosRepository elementosRepository;
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
@@ -122,7 +124,7 @@ public class ComprobantePagoEmpleadoServiceImpl implements ComprobantePagoEmplea
 
         ComprobantePagoEmpleado entity = toEntity(dto);
         entity.setSemilla(1);
-        entity.setTabEstado("004");
+        entity.setTabEstado("014"); // Tabla de estados de comprobante
         entity.setCodEstado("REG"); // Estado inicial: Registrado
 
         entity = repository.save(entity);
@@ -304,6 +306,28 @@ public class ComprobantePagoEmpleadoServiceImpl implements ComprobantePagoEmplea
         Proyecto proyecto = entity.getProyecto();
         if (proyecto != null) {
             dto.setNombreProyecto(proyecto.getNombPyto());
+        }
+
+        // Obtener descripciones de elementos (moneda, tipo comprobante, estado)
+        try {
+            elementosRepository.findByCodTabAndCodElemAndVigente("003", entity.getEMoneda(), "1")
+                    .ifPresent(e -> dto.setMonedaDesc(e.getDenEle()));
+        } catch (Exception e) {
+            log.warn("No se pudo obtener descripción de moneda: {}", e.getMessage());
+        }
+
+        try {
+            elementosRepository.findByCodTabAndCodElemAndVigente("004", entity.getECompPago(), "1")
+                    .ifPresent(e -> dto.setTipoComprobanteDesc(e.getDenEle()));
+        } catch (Exception e) {
+            log.warn("No se pudo obtener descripción de tipo comprobante: {}", e.getMessage());
+        }
+
+        try {
+            elementosRepository.findByCodTabAndCodElemAndVigente("014", entity.getCodEstado(), "1")
+                    .ifPresent(e -> dto.setEstadoDesc(e.getDenEle()));
+        } catch (Exception e) {
+            log.warn("No se pudo obtener descripción de estado: {}", e.getMessage());
         }
 
         return dto;

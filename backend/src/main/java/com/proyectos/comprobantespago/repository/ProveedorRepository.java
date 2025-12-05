@@ -19,7 +19,10 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, Proveedor.
 
     Optional<Proveedor> findByCodCiaAndCodProveedor(Long codCia, Long codProveedor);
 
-    @Query("SELECT p FROM Proveedor p WHERE p.codCia = :codCia AND p.vigente = '1' ORDER BY p.persona.desPersona")
+    @Query("SELECT p FROM Proveedor p WHERE p.codCia = :codCia AND p.vigente IN ('1', 'S') ORDER BY p.persona.desPersona")
+    List<Proveedor> findByCodCiaAndVigentes(Long codCia);
+
+    @Query("SELECT p FROM Proveedor p WHERE p.codCia = :codCia AND p.vigente = 'S' ORDER BY p.persona.desPersona")
     List<Proveedor> findByCodCiaAndVigenteOrderByPersonaDesPersona(Long codCia);
 
     boolean existsByNroRuc(String nroRuc);

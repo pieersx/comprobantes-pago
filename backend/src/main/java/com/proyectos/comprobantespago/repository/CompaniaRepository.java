@@ -19,7 +19,7 @@ public interface CompaniaRepository extends JpaRepository<Compania, Long> {
 
     Optional<Compania> findByCodCiaAndVigente(Long codCia, String vigente);
 
-    @Query("SELECT c FROM Compania c WHERE c.vigente = '1' ORDER BY c.desCia")
+    @Query("SELECT c FROM Compania c WHERE c.vigente = 'S' ORDER BY c.desCia")
     List<Compania> findAllActive();
 
     boolean existsByDesCia(String desCia);

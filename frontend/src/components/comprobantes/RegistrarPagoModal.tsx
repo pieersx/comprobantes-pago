@@ -55,8 +55,14 @@ export function RegistrarPagoModal({
   nroCP,
   onSuccess,
 }: RegistrarPagoModalProps) {
+  // Obtener fecha local en formato YYYY-MM-DD
+  const obtenerFechaLocal = () => {
+    const hoy = new Date();
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  };
+
   const [formData, setFormData] = useState<AbonoData>({
-    fechaAbono: new Date().toISOString().split('T')[0],
+    fechaAbono: obtenerFechaLocal(),
     descripcionMedioPago: '',
     montoAbono: undefined,
     fotoAbono: '',
@@ -150,7 +156,7 @@ export function RegistrarPagoModal({
 
   const handleClose = () => {
     setFormData({
-      fechaAbono: new Date().toISOString().split('T')[0],
+      fechaAbono: obtenerFechaLocal(),
       descripcionMedioPago: '',
       fotoAbono: '',
     });
@@ -179,7 +185,7 @@ export function RegistrarPagoModal({
                 setFormData({ ...formData, fechaAbono: e.target.value })
               }
               required
-              max={new Date().toISOString().split('T')[0]}
+              max={obtenerFechaLocal()}
             />
           </div>
 

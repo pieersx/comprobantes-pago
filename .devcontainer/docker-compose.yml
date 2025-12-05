@@ -32,7 +32,6 @@ services:
       - "5500:5500"
     volumes:
       - oracle-data:/opt/oracle/oradata
-      - ./initdb:/container-entrypoint-initdb.d
 
 volumes:
   oracle-data:

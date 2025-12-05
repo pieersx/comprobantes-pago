@@ -20,7 +20,7 @@ export interface ComprobantePagoEmpleado {
   tipCambio: number;
   impMo: number;
   impNetoMn: number;
-  impIgvmn: number;
+  impIgvMn: number;
   impTotalMn: number;
 
   // Datos de abono
@@ -61,7 +61,7 @@ export interface ComprobantePagoEmpleadoCreate {
   tipCambio: number;
   impMo: number;
   impNetoMn: number;
-  impIgvmn: number;
+  impIgvMn: number;
   impTotalMn: number;
   fecAbono?: string;
   desAbono?: string;

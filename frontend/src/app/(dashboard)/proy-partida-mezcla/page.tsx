@@ -1,0 +1,607 @@
+'use client';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { partidasService, proyPartidaMezclaService } from '@/services/partidas.service';
+import { proyectosService } from '@/services/proyectos.service';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    Edit,
+    FolderKanban,
+    ListTree,
+    Loader2,
+    Plus,
+    Search,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
+} from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+interface ProyPartidaMezclaForm {
+  codCia: number;
+  codPyto: number;
+  ingEgr: string;
+  nroVersion: number;
+  codPartida: number;
+  corr: number;
+  padCodPartida: number;
+  tUniMed: string;
+  eUniMed: string;
+  nivel: number;
+  orden: number;
+  costoUnit: number;
+  cant: number;
+  costoTot: number;
+}
+
+const initialFormState: ProyPartidaMezclaForm = {
+  codCia: 1,
+  codPyto: 0,
+  ingEgr: 'E',
+  nroVersion: 1,
+  codPartida: 0,
+  corr: 0,
+  padCodPartida: 0,
+  tUniMed: '012',
+  eUniMed: '001',
+  nivel: 1,
+  orden: 1,
+  costoUnit: 0,
+  cant: 0,
+  costoTot: 0,
+};
+
+export default function ProyPartidaMezclaPage() {
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterProyecto, setFilterProyecto] = useState<string>('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<ProyPartidaMezclaForm>(initialFormState);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  // Obtener proyectos
+  const { data: proyectos = [] } = useQuery({
+    queryKey: ['proyectos'],
+    queryFn: () => proyectosService.getAll(1),
+  });
+
+  // Obtener partidas mezcla de proyecto
+  const { data: proyPartidasMezcla = [], isLoading } = useQuery({
+    queryKey: ['proy-partida-mezcla'],
+    queryFn: () => proyPartidaMezclaService.getAll(),
+  });
+
+  // Obtener partidas para el selector
+  const { data: partidas = [] } = useQuery({
+    queryKey: ['partidas-catalogo'],
+    queryFn: () => partidasService.getAll(1),
+  });
+
+  // Mutación para crear
+  const createMutation = useMutation({
+    mutationFn: proyPartidaMezclaService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proy-partida-mezcla'] });
+      toast.success('Partida mezcla de proyecto creada exitosamente');
+      setDialogOpen(false);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error al crear partida mezcla de proyecto');
+    },
+  });
+
+  // Mutación para actualizar
+  const updateMutation = useMutation({
+    mutationFn: (data: any) =>
+      proyPartidaMezclaService.update(
+        data.codCia,
+        data.codPyto,
+        data.ingEgr,
+        data.nroVersion,
+        data.codPartida,
+        data.corr,
+        data
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proy-partida-mezcla'] });
+      toast.success('Partida mezcla de proyecto actualizada exitosamente');
+      setDialogOpen(false);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error al actualizar partida mezcla de proyecto');
+    },
+  });
+
+  // Mutación para eliminar
+  const deleteMutation = useMutation({
+    mutationFn: (item: any) =>
+      proyPartidaMezclaService.delete(
+        item.codCia,
+        item.codPyto,
+        item.ingEgr,
+        item.nroVersion,
+        item.codPartida,
+        item.corr
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proy-partida-mezcla'] });
+      toast.success('Partida mezcla de proyecto eliminada exitosamente');
+      setDeleteDialogOpen(false);
+      setSelectedItem(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Error al eliminar partida mezcla de proyecto');
+    },
+  });
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setIsEditing(false);
+  };
+
+  const handleOpenCreate = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const handleOpenEdit = (item: any) => {
+    setFormData({
+      codCia: item.codCia,
+      codPyto: item.codPyto,
+      ingEgr: item.ingEgr,
+      nroVersion: item.nroVersion,
+      codPartida: item.codPartida,
+      corr: item.corr,
+      padCodPartida: item.padCodPartida,
+      tUniMed: item.tUniMed || '012',
+      eUniMed: item.eUniMed || '001',
+      nivel: item.nivel || 1,
+      orden: item.orden || 1,
+      costoUnit: item.costoUnit || 0,
+      cant: item.cant || 0,
+      costoTot: item.costoTot || 0,
+    });
+    setIsEditing(true);
+    setDialogOpen(true);
+  };
+
+  const handleOpenDelete = (item: any) => {
+    setSelectedItem(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    // Calcular costo total
+    const data = {
+      ...formData,
+      costoTot: formData.costoUnit * formData.cant,
+    };
+    if (isEditing) {
+      updateMutation.mutate(data);
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const getProyectoNombre = (codPyto: number) => {
+    const proyecto = proyectos.find((p: any) => p.codPyto === codPyto);
+    return proyecto?.nombPyto || `Proyecto ${codPyto}`;
+  };
+
+  const getPartidaNombre = (codPartida: number) => {
+    const partida = partidas.find((p: any) => p.codPartida === codPartida);
+    return partida?.desPartida || `Partida ${codPartida}`;
+  };
+
+  const filteredData = proyPartidasMezcla.filter((item: any) => {
+    const matchesSearch =
+      String(item.codPartida).includes(searchTerm) ||
+      getProyectoNombre(item.codPyto).toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesProyecto = filterProyecto === 'all' || String(item.codPyto) === filterProyecto;
+
+    return matchesSearch && matchesProyecto;
+  });
+
+  // Calcular totales
+  const totalCosto = filteredData.reduce((sum: number, item: any) => sum + (item.costoTot || 0), 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[450px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Partida Mezcla de Proyecto</h1>
+          <p className="text-muted-foreground">
+            Gestión de composición específica de partidas por proyecto
+          </p>
+        </div>
+        <Button onClick={handleOpenCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Partida Mezcla
+        </Button>
+      </div>
+
+      {/* Estadísticas */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Registros</CardTitle>
+            <ListTree className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{proyPartidasMezcla.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Proyectos</CardTitle>
+            <FolderKanban className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {new Set(proyPartidasMezcla.map((p: any) => p.codPyto)).size}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {proyPartidasMezcla.filter((p: any) => p.ingEgr === 'I').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Egresos</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {proyPartidasMezcla.filter((p: any) => p.ingEgr === 'E').length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por código o proyecto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={filterProyecto} onValueChange={setFilterProyecto}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filtrar por proyecto" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los proyectos</SelectItem>
+            {proyectos.map((p: any) => (
+              <SelectItem key={p.codPyto} value={String(p.codPyto)}>
+                {p.nombPyto}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Tabla */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Proyecto</TableHead>
+                <TableHead>Ver.</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Partida</TableHead>
+                <TableHead>Corr</TableHead>
+                <TableHead>Padre</TableHead>
+                <TableHead>Nivel</TableHead>
+                <TableHead className="text-right">Costo U.</TableHead>
+                <TableHead className="text-right">Cant.</TableHead>
+                <TableHead className="text-right">Costo Total</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                    No hay partidas mezcla de proyecto registradas
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {filteredData.map((item: any) => (
+                    <TableRow
+                      key={`${item.codCia}-${item.codPyto}-${item.ingEgr}-${item.nroVersion}-${item.codPartida}-${item.corr}`}
+                    >
+                      <TableCell>
+                        <div className="font-medium text-sm">{getProyectoNombre(item.codPyto)}</div>
+                      </TableCell>
+                      <TableCell>{item.nroVersion}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            item.ingEgr === 'I'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }
+                        >
+                          {item.ingEgr === 'I' ? 'I' : 'E'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">{item.codPartida}</span>
+                      </TableCell>
+                      <TableCell>{item.corr}</TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">{item.padCodPartida}</span>
+                      </TableCell>
+                      <TableCell>{item.nivel}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        S/ {item.costoUnit?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {item.cant?.toFixed(3) || '0.000'}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-medium">
+                        S/ {item.costoTot?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Fila de totales */}
+                  <TableRow className="bg-muted/50 font-medium">
+                    <TableCell colSpan={9} className="text-right">
+                      Total:
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-bold">
+                      S/ {totalCosto.toFixed(2)}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                </>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Dialog para Crear/Editar */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? 'Editar' : 'Nueva'} Partida Mezcla de Proyecto</DialogTitle>
+            <DialogDescription>
+              {isEditing
+                ? 'Modifica los datos de la partida mezcla'
+                : 'Ingresa los datos para crear una nueva partida mezcla de proyecto'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Proyecto</Label>
+                <Select
+                  value={String(formData.codPyto)}
+                  onValueChange={(value) => setFormData({ ...formData, codPyto: Number(value) })}
+                  disabled={isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {proyectos.map((p: any) => (
+                      <SelectItem key={p.codPyto} value={String(p.codPyto)}>
+                        {p.nombPyto}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Versión</Label>
+                <Input
+                  type="number"
+                  value={formData.nroVersion}
+                  onChange={(e) => setFormData({ ...formData, nroVersion: Number(e.target.value) })}
+                  disabled={isEditing}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={formData.ingEgr}
+                  onValueChange={(value) => setFormData({ ...formData, ingEgr: value })}
+                  disabled={isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="I">Ingreso</SelectItem>
+                    <SelectItem value="E">Egreso</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Cód. Partida</Label>
+                <Input
+                  type="number"
+                  value={formData.codPartida}
+                  onChange={(e) => setFormData({ ...formData, codPartida: Number(e.target.value) })}
+                  disabled={isEditing}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Correlativo</Label>
+                <Input
+                  type="number"
+                  value={formData.corr}
+                  onChange={(e) => setFormData({ ...formData, corr: Number(e.target.value) })}
+                  disabled={isEditing}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Partida Padre</Label>
+                <Input
+                  type="number"
+                  value={formData.padCodPartida}
+                  onChange={(e) => setFormData({ ...formData, padCodPartida: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nivel</Label>
+                <Input
+                  type="number"
+                  value={formData.nivel}
+                  onChange={(e) => setFormData({ ...formData, nivel: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Orden</Label>
+                <Input
+                  type="number"
+                  value={formData.orden}
+                  onChange={(e) => setFormData({ ...formData, orden: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Costo Unitario</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.costoUnit}
+                  onChange={(e) => setFormData({ ...formData, costoUnit: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cantidad</Label>
+                <Input
+                  type="number"
+                  step="0.001"
+                  value={formData.cant}
+                  onChange={(e) => setFormData({ ...formData, cant: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Costo Total (calculado)</Label>
+                <Input
+                  type="number"
+                  value={(formData.costoUnit * formData.cant).toFixed(2)}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              {isEditing ? 'Actualizar' : 'Crear'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Eliminar */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar esta partida mezcla de proyecto? Esta acción no se
+              puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => selectedItem && deleteMutation.mutate(selectedItem)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

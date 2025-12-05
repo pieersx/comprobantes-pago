@@ -37,16 +37,23 @@ public class ClienteController {
 
     /**
      * GET /clientes
-     * Lista todos los clientes
+     * Lista todos los clientes (filtrados por codCia y/o vigente)
      */
     @GetMapping
     @Transactional(readOnly = true)
     public ResponseEntity<List<ClienteDTO>> listarClientes(
+            @RequestParam(required = false) Long codCia,
             @RequestParam(required = false) String vigente) {
 
         List<Cliente> clientes;
 
-        if (vigente != null) {
+        if (codCia != null && vigente != null) {
+            clientes = clienteRepository.findByCodCiaAndVigente(codCia, vigente);
+        } else if (codCia != null) {
+            // Buscar vigentes - soportar tanto '1' (nuevo formato) como 'S' (formato
+            // antiguo)
+            clientes = clienteRepository.findByCodCiaAndVigentes(codCia);
+        } else if (vigente != null) {
             clientes = clienteRepository.findByVigente(vigente);
         } else {
             clientes = clienteRepository.findAll();

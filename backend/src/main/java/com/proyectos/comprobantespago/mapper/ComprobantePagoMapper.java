@@ -22,6 +22,9 @@ public interface ComprobantePagoMapper {
 
     @Mapping(target = "nombreProveedor", source = "proveedor.persona.desPersona")
     @Mapping(target = "nombreProyecto", source = "proyecto.nombPyto")
+    @Mapping(target = "descripcionMoneda", source = "moneda.denEle")
+    @Mapping(target = "descripcionTipoComprobante", source = "tipoComprobante.denEle")
+    @Mapping(target = "descripcionEstado", source = "estado.denEle")
     @Mapping(target = "impIgvMn", source = "impIgvmn")
     @Mapping(target = "fotoCp", ignore = true)
     @Mapping(target = "fotoAbono", ignore = true)

@@ -31,7 +31,7 @@ export default function ProveedoresPage() {
  // Obtener proveedores desde la API real
  const { data: proveedores = [], isLoading, error } = useQuery({
  queryKey: ["proveedores"],
- queryFn: () => proveedoresService.getAll(),
+ queryFn: () => proveedoresService.getAll(1), // codCia = 1 por defecto
  });
 
  const filteredProveedores = proveedores.filter(

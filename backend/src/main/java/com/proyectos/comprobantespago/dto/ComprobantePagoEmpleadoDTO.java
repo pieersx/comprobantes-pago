@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,18 +30,30 @@ public class ComprobantePagoEmpleadoDTO {
     // Datos del comprobante
     private Long codPyto;
     private Integer nroPago;
+
+    @JsonProperty("tCompPago")
     private String tCompPago;
+
+    @JsonProperty("eCompPago")
     private String eCompPago;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fecCp;
 
+    @JsonProperty("tMoneda")
     private String tMoneda;
+
+    @JsonProperty("eMoneda")
     private String eMoneda;
+
     private BigDecimal tipCambio;
     private BigDecimal impMo;
     private BigDecimal impNetoMn;
+
+    @JsonProperty("impIgvMn")
+    @JsonAlias({ "impIgvmn", "impigvmn" })
     private BigDecimal impIgvmn;
+
     private BigDecimal impTotalMn;
 
     // Datos de abono

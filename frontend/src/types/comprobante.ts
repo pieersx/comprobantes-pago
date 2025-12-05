@@ -25,8 +25,15 @@ export interface VtaCompPagoCab {
   detalles?: VtaCompPagoDet[];
   // Campos adicionales del DTO
   nombreCliente?: string;
+  nomCliente?: string;
   nombreProyecto?: string;
+  nomProyecto?: string;
   descripcionEstado?: string;
+  descEstado?: string;
+  descripcionMoneda?: string;
+  descMoneda?: string;
+  descripcionTipoComprobante?: string;
+  descTipoComprobante?: string;
 }
 
 export interface VtaCompPagoDet {
@@ -72,6 +79,8 @@ export interface CompPagoCab {
   nombreProveedor?: string;
   nombreProyecto?: string;
   descripcionEstado?: string;
+  descripcionMoneda?: string;
+  descripcionTipoComprobante?: string;
 }
 
 export interface CompPagoDet {
@@ -87,6 +96,7 @@ export interface CompPagoDet {
   semilla: number;
   // Campos opcionales adicionales
   desPartida?: string;
+  nombrePartida?: string;
   descripcion?: string;
   cantidad?: number;
   precio?: number;
@@ -328,7 +338,7 @@ export type TipoComprobante = 'FAC' | 'BOL' | 'REC' | 'OTR';
 /**
  * Estados de comprobante
  */
-export type EstadoComprobante = 'REG' | 'PAR' | 'PAG' | 'ANU';
+export type EstadoComprobante = 'REG' | 'PEN' | 'PAG' | 'ANU';
 
 /**
  * Tipos de moneda

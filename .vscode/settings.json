@@ -4,15 +4,16 @@
     // "editor.formatOnSave": true
   },
   "sqldeveloper.format.general.keywordCase": "UPPER",
-  "sqldeveloper.format.general.identifierCase": "lower",
+  "sqldeveloper.format.general.identifierCase": "Keep unchanged",
   "sqldeveloper.format.alignment": {
     "namedArgumentSeparator": true,
     "assignmentOperator": true,
     "rightAlignQueryKeywords": false
   },
-  "sqldeveloper.format.indentation.identSpaces": 2,
+  "sqldeveloper.format.indentation.identSpaces": 4,
   "sqldeveloper.format.lineBreaks.onComma": "After",
   "java.debug.settings.onBuildFailureProceed": true,
   "java.compile.nullAnalysis.mode": "automatic",
-  "kiroAgent.configureMCP": "Disabled"
+  "kiroAgent.configureMCP": "Disabled",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable"
 }

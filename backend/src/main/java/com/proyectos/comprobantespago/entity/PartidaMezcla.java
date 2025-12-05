@@ -3,6 +3,8 @@ package com.proyectos.comprobantespago.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -99,6 +101,7 @@ public class PartidaMezcla implements Serializable {
     // private Partida partida;
 
     // Relación con ELEMENTOS (Unidad de Medida)
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
             @JoinColumn(name = "TUNIMED", referencedColumnName = "CODTAB", insertable = false, updatable = false),

@@ -16,27 +16,48 @@ import com.proyectos.comprobantespago.entity.ComprobantePagoCab;
  */
 @Repository
 public interface ComprobantePagoCabRepository
-        extends JpaRepository<ComprobantePagoCab, ComprobantePagoCab.ComprobantePagoCabId> {
+                extends JpaRepository<ComprobantePagoCab, ComprobantePagoCab.ComprobantePagoCabId> {
 
-    Optional<ComprobantePagoCab> findByCodCiaAndCodProveedorAndNroCp(Long codCia, Long codProveedor, String nroCp);
+        Optional<ComprobantePagoCab> findByCodCiaAndCodProveedorAndNroCp(Long codCia, Long codProveedor, String nroCp);
 
-    List<ComprobantePagoCab> findByCodCiaAndCodPyto(Long codCia, Long codPyto);
+        @Query("SELECT c FROM ComprobantePagoCab c " +
+                        "LEFT JOIN FETCH c.proveedor p LEFT JOIN FETCH p.persona " +
+                        "LEFT JOIN FETCH c.proyecto " +
+                        "LEFT JOIN FETCH c.moneda " +
+                        "LEFT JOIN FETCH c.tipoComprobante " +
+                        "LEFT JOIN FETCH c.estado " +
+                        "WHERE c.codCia = :codCia AND c.codProveedor = :codProveedor AND c.nroCp = :nroCp")
+        Optional<ComprobantePagoCab> findByIdWithRelaciones(@Param("codCia") Long codCia,
+                        @Param("codProveedor") Long codProveedor,
+                        @Param("nroCp") String nroCp);
 
-    List<ComprobantePagoCab> findByCodCiaAndCodProveedor(Long codCia, Long codProveedor);
+        List<ComprobantePagoCab> findByCodCiaAndCodPyto(Long codCia, Long codPyto);
 
-    List<ComprobantePagoCab> findByCodCia(Long codCia);
+        List<ComprobantePagoCab> findByCodCiaAndCodProveedor(Long codCia, Long codProveedor);
 
-    @Query("SELECT c FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.codEstado = :estado ORDER BY c.fecCp DESC")
-    List<ComprobantePagoCab> findByEstado(@Param("codCia") Long codCia, @Param("estado") String estado);
+        List<ComprobantePagoCab> findByCodCia(Long codCia);
 
-    @Query("SELECT c FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.fecCp BETWEEN :fechaInicio AND :fechaFin ORDER BY c.fecCp DESC")
-    List<ComprobantePagoCab> findByFechaRange(@Param("codCia") Long codCia, @Param("fechaInicio") LocalDate fechaInicio,
-            @Param("fechaFin") LocalDate fechaFin);
+        @Query("SELECT c FROM ComprobantePagoCab c " +
+                        "LEFT JOIN FETCH c.proveedor p LEFT JOIN FETCH p.persona " +
+                        "LEFT JOIN FETCH c.proyecto " +
+                        "LEFT JOIN FETCH c.moneda " +
+                        "LEFT JOIN FETCH c.tipoComprobante " +
+                        "LEFT JOIN FETCH c.estado " +
+                        "WHERE c.codCia = :codCia ORDER BY c.fecCp DESC")
+        List<ComprobantePagoCab> findByCodCiaWithRelaciones(@Param("codCia") Long codCia);
 
-    @Query("SELECT c FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.codPyto = :codPyto AND EXTRACT(YEAR FROM c.fecCp) = :anio")
-    List<ComprobantePagoCab> findByProyectoAndAnio(@Param("codCia") Long codCia, @Param("codPyto") Long codPyto,
-            @Param("anio") Integer anio);
+        @Query("SELECT c FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.codEstado = :estado ORDER BY c.fecCp DESC")
+        List<ComprobantePagoCab> findByEstado(@Param("codCia") Long codCia, @Param("estado") String estado);
 
-    @Query("SELECT SUM(c.impTotalMn) FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.codPyto = :codPyto AND c.codEstado = 'PAG'")
-    java.math.BigDecimal getTotalPagadoByProyecto(@Param("codCia") Long codCia, @Param("codPyto") Long codPyto);
+        @Query("SELECT c FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.fecCp BETWEEN :fechaInicio AND :fechaFin ORDER BY c.fecCp DESC")
+        List<ComprobantePagoCab> findByFechaRange(@Param("codCia") Long codCia,
+                        @Param("fechaInicio") LocalDate fechaInicio,
+                        @Param("fechaFin") LocalDate fechaFin);
+
+        @Query("SELECT c FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.codPyto = :codPyto AND EXTRACT(YEAR FROM c.fecCp) = :anio")
+        List<ComprobantePagoCab> findByProyectoAndAnio(@Param("codCia") Long codCia, @Param("codPyto") Long codPyto,
+                        @Param("anio") Integer anio);
+
+        @Query("SELECT SUM(c.impTotalMn) FROM ComprobantePagoCab c WHERE c.codCia = :codCia AND c.codPyto = :codPyto AND c.codEstado = 'PAG'")
+        java.math.BigDecimal getTotalPagadoByProyecto(@Param("codCia") Long codCia, @Param("codPyto") Long codPyto);
 }

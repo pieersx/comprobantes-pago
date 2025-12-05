@@ -14,9 +14,11 @@ import com.proyectos.comprobantespago.dto.PartidaDTO;
 import com.proyectos.comprobantespago.dto.PartidaTreeNode;
 import com.proyectos.comprobantespago.entity.Partida;
 import com.proyectos.comprobantespago.entity.PartidaMezcla;
+import com.proyectos.comprobantespago.entity.ProyPartidaMezcla;
 import com.proyectos.comprobantespago.exception.ResourceNotFoundException;
 import com.proyectos.comprobantespago.repository.PartidaMezclaRepository;
 import com.proyectos.comprobantespago.repository.PartidaRepository;
+import com.proyectos.comprobantespago.repository.ProyPartidaMezclaRepository;
 import com.proyectos.comprobantespago.repository.ProyPartidaRepository;
 import com.proyectos.comprobantespago.service.PartidaHierarchyService;
 
@@ -33,6 +35,7 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
     private final PartidaRepository partidaRepository;
     private final PartidaMezclaRepository partidaMezclaRepository;
     private final ProyPartidaRepository proyPartidaRepository;
+    private final ProyPartidaMezclaRepository proyPartidaMezclaRepository;
 
     // Constantes para límites de niveles
     // Según notas del profesor: Ingresos nivel 2, Egresos nivel 3
@@ -352,27 +355,99 @@ public class PartidaHierarchyServiceImpl implements PartidaHierarchyService {
     }
 
     /**
-     * Obtener TODAS las partidas (niveles 1, 2 y 3) para un proyecto
-     * Nuevo requerimiento: El usuario debe ver todas las partidas del catálogo
-     * organizadas jerárquicamente, aunque solo pueda seleccionar nivel 3
+     * Obtener TODAS las partidas asignadas a un proyecto específico
+     * IMPORTANTE: Ahora usa PROY_PARTIDA_MEZCLA para obtener solo las partidas
+     * que realmente están asignadas al proyecto, con su jerarquía (nivel y padre)
+     *
+     * Según el diagrama del profesor:
+     * - PROY_PARTIDA_MEZCLA contiene: CodCia, CodPyto, CodPartida, PadCodPartida,
+     * Nivel
+     * - Solo muestra las partidas que están en el presupuesto del proyecto
      */
     @Override
     public List<PartidaDTO> getAllPartidasByProyecto(Long codCia, Long codPyto, String ingEgr) {
-        // Obtener TODAS las partidas del catálogo vigentes (niveles 1, 2 y 3)
-        // Esto mostrará toda la estructura jerárquica disponible
-        List<Partida> todasPartidas = partidaRepository.findByCodCiaAndIngEgrAndVigente(codCia, ingEgr, "1");
+        // Obtener las partidas del proyecto desde PROY_PARTIDA_MEZCLA
+        List<ProyPartidaMezcla> partidasMezcla = proyPartidaMezclaRepository.findByProyectoAndTipo(codCia, codPyto,
+                ingEgr);
 
-        // Convertir a DTO con información de jerarquía
-        return todasPartidas.stream()
-                .map(this::convertToDTOWithHierarchy)
-                .sorted((a, b) -> {
-                    // Ordenar por nivel y luego por código
-                    int nivelCompare = Integer.compare(a.getNivel(), b.getNivel());
-                    if (nivelCompare != 0)
-                        return nivelCompare;
-                    return a.getCodPartidas().compareTo(b.getCodPartidas());
-                })
-                .collect(Collectors.toList());
+        if (partidasMezcla.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Crear un mapa de partidas para buscar la descripción rápidamente
+        Map<Long, Partida> partidaMap = new HashMap<>();
+        for (ProyPartidaMezcla ppm : partidasMezcla) {
+            Partida partida = partidaRepository.findById(
+                    new Partida.PartidaId(codCia, ingEgr, ppm.getCodPartida())).orElse(null);
+            if (partida != null) {
+                partidaMap.put(ppm.getCodPartida(), partida);
+            }
+        }
+
+        // Convertir a DTO con información de jerarquía del proyecto
+        List<PartidaDTO> resultado = new ArrayList<>();
+        for (ProyPartidaMezcla ppm : partidasMezcla) {
+            Partida partida = partidaMap.get(ppm.getCodPartida());
+            if (partida == null)
+                continue;
+
+            PartidaDTO dto = PartidaDTO.builder()
+                    .codCia(codCia)
+                    .ingEgr(ingEgr)
+                    .codPartida(ppm.getCodPartida())
+                    .codPartidas(partida.getCodPartidas())
+                    .desPartida(partida.getDesPartida())
+                    .nivel(ppm.getNivel())
+                    .padCodPartida(ppm.getPadCodPartida())
+                    .tUniMed(ppm.getTUniMed())
+                    .eUniMed(ppm.getEUniMed())
+                    .vigente(partida.getVigente())
+                    .build();
+
+            // Construir la ruta jerárquica (ej: "INGRESOS > Venta > Producto A")
+            StringBuilder hierarchyPath = new StringBuilder();
+            buildHierarchyPathFromMezcla(partidasMezcla, partidaMap, ppm.getCodPartida(), hierarchyPath);
+            dto.setJerarquiaCompleta(hierarchyPath.toString());
+
+            resultado.add(dto);
+        }
+
+        // Ordenar por nivel y luego por orden
+        resultado.sort((a, b) -> {
+            int nivelCompare = Integer.compare(a.getNivel(), b.getNivel());
+            if (nivelCompare != 0)
+                return nivelCompare;
+            return Long.compare(a.getCodPartida(), b.getCodPartida());
+        });
+
+        return resultado;
+    }
+
+    /**
+     * Construye la ruta jerárquica de una partida recursivamente
+     */
+    private void buildHierarchyPathFromMezcla(List<ProyPartidaMezcla> mezclas, Map<Long, Partida> partidaMap,
+            Long codPartida, StringBuilder path) {
+        ProyPartidaMezcla actual = mezclas.stream()
+                .filter(m -> m.getCodPartida().equals(codPartida))
+                .findFirst().orElse(null);
+
+        if (actual == null)
+            return;
+
+        // Si tiene padre y no es él mismo, primero construir la ruta del padre
+        if (actual.getPadCodPartida() != null && !actual.getPadCodPartida().equals(codPartida)) {
+            buildHierarchyPathFromMezcla(mezclas, partidaMap, actual.getPadCodPartida(), path);
+            if (path.length() > 0) {
+                path.append(" > ");
+            }
+        }
+
+        // Agregar el nombre de esta partida
+        Partida partida = partidaMap.get(codPartida);
+        if (partida != null) {
+            path.append(partida.getDesPartida());
+        }
     }
 
     /**
