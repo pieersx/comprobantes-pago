@@ -1154,6 +1154,7 @@ INSERT INTO COMP_PAGOEMPLEADO VALUES ( 1, 1002, 'CPE-004', 2, 1, '004', '002', D
 -- ============================================================================
 INSERT INTO COMP_PAGOEMPLEADO_DET VALUES ( 1, 1001, 'CPE-001', 1, 'E', 2104, 12000, 2160, 14160, 1 );
 INSERT INTO COMP_PAGOEMPLEADO_DET VALUES ( 1, 1001, 'CPE-001', 2, 'E', 2104, 3000, 540, 3540, 1 );
+INSERT INTO COMP_PAGOEMPLEADO_DET VALUES ( 1, 1002, 'CPE-004', 1, 'E', 2104, 11000, 1980, 12980, 1 );
 
 -- ============================================================================
 -- SECCIÓN 5: CONSULTAS DE VERIFICACIÓN (SELECT)

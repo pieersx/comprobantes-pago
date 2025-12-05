@@ -20,6 +20,7 @@ import com.proyectos.comprobantespago.repository.ComprobantePagoCabRepository;
 import com.proyectos.comprobantespago.repository.ComprobantePagoDetRepository;
 import com.proyectos.comprobantespago.repository.PartidaRepository;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +40,7 @@ public class ComprobantePagoService {
     private final PartidaHierarchyService partidaHierarchyService;
     private final TaxCalculationService taxCalculationService;
     private final PartidaRepository partidaRepository;
+    private final EntityManager entityManager;
 
     public List<ComprobantePagoDTO> findAllByCompania(Long codCia) {
         log.debug("Buscando comprobantes de la compañía: {}", codCia);
@@ -190,6 +192,8 @@ public class ComprobantePagoService {
 
         // 7. Eliminar detalles antiguos y guardar nuevos
         detRepository.deleteByComprobante(codCia, codProveedor, nroCp);
+        detRepository.flush(); // Forzar eliminación antes de insertar nuevos
+        entityManager.clear(); // Limpiar caché de Hibernate para evitar conflictos
 
         for (int i = 0; i < dto.getDetalles().size(); i++) {
             ComprobantePagoDetalleDTO detalleDTO = dto.getDetalles().get(i);
@@ -207,6 +211,8 @@ public class ComprobantePagoService {
 
             detRepository.save(detalle);
         }
+
+        detRepository.flush(); // Asegurar que los nuevos detalles estén guardados
 
         // 8. Generar alertas automáticas después de actualizar
         presupuestoService.generarAlertas(dto.getCodCia(), dto.getCodPyto());

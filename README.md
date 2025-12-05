@@ -1,53 +1,57 @@
-# 🎯 Sistema de Gestión de Comprobantes de Pago
+# 💼 Sistema de Comprobantes de Pago - CONSANDINA
 
-Sistema moderno y completo para gestión de comprobantes de pago (ingresos/egresos) con arquitectura multi-tenant. Desarrollado con las tecnologías más actuales de 2025.
+Sistema de gestión financiera para control de comprobantes de ingreso y egreso con soporte para proveedores, clientes y empleados.
 
-## ✨ Características Principales
+## 🚀 Tecnologías
 
-- 📊 **Dashboard Interactivo** - Visualización en tiempo real de KPIs y métricas
-- 💰 **Gestión de Comprobantes** - Control completo de ingresos y egresos
-- 📄 **PDFs Profesionales** - Generación automática de comprobantes en PDF ⭐ **NUEVO**
-- 🎨 **Sistema de Estados** - REG/PAG/ANU con badges visuales de colores ⭐ **NUEVO**
-- 💳 **Módulo de Abonos** - Registro completo de pagos con vouchers ⭐ **NUEVO**
-- 📎 **Gestión de Archivos** - Subida y descarga de FotoCP y FotoAbono ⭐ **NUEVO**
-- 📈 **Flujo de Caja** - Análisis y proyecciones financieras
-- 🏢 **Multi-tenant** - Soporte para múltiples empresas
-- 🎨 **UI Moderna** - Diseño responsive con shadcn/ui
-- 🔐 **Seguridad** - JWT Authentication y Spring Security
-- 📱 **Responsive** - Funciona en desktop, tablet y móvil
+**Backend**
+- Spring Boot 3.5.x + Oracle Database
+- REST API con Spring Security
+- MapStruct para mapeo de entidades
 
-## 🎉 Nuevas Funcionalidades (Nov 2025)
+**Frontend**
+- Next.js 14 + TypeScript + React Query
+- shadcn/ui + TailwindCSS
+- Generación de PDFs con jsPDF
 
-### 📄 Generación de PDFs Profesionales
-- **Diseño corporativo** con encabezado CONSANDINA
-- **Badge de estado** con colores (REGISTRADO/PAGADO/ANULADO)
-- **Tabla de partidas** profesional con bordes
-- **Total destacado** en azul
-- **Descarga con un clic** desde el botón "Descargar PDF"
-- 👉 [**Ver Guía Rápida**](PRUEBA_RAPIDA_PDF.md)
+## ✨ Funcionalidades
 
-### 🎨 Sistema de Estados
-- **REGISTRADO** (REG) - Badge gris - Pago pendiente
-- **PAGADO** (PAG) - Badge verde - Pago completado
-- **ANULADO** (ANU) - Badge rojo - Comprobante anulado
-- Cambio automático al registrar pago
+### 📊 Comprobantes
+- **Ingresos**: Pagos de clientes
+- **Egresos**: Pagos a proveedores y empleados
+- Estados: Registrado, Pagado, Anulado
+- Soporte para múltiples monedas (Soles, Dólares, Euros)
 
-### 💳 Módulo de Abonos (Pagos)
-- Registro de fecha de pago (FecAbono)
-- 7 medios de pago disponibles
-- Descripción del pago (DesAbono)
-- Subida de voucher bancario (FotoAbono)
+### 💰 Gestión de Pagos
+- Registro de abonos con fecha y medio de pago
+- Adjuntar vouchers bancarios
+- Sincronización automática de fecha al marcar como pagado
+- Historial de estados
 
-### 📎 Gestión de Archivos
-- **FotoCP**: Comprobante original (factura del proveedor)
-- **FotoAbono**: Voucher de pago (comprobante bancario)
+### 📄 Documentos
+- Generación de PDFs profesionales
+- Subida de comprobantes y vouchers
 - Validación: PDF, JPG, PNG (máx 10MB)
-- Almacenamiento seguro en servidor
 
-## 📚 Documentación Completa
+### 📈 Reportes
+- Dashboard con KPIs
+- Flujo de caja y presupuestos
+- Análisis por proyecto, proveedor y empleado
 
-### 🚀 **Inicio Rápido**
-- [**ÍNDICE.md**](INDICE.md) - Navegación completa de la documentación
+## 🏗️ Estructura
+
+```
+/backend    - API Spring Boot (puerto 6969)
+/frontend   - Next.js app (puerto 4584)
+/database   - Scripts SQL y esquemas
+```
+
+## 🎯 Inicio Rápido
+
+1. **Base de datos**: Ejecutar `/database/esquema.sql`
+2. **Backend**: `cd backend && mvn spring-boot:run`
+3. **Frontend**: `cd frontend && npm run dev`
+4. Abrir: `http://localhost:4584`
 - [**PRUEBA_RAPIDA_PDF.md**](PRUEBA_RAPIDA_PDF.md) - Prueba el sistema en 3 pasos
 
 ### 🎓 **Para el Profesor / Evaluador**

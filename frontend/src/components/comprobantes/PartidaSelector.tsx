@@ -68,7 +68,14 @@ export function PartidaSelector({
         // El usuario puede seleccionar cualquier nivel
         const data = await partidasService.getTodasPartidasPorProyecto(codCia, codPyto, tipo);
         console.log(`✅ TODAS las partidas cargadas (${data.length} partidas):`, data);
-        setPartidas(data);
+
+        // Ordenar jerárquicamente: primero por código de partida
+        // Esto asegura que las partidas estén en orden: 2000, 2100, 2101, 2102, 2200, 2201, etc.
+        const partidasOrdenadas = [...data].sort((a, b) => {
+          return a.codPartida - b.codPartida;
+        });
+
+        setPartidas(partidasOrdenadas);
       } catch (err) {
         setErrorMsg('Error cargando partidas. Por favor contacte al administrador del sistema.');
         console.error('❌ Error cargando partidas:', err);
