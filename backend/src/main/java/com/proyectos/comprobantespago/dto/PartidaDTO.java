@@ -25,6 +25,12 @@ public class PartidaDTO {
     private Integer semilla;
     private String vigente;
 
+    // Datos para la relación jerárquica (PARTIDA_MEZCLA)
+    private Long padCodPartida; // Código de la partida padre
+    private Long corr; // Correlativo en PARTIDA_MEZCLA
+    private Integer orden; // Orden entre hermanos
+    private java.math.BigDecimal costoUnit; // Costo unitario (por defecto 0)
+
     /**
      * Ruta completa de la partida en la jerarquía
      * Ejemplo: "Ingresos > Ventas > Servicios Técnicos"
@@ -32,7 +38,8 @@ public class PartidaDTO {
     private String fullPath;
 
     /**
-     * Indica si la partida es del último nivel (hoja) y puede usarse en comprobantes
+     * Indica si la partida es del último nivel (hoja) y puede usarse en
+     * comprobantes
      * Feature: comprobantes-mejoras
      * Requirements: 5.1, 5.2
      */
@@ -41,9 +48,11 @@ public class PartidaDTO {
     /**
      * Código de la partida padre
      */
-    private Long padCodPartida;
+    // Nota: se conserva por compatibilidad con el UI; se rellena desde
+    // PARTIDA_MEZCLA
 
-    // ========== Información de jerarquía (Feature: comprobantes-jerarquicos) ==========
+    // ========== Información de jerarquía (Feature: comprobantes-jerarquicos)
+    // ==========
 
     /**
      * Código de la partida padre de nivel 2

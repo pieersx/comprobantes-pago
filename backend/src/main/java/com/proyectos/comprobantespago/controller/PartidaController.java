@@ -1,6 +1,8 @@
 package com.proyectos.comprobantespago.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.proyectos.comprobantespago.dto.PartidaDTO;
 import com.proyectos.comprobantespago.dto.PartidaTreeNode;
 import com.proyectos.comprobantespago.entity.Partida;
+import com.proyectos.comprobantespago.entity.PartidaMezcla;
+import com.proyectos.comprobantespago.repository.PartidaMezclaRepository;
 import com.proyectos.comprobantespago.repository.PartidaRepository;
 import com.proyectos.comprobantespago.service.PartidaHierarchyService;
 
@@ -40,6 +44,9 @@ public class PartidaController {
 
     @Autowired
     private PartidaRepository partidaRepository;
+
+    @Autowired
+    private PartidaMezclaRepository partidaMezclaRepository;
 
     @Autowired
     private PartidaHierarchyService partidaHierarchyService;
@@ -94,6 +101,11 @@ public class PartidaController {
         try {
             Partida partida = convertirAEntidad(partidaDTO);
             Partida partidaGuardada = partidaRepository.save(partida);
+
+            // Crear/actualizar relación en PARTIDA_MEZCLA para mantener jerarquía y orden
+            PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, partidaGuardada);
+            partidaMezclaRepository.save(mezcla);
+
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(convertirADTO(partidaGuardada));
         } catch (Exception e) {
@@ -121,6 +133,11 @@ public class PartidaController {
                     }
 
                     Partida actualizada = partidaRepository.save(partidaExistente);
+
+                    // Sincronizar PARTIDA_MEZCLA (crea si no existe, actualiza si existe)
+                    PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, actualizada);
+                    partidaMezclaRepository.save(mezcla);
+
                     return ResponseEntity.ok(convertirADTO(actualizada));
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -162,6 +179,20 @@ public class PartidaController {
         dto.setSemilla(partida.getSemilla());
         dto.setVigente(partida.getVigente());
 
+        // Enriquecer con datos de PARTIDA_MEZCLA (padre, orden, costo)
+        Optional<PartidaMezcla> mezclaOpt = partidaMezclaRepository
+                .findByCodCiaAndIngEgrAndCodPartidaAndVigente(partida.getCodCia(), partida.getIngEgr(),
+                        partida.getCodPartida(), "1")
+                .stream()
+                .findFirst();
+
+        mezclaOpt.ifPresent(mezcla -> {
+            dto.setPadCodPartida(mezcla.getPadCodPartida());
+            dto.setCorr(mezcla.getCorr());
+            dto.setOrden(mezcla.getOrden());
+            dto.setCostoUnit(mezcla.getCostoUnit());
+        });
+
         return dto;
     }
 
@@ -183,6 +214,42 @@ public class PartidaController {
         partida.setVigente(dto.getVigente());
 
         return partida;
+    }
+
+    /**
+     * Construye o actualiza el registro en PARTIDA_MEZCLA a partir del DTO y la
+     * partida guardada.
+     * Se aplican valores por defecto para evitar nulls y mantener la jerarquía.
+     */
+    private PartidaMezcla construirMezclaDesdeDTO(PartidaDTO dto, Partida partidaGuardada) {
+        Long codCia = partidaGuardada.getCodCia();
+        String ingEgr = partidaGuardada.getIngEgr();
+        Long codPartida = partidaGuardada.getCodPartida();
+
+        Long corr = dto.getCorr() != null ? dto.getCorr() : 1L;
+        Long padCodPartida = dto.getPadCodPartida() != null ? dto.getPadCodPartida() : codPartida; // raíz se apunta a
+                                                                                                   // sí misma
+        Integer nivel = dto.getNivel() != null ? dto.getNivel() : partidaGuardada.getNivel();
+        Integer orden = dto.getOrden() != null ? dto.getOrden() : 1;
+        BigDecimal costoUnit = dto.getCostoUnit() != null ? dto.getCostoUnit() : BigDecimal.ZERO;
+        String vigente = dto.getVigente() != null ? dto.getVigente() : "1";
+
+        PartidaMezcla.PartidaMezclaId id = new PartidaMezcla.PartidaMezclaId(codCia, ingEgr, codPartida, corr);
+        PartidaMezcla mezcla = partidaMezclaRepository.findById(id).orElseGet(PartidaMezcla::new);
+
+        mezcla.setCodCia(codCia);
+        mezcla.setIngEgr(ingEgr);
+        mezcla.setCodPartida(codPartida);
+        mezcla.setCorr(corr);
+        mezcla.setPadCodPartida(padCodPartida);
+        mezcla.setTUniMed(partidaGuardada.getTUniMed());
+        mezcla.setEUniMed(partidaGuardada.getEUniMed());
+        mezcla.setCostoUnit(costoUnit);
+        mezcla.setNivel(nivel);
+        mezcla.setOrden(orden);
+        mezcla.setVigente(vigente);
+
+        return mezcla;
     }
 
     /**
