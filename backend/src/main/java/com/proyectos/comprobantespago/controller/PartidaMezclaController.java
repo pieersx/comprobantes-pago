@@ -18,10 +18,12 @@ import com.proyectos.comprobantespago.entity.PartidaMezcla;
 import com.proyectos.comprobantespago.service.PartidaMezclaService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST Controller para PARTIDA_MEZCLA
  */
+@Slf4j
 @RestController
 @RequestMapping("/partida-mezcla")
 @RequiredArgsConstructor
@@ -66,7 +68,24 @@ public class PartidaMezclaController {
 
     @PostMapping
     public ResponseEntity<PartidaMezcla> create(@RequestBody PartidaMezcla partidaMezcla) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(partidaMezclaService.save(partidaMezcla));
+        try {
+            log.info("Creando PartidaMezcla: codCia={}, ingEgr={}, codPartida={}, corr={}",
+                    partidaMezcla.getCodCia(), partidaMezcla.getIngEgr(),
+                    partidaMezcla.getCodPartida(), partidaMezcla.getCorr());
+
+            if (partidaMezcla.getCodCia() == null || partidaMezcla.getIngEgr() == null ||
+                    partidaMezcla.getCodPartida() == null || partidaMezcla.getCorr() == null) {
+                log.error("Campos obligatorios faltantes en PartidaMezcla");
+                return ResponseEntity.badRequest().build();
+            }
+
+            PartidaMezcla guardada = partidaMezclaService.save(partidaMezcla);
+            log.info("PartidaMezcla guardada exitosamente");
+            return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
+        } catch (Exception e) {
+            log.error("Error creando PartidaMezcla", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PutMapping("/{codCia}/{ingEgr}/{codPartida}/{corr}")
@@ -76,7 +95,16 @@ public class PartidaMezclaController {
             @PathVariable Long codPartida,
             @PathVariable Long corr,
             @RequestBody PartidaMezcla partidaMezcla) {
-        return ResponseEntity.ok(partidaMezclaService.update(codCia, ingEgr, codPartida, corr, partidaMezcla));
+        try {
+            log.info("Actualizando PartidaMezcla: codCia={}, ingEgr={}, codPartida={}, corr={}",
+                    codCia, ingEgr, codPartida, corr);
+            PartidaMezcla actualizada = partidaMezclaService.update(codCia, ingEgr, codPartida, corr, partidaMezcla);
+            log.info("PartidaMezcla actualizada exitosamente");
+            return ResponseEntity.ok(actualizada);
+        } catch (Exception e) {
+            log.error("Error actualizando PartidaMezcla", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @DeleteMapping("/{codCia}/{ingEgr}/{codPartida}/{corr}")

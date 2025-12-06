@@ -2,6 +2,7 @@ package com.proyectos.comprobantespago.controller;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -30,15 +31,16 @@ import com.proyectos.comprobantespago.service.PartidaHierarchyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Controlador REST para la gestión de Partidas
  * Endpoints: /api/v1/partidas
  */
+@Slf4j
 @RestController
 @RequestMapping("/partidas")
 @CrossOrigin(origins = "*")
-@Tag(name = "Partidas", description = "Gestión de partidas presupuestales")
 @Tag(name = "Partidas", description = "Gestión de partidas presupuestales")
 public class PartidaController {
 
@@ -97,19 +99,68 @@ public class PartidaController {
      * Crea una nueva partida
      */
     @PostMapping
-    public ResponseEntity<PartidaDTO> crearPartida(@RequestBody PartidaDTO partidaDTO) {
+    public ResponseEntity<?> crearPartida(@RequestBody PartidaDTO partidaDTO) {
         try {
+            log.info("=== INICIANDO CREACIÓN DE PARTIDA ===");
+            log.info("DTO recibido - codCia: {}, ingEgr: {}, codPartida: {}, desPartida: {}",
+                    partidaDTO.getCodCia(), partidaDTO.getIngEgr(),
+                    partidaDTO.getCodPartida(), partidaDTO.getDesPartida());
+            log.info("DTO recibido - tUniMed: '{}' (null={}), eUniMed: '{}' (null={})",
+                    partidaDTO.getTUniMed(), partidaDTO.getTUniMed() == null,
+                    partidaDTO.getEUniMed(), partidaDTO.getEUniMed() == null);
+
+            // Validar campos obligatorios
+            if (partidaDTO.getCodCia() == null) {
+                log.warn("✗ Validación fallida: codCia es nulo");
+                return ResponseEntity.badRequest().body(Map.of("error", "El código de compañía es obligatorio"));
+            }
+            if (partidaDTO.getIngEgr() == null || partidaDTO.getIngEgr().trim().isEmpty()) {
+                log.warn("✗ Validación fallida: ingEgr es nulo o vacío");
+                return ResponseEntity.badRequest().body(Map.of("error", "El tipo (Ingreso/Egreso) es obligatorio"));
+            }
+            if (partidaDTO.getCodPartida() == null || partidaDTO.getCodPartida() <= 0) {
+                log.warn("✗ Validación fallida: codPartida={} es nulo o menor a 1", partidaDTO.getCodPartida());
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "El código numérico es obligatorio y debe ser mayor a 0"));
+            }
+            if (partidaDTO.getDesPartida() == null || partidaDTO.getDesPartida().trim().isEmpty()) {
+                log.warn("✗ Validación fallida: desPartida es nulo o vacío");
+                return ResponseEntity.badRequest().body(Map.of("error", "La descripción es obligatoria"));
+            }
+            if (partidaDTO.getTUniMed() == null || partidaDTO.getTUniMed().trim().isEmpty()) {
+                log.warn("✗ Validación fallida: tUniMed='{}' es nulo o vacío", partidaDTO.getTUniMed());
+                return ResponseEntity.badRequest().body(Map.of("error", "La unidad de medida técnica es obligatoria"));
+            }
+            if (partidaDTO.getEUniMed() == null || partidaDTO.getEUniMed().trim().isEmpty()) {
+                log.warn("✗ Validación fallida: eUniMed='{}' es nulo o vacío", partidaDTO.getEUniMed());
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "La unidad de medida económica es obligatoria"));
+            }
+
+            log.info("✓ Todas las validaciones pasaron");
+
             Partida partida = convertirAEntidad(partidaDTO);
+            log.info("Partida convertida a entidad");
+
             Partida partidaGuardada = partidaRepository.save(partida);
+            log.info("✓ Partida guardada: codCia={}, ingEgr={}, codPartida={}",
+                    partidaGuardada.getCodCia(), partidaGuardada.getIngEgr(), partidaGuardada.getCodPartida());
 
             // Crear/actualizar relación en PARTIDA_MEZCLA para mantener jerarquía y orden
             PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, partidaGuardada);
             partidaMezclaRepository.save(mezcla);
+            log.info("✓ PartidaMezcla creada: codCia={}, ingEgr={}, codPartida={}, corr={}",
+                    mezcla.getCodCia(), mezcla.getIngEgr(), mezcla.getCodPartida(), mezcla.getCorr());
 
+            log.info("=== PARTIDA CREADA EXITOSAMENTE ===");
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(convertirADTO(partidaGuardada));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("✗✗✗ ERROR CREANDO PARTIDA ✗✗✗", e);
+            String errorMsg = "Error al crear la partida: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+            log.error("Mensaje de error: {}", errorMsg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", errorMsg));
         }
     }
 
@@ -123,24 +174,48 @@ public class PartidaController {
             @PathVariable String ingEgr,
             @PathVariable Long codPartida,
             @RequestBody PartidaDTO partidaDTO) {
+        try {
+            log.info("Actualizando partida: codCia={}, ingEgr={}, codPartida={}", codCia, ingEgr, codPartida);
 
-        Partida.PartidaId id = new Partida.PartidaId(codCia, ingEgr, codPartida);
+            Partida.PartidaId id = new Partida.PartidaId(codCia, ingEgr, codPartida);
+            Optional<Partida> partidaOpt = partidaRepository.findById(id);
 
-        return partidaRepository.findById(id)
-                .map(partidaExistente -> {
-                    if (partidaDTO.getDesPartida() != null) {
-                        partidaExistente.setDesPartida(partidaDTO.getDesPartida());
-                    }
+            if (!partidaOpt.isPresent()) {
+                log.warn("Partida no encontrada: codCia={}, ingEgr={}, codPartida={}", codCia, ingEgr, codPartida);
+                return ResponseEntity.notFound().build();
+            }
 
-                    Partida actualizada = partidaRepository.save(partidaExistente);
+            Partida partidaExistente = partidaOpt.get();
+            if (partidaDTO.getDesPartida() != null) {
+                partidaExistente.setDesPartida(partidaDTO.getDesPartida());
+            }
+            if (partidaDTO.getCodPartidas() != null) {
+                partidaExistente.setCodPartidas(partidaDTO.getCodPartidas());
+            }
+            if (partidaDTO.getFlgCC() != null) {
+                partidaExistente.setFlgCC(partidaDTO.getFlgCC());
+            }
+            if (partidaDTO.getNivel() != null) {
+                partidaExistente.setNivel(partidaDTO.getNivel());
+            }
+            if (partidaDTO.getVigente() != null) {
+                partidaExistente.setVigente(partidaDTO.getVigente());
+            }
 
-                    // Sincronizar PARTIDA_MEZCLA (crea si no existe, actualiza si existe)
-                    PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, actualizada);
-                    partidaMezclaRepository.save(mezcla);
+            Partida actualizada = partidaRepository.save(partidaExistente);
+            log.info("Partida actualizada: codCia={}, ingEgr={}, codPartida={}", codCia, ingEgr, codPartida);
 
-                    return ResponseEntity.ok(convertirADTO(actualizada));
-                })
-                .orElse(ResponseEntity.notFound().build());
+            // Sincronizar PARTIDA_MEZCLA (crea si no existe, actualiza si existe)
+            PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, actualizada);
+            partidaMezclaRepository.save(mezcla);
+            log.info("PartidaMezcla sincronizada: codCia={}, ingEgr={}, codPartida={}, corr={}",
+                    mezcla.getCodCia(), mezcla.getIngEgr(), mezcla.getCodPartida(), mezcla.getCorr());
+
+            return ResponseEntity.ok(convertirADTO(actualizada));
+        } catch (Exception e) {
+            log.error("Error actualizando partida", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**

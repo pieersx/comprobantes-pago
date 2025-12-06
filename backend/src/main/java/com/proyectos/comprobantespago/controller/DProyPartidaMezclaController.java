@@ -21,10 +21,12 @@ import com.proyectos.comprobantespago.entity.DProyPartidaMezcla;
 import com.proyectos.comprobantespago.service.DProyPartidaMezclaService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST Controller para DPROY_PARTIDA_MEZCLA (Desembolsos)
  */
+@Slf4j
 @RestController
 @RequestMapping("/desembolsos")
 @RequiredArgsConstructor
@@ -80,7 +82,28 @@ public class DProyPartidaMezclaController {
 
     @PostMapping
     public ResponseEntity<DProyPartidaMezcla> create(@RequestBody DProyPartidaMezcla dProyPartidaMezcla) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(dProyPartidaMezclaService.save(dProyPartidaMezcla));
+        try {
+            log.info(
+                    "Creando DProyPartidaMezcla: codCia={}, codPyto={}, ingEgr={}, nroVersion={}, codPartida={}, corr={}",
+                    dProyPartidaMezcla.getCodCia(), dProyPartidaMezcla.getCodPyto(),
+                    dProyPartidaMezcla.getIngEgr(), dProyPartidaMezcla.getNroVersion(),
+                    dProyPartidaMezcla.getCodPartida(), dProyPartidaMezcla.getCorr());
+
+            if (dProyPartidaMezcla.getCodCia() == null || dProyPartidaMezcla.getCodPyto() == null ||
+                    dProyPartidaMezcla.getIngEgr() == null || dProyPartidaMezcla.getNroVersion() == null ||
+                    dProyPartidaMezcla.getCodPartida() == null || dProyPartidaMezcla.getCorr() == null ||
+                    dProyPartidaMezcla.getSec() == null) {
+                log.error("Campos obligatorios faltantes en DProyPartidaMezcla");
+                return ResponseEntity.badRequest().build();
+            }
+
+            DProyPartidaMezcla guardada = dProyPartidaMezclaService.save(dProyPartidaMezcla);
+            log.info("DProyPartidaMezcla guardada exitosamente");
+            return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
+        } catch (Exception e) {
+            log.error("Error creando DProyPartidaMezcla", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PutMapping("/{codCia}/{codPyto}/{ingEgr}/{nroVersion}/{codPartida}/{corr}/{sec}")
@@ -93,8 +116,18 @@ public class DProyPartidaMezclaController {
             @PathVariable Long corr,
             @PathVariable Integer sec,
             @RequestBody DProyPartidaMezcla dProyPartidaMezcla) {
-        return ResponseEntity.ok(dProyPartidaMezclaService.update(codCia, codPyto, ingEgr, nroVersion, codPartida, corr,
-                sec, dProyPartidaMezcla));
+        try {
+            log.info(
+                    "Actualizando DProyPartidaMezcla: codCia={}, codPyto={}, ingEgr={}, nroVersion={}, codPartida={}, corr={}, sec={}",
+                    codCia, codPyto, ingEgr, nroVersion, codPartida, corr, sec);
+            DProyPartidaMezcla actualizada = dProyPartidaMezclaService.update(codCia, codPyto, ingEgr, nroVersion,
+                    codPartida, corr, sec, dProyPartidaMezcla);
+            log.info("DProyPartidaMezcla actualizada exitosamente");
+            return ResponseEntity.ok(actualizada);
+        } catch (Exception e) {
+            log.error("Error actualizando DProyPartidaMezcla", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @DeleteMapping("/{codCia}/{codPyto}/{ingEgr}/{nroVersion}/{codPartida}/{corr}/{sec}")

@@ -1,5 +1,7 @@
 package com.proyectos.comprobantespago.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,8 +22,13 @@ public class PartidaDTO {
     private String desPartida;
     private String flgCC;
     private Integer nivel;
+
+    @JsonProperty("tUniMed")
     private String tUniMed;
+
+    @JsonProperty("eUniMed")
     private String eUniMed;
+
     private Integer semilla;
     private String vigente;
 

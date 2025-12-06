@@ -95,7 +95,20 @@ export default function PartidasPage() {
 
   // Mutación para crear
   const createMutation = useMutation({
-    mutationFn: partidasService.create,
+    mutationFn: (data: PartidaForm) => {
+      console.log('=== DATOS ENVIADOS ===');
+      console.log('codCia:', data.codCia);
+      console.log('ingEgr:', data.ingEgr);
+      console.log('codPartida:', data.codPartida);
+      console.log('codPartidas:', data.codPartidas);
+      console.log('desPartida:', data.desPartida);
+      console.log('nivel:', data.nivel);
+      console.log('tUniMed:', data.tUniMed, '(tipo:', typeof data.tUniMed + ')');
+      console.log('eUniMed:', data.eUniMed, '(tipo:', typeof data.eUniMed + ')');
+      console.log('vigente:', data.vigente);
+      console.log('=== FIN DATOS ===');
+      return partidasService.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partidas'] });
       toast.success('Partida creada exitosamente');
@@ -103,7 +116,9 @@ export default function PartidasPage() {
       resetForm();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error al crear partida');
+      console.error('Error al crear partida:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Error al crear partida';
+      toast.error(errorMessage);
     },
   });
 
@@ -142,7 +157,10 @@ export default function PartidasPage() {
   };
 
   const handleOpenCreate = () => {
-    resetForm();
+    const newFormState = { ...initialFormState };
+    console.log('Abriendo modal crear con estado inicial:', newFormState);
+    setFormData(newFormState);
+    setIsEditing(false);
     setDialogOpen(true);
   };
 
@@ -170,6 +188,15 @@ export default function PartidasPage() {
   };
 
   const handleSubmit = () => {
+    // Validar campos obligatorios
+    if (!formData.ingEgr || formData.ingEgr.trim() === '') {
+      toast.error('El tipo (Ingreso/Egreso) es obligatorio');
+      return;
+    }
+    if (formData.codPartida === null || formData.codPartida === 0 || isNaN(formData.codPartida)) {
+      toast.error('El código numérico es obligatorio y debe ser mayor a 0');
+      return;
+    }
     if (!formData.desPartida.trim()) {
       toast.error('La descripción es obligatoria');
       return;
@@ -178,6 +205,19 @@ export default function PartidasPage() {
       toast.error('El código de partida es obligatorio');
       return;
     }
+    if (formData.nivel === null || formData.nivel === 0) {
+      toast.error('El nivel es obligatorio');
+      return;
+    }
+    if (!formData.tUniMed || formData.tUniMed.trim() === '') {
+      toast.error('La unidad de medida técnica es obligatoria');
+      return;
+    }
+    if (!formData.eUniMed || formData.eUniMed.trim() === '') {
+      toast.error('La unidad de medida económica es obligatoria');
+      return;
+    }
+
     if (isEditing) {
       updateMutation.mutate(formData);
     } else {

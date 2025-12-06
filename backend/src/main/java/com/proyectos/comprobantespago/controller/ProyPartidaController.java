@@ -18,10 +18,12 @@ import com.proyectos.comprobantespago.entity.ProyPartida;
 import com.proyectos.comprobantespago.service.ProyPartidaService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST Controller para PROY_PARTIDA
  */
+@Slf4j
 @RestController
 @RequestMapping("/proy-partida")
 @RequiredArgsConstructor
@@ -74,7 +76,25 @@ public class ProyPartidaController {
 
     @PostMapping
     public ResponseEntity<ProyPartida> create(@RequestBody ProyPartida proyPartida) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(proyPartidaService.save(proyPartida));
+        try {
+            log.info("Creando ProyPartida: codCia={}, codPyto={}, nroVersion={}, ingEgr={}, codPartida={}",
+                    proyPartida.getCodCia(), proyPartida.getCodPyto(), proyPartida.getNroVersion(),
+                    proyPartida.getIngEgr(), proyPartida.getCodPartida());
+
+            if (proyPartida.getCodCia() == null || proyPartida.getCodPyto() == null ||
+                    proyPartida.getNroVersion() == null || proyPartida.getIngEgr() == null ||
+                    proyPartida.getCodPartida() == null) {
+                log.error("Campos obligatorios faltantes en ProyPartida");
+                return ResponseEntity.badRequest().build();
+            }
+
+            ProyPartida guardada = proyPartidaService.save(proyPartida);
+            log.info("ProyPartida guardada exitosamente");
+            return ResponseEntity.status(HttpStatus.CREATED).body(guardada);
+        } catch (Exception e) {
+            log.error("Error creando ProyPartida", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PutMapping("/{codCia}/{codPyto}/{nroVersion}/{ingEgr}/{codPartida}")
@@ -85,8 +105,17 @@ public class ProyPartidaController {
             @PathVariable String ingEgr,
             @PathVariable Long codPartida,
             @RequestBody ProyPartida proyPartida) {
-        return ResponseEntity
-                .ok(proyPartidaService.update(codCia, codPyto, nroVersion, ingEgr, codPartida, proyPartida));
+        try {
+            log.info("Actualizando ProyPartida: codCia={}, codPyto={}, nroVersion={}, ingEgr={}, codPartida={}",
+                    codCia, codPyto, nroVersion, ingEgr, codPartida);
+            ProyPartida actualizada = proyPartidaService.update(codCia, codPyto, nroVersion, ingEgr, codPartida,
+                    proyPartida);
+            log.info("ProyPartida actualizada exitosamente");
+            return ResponseEntity.ok(actualizada);
+        } catch (Exception e) {
+            log.error("Error actualizando ProyPartida", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @DeleteMapping("/{codCia}/{codPyto}/{nroVersion}/{ingEgr}/{codPartida}")
