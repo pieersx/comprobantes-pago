@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -69,11 +70,13 @@ public class ProyPartidaMezcla implements Serializable {
 
     @NotBlank
     @Size(max = 3)
+    @JsonProperty("tUniMed")
     @Column(name = "TUNIMED", nullable = false, length = 3)
     private String tUniMed;
 
     @NotBlank
     @Size(max = 3)
+    @JsonProperty("eUniMed")
     @Column(name = "EUNIMED", nullable = false, length = 3)
     private String eUniMed;
 

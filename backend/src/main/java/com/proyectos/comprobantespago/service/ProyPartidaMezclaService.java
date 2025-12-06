@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.proyectos.comprobantespago.entity.ProyPartidaMezcla;
+import com.proyectos.comprobantespago.repository.PartidaMezclaRepository;
 import com.proyectos.comprobantespago.repository.ProyPartidaMezclaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class ProyPartidaMezclaService {
 
     private final ProyPartidaMezclaRepository proyPartidaMezclaRepository;
+    private final PartidaMezclaRepository partidaMezclaRepository;
 
     /**
      * Obtener todas las mezclas de proyecto

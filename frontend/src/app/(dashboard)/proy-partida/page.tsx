@@ -69,9 +69,9 @@ const initialFormState: ProyPartidaForm = {
   codPartidas: '',
   flgCC: 'N',
   nivel: 1,
-  uniMed: 'UND',
+  uniMed: '012',
   tabEstado: '014',
-  codEstado: 'REG',
+  codEstado: '001',
   vigente: '1',
 };
 
@@ -105,7 +105,23 @@ export default function ProyPartidaPage() {
 
   // Mutación para crear
   const createMutation = useMutation({
-    mutationFn: proyPartidaService.create,
+    mutationFn: (data: ProyPartidaForm) => {
+      console.log('=== DATOS ENVIADOS (PROY PARTIDA) ===');
+      console.log('codCia:', data.codCia);
+      console.log('codPyto:', data.codPyto);
+      console.log('nroVersion:', data.nroVersion);
+      console.log('ingEgr:', data.ingEgr);
+      console.log('codPartida:', data.codPartida);
+      console.log('codPartidas:', data.codPartidas);
+      console.log('flgCC:', data.flgCC);
+      console.log('nivel:', data.nivel);
+      console.log('uniMed:', data.uniMed);
+      console.log('tabEstado:', data.tabEstado);
+      console.log('codEstado:', data.codEstado);
+      console.log('vigente:', data.vigente);
+      console.log('=== FIN DATOS ===');
+      return proyPartidaService.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proy-partida'] });
       toast.success('Partida de proyecto creada exitosamente');
@@ -113,6 +129,7 @@ export default function ProyPartidaPage() {
       resetForm();
     },
     onError: (error: any) => {
+      console.error('Error al crear:', error);
       toast.error(error.message || 'Error al crear partida de proyecto');
     },
   });
@@ -195,6 +212,32 @@ export default function ProyPartidaPage() {
   };
 
   const handleSubmit = () => {
+    // Validaciones
+    if (!formData.codPyto || formData.codPyto === 0) {
+      toast.error('Selecciona un proyecto');
+      return;
+    }
+    if (!formData.codPartida || formData.codPartida === 0) {
+      toast.error('Selecciona una partida');
+      return;
+    }
+    if (!formData.codPartidas || formData.codPartidas.trim() === '') {
+      toast.error('El código de partida es obligatorio');
+      return;
+    }
+    if (!formData.uniMed || formData.uniMed.trim() === '') {
+      toast.error('La unidad de medida es obligatoria');
+      return;
+    }
+    if (!formData.tabEstado || formData.tabEstado.trim() === '') {
+      toast.error('La tabla de estado es obligatoria');
+      return;
+    }
+    if (!formData.codEstado || formData.codEstado.trim() === '') {
+      toast.error('El código de estado es obligatorio');
+      return;
+    }
+
     if (isEditing) {
       updateMutation.mutate(formData);
     } else {
@@ -241,7 +284,7 @@ export default function ProyPartidaPage() {
             Gestión de partidas asignadas a proyectos específicos
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
+        <Button onClick={handleOpenCreate} disabled={partidas.length === 0}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva Partida de Proyecto
         </Button>
@@ -292,6 +335,33 @@ export default function ProyPartidaPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Advertencia si no hay partidas */}
+      {partidas.length === 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Layers className="h-5 w-5 text-orange-600" />
+              <div>
+                <p className="font-medium text-orange-900">
+                  No hay partidas disponibles
+                </p>
+                <p className="text-sm text-orange-700">
+                  Necesitas crear partidas antes de asignarlas a proyectos.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => (window.location.href = '/partidas')}
+              >
+                Ir a Partidas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filtros */}
       <div className="flex items-center gap-4">
@@ -440,10 +510,10 @@ export default function ProyPartidaPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tipo</Label>
+                <Label>Tipo *</Label>
                 <Select
                   value={formData.ingEgr}
-                  onValueChange={(value) => setFormData({ ...formData, ingEgr: value })}
+                  onValueChange={(value) => setFormData({ ...formData, ingEgr: value, codPartida: 0 })}
                   disabled={isEditing}
                 >
                   <SelectTrigger>
@@ -456,40 +526,63 @@ export default function ProyPartidaPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Cód. Partida</Label>
-                <Input
-                  type="number"
-                  value={formData.codPartida}
-                  onChange={(e) => setFormData({ ...formData, codPartida: Number(e.target.value) })}
-                  disabled={isEditing}
-                />
+                <Label>Partida *</Label>
+                <Select
+                  value={String(formData.codPartida)}
+                  onValueChange={(value) => {
+                    const partida = partidas.find((p: any) => p.codPartida === Number(value));
+                    setFormData({
+                      ...formData,
+                      codPartida: Number(value),
+                      codPartidas: partida?.codPartidas || '',
+                      nivel: partida?.nivel || 1,
+                    });
+                  }}
+                  disabled={isEditing || partidas.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona partida" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partidas
+                      .filter((p: any) => p.ingEgr === formData.ingEgr)
+                      .map((p: any) => (
+                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                          {p.codPartida} - {p.desPartida}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Código Partida (Texto)</Label>
-                <Input
-                  value={formData.codPartidas}
-                  onChange={(e) => setFormData({ ...formData, codPartidas: e.target.value })}
-                  placeholder="Ej: EGR-001-01"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Código Partida *</Label>
+              <Input
+                value={formData.codPartidas}
+                onChange={(e) => setFormData({ ...formData, codPartidas: e.target.value })}
+                placeholder="Ej: EGR-001-01"
+                readOnly
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Nivel</Label>
-                <Input
-                  type="number"
-                  value={formData.nivel}
-                  onChange={(e) => setFormData({ ...formData, nivel: Number(e.target.value) })}
-                />
+                <Input type="number" value={formData.nivel} readOnly />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Unidad de Medida</Label>
-                <Input
-                  value={formData.uniMed}
-                  onChange={(e) => setFormData({ ...formData, uniMed: e.target.value })}
-                />
+                <Label>Control Costos</Label>
+                <Select
+                  value={formData.flgCC}
+                  onValueChange={(value) => setFormData({ ...formData, flgCC: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="S">Sí</SelectItem>
+                    <SelectItem value="N">No</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Estado</Label>
@@ -505,6 +598,35 @@ export default function ProyPartidaPage() {
                     <SelectItem value="0">Inactivo</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Unid. Medida *</Label>
+                <Input
+                  value={formData.uniMed}
+                  onChange={(e) => setFormData({ ...formData, uniMed: e.target.value })}
+                  placeholder="012"
+                  maxLength={5}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tab. Estado *</Label>
+                <Input
+                  value={formData.tabEstado}
+                  onChange={(e) => setFormData({ ...formData, tabEstado: e.target.value })}
+                  placeholder="014"
+                  maxLength={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cód. Estado *</Label>
+                <Input
+                  value={formData.codEstado}
+                  onChange={(e) => setFormData({ ...formData, codEstado: e.target.value })}
+                  placeholder="001"
+                  maxLength={3}
+                />
               </div>
             </div>
           </div>

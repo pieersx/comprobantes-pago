@@ -32,11 +32,6 @@ public class ProyPartidaController {
 
     private final ProyPartidaService proyPartidaService;
 
-    @GetMapping
-    public ResponseEntity<List<ProyPartida>> getAll() {
-        return ResponseEntity.ok(proyPartidaService.findAll());
-    }
-
     @GetMapping("/{codCia}/{codPyto}/{nroVersion}/{ingEgr}/{codPartida}")
     public ResponseEntity<ProyPartida> getById(
             @PathVariable Long codCia,
@@ -49,19 +44,19 @@ public class ProyPartidaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/proyecto/{codCia}/{codPyto}")
-    public ResponseEntity<List<ProyPartida>> getByProyecto(
-            @PathVariable Long codCia,
-            @PathVariable Long codPyto) {
-        return ResponseEntity.ok(proyPartidaService.findByProyecto(codCia, codPyto));
-    }
-
     @GetMapping("/proyecto/{codCia}/{codPyto}/version/{nroVersion}")
     public ResponseEntity<List<ProyPartida>> getByProyectoAndVersion(
             @PathVariable Long codCia,
             @PathVariable Long codPyto,
             @PathVariable Integer nroVersion) {
         return ResponseEntity.ok(proyPartidaService.findByProyectoAndVersion(codCia, codPyto, nroVersion));
+    }
+
+    @GetMapping("/proyecto/{codCia}/{codPyto}")
+    public ResponseEntity<List<ProyPartida>> getByProyecto(
+            @PathVariable Long codCia,
+            @PathVariable Long codPyto) {
+        return ResponseEntity.ok(proyPartidaService.findByProyecto(codCia, codPyto));
     }
 
     @GetMapping("/tipo/{ingEgr}")
@@ -72,6 +67,11 @@ public class ProyPartidaController {
     @GetMapping("/vigente/{vigente}")
     public ResponseEntity<List<ProyPartida>> getByVigente(@PathVariable String vigente) {
         return ResponseEntity.ok(proyPartidaService.findByVigente(vigente));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProyPartida>> getAll() {
+        return ResponseEntity.ok(proyPartidaService.findAll());
     }
 
     @PostMapping

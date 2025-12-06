@@ -30,9 +30,30 @@ public class ProyPartidaMezclaController {
 
     private final ProyPartidaMezclaService proyPartidaMezclaService;
 
-    @GetMapping
-    public ResponseEntity<List<ProyPartidaMezcla>> getAll() {
-        return ResponseEntity.ok(proyPartidaMezclaService.findAll());
+    @GetMapping("/proyecto/{codCia}/{codPyto}/version/{nroVersion}/partida/{ingEgr}/{codPartida}")
+    public ResponseEntity<List<ProyPartidaMezcla>> getByProyectoAndPartida(
+            @PathVariable Long codCia,
+            @PathVariable Long codPyto,
+            @PathVariable Integer nroVersion,
+            @PathVariable String ingEgr,
+            @PathVariable Long codPartida) {
+        return ResponseEntity
+                .ok(proyPartidaMezclaService.findByProyectoAndPartida(codCia, codPyto, nroVersion, ingEgr, codPartida));
+    }
+
+    @GetMapping("/proyecto/{codCia}/{codPyto}/version/{nroVersion}")
+    public ResponseEntity<List<ProyPartidaMezcla>> getByProyectoAndVersion(
+            @PathVariable Long codCia,
+            @PathVariable Long codPyto,
+            @PathVariable Integer nroVersion) {
+        return ResponseEntity.ok(proyPartidaMezclaService.findByProyectoAndVersion(codCia, codPyto, nroVersion));
+    }
+
+    @GetMapping("/proyecto/{codCia}/{codPyto}")
+    public ResponseEntity<List<ProyPartidaMezcla>> getByProyecto(
+            @PathVariable Long codCia,
+            @PathVariable Long codPyto) {
+        return ResponseEntity.ok(proyPartidaMezclaService.findByProyecto(codCia, codPyto));
     }
 
     @GetMapping("/{codCia}/{codPyto}/{ingEgr}/{nroVersion}/{codPartida}/{corr}")
@@ -48,30 +69,9 @@ public class ProyPartidaMezclaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/proyecto/{codCia}/{codPyto}")
-    public ResponseEntity<List<ProyPartidaMezcla>> getByProyecto(
-            @PathVariable Long codCia,
-            @PathVariable Long codPyto) {
-        return ResponseEntity.ok(proyPartidaMezclaService.findByProyecto(codCia, codPyto));
-    }
-
-    @GetMapping("/proyecto/{codCia}/{codPyto}/version/{nroVersion}")
-    public ResponseEntity<List<ProyPartidaMezcla>> getByProyectoAndVersion(
-            @PathVariable Long codCia,
-            @PathVariable Long codPyto,
-            @PathVariable Integer nroVersion) {
-        return ResponseEntity.ok(proyPartidaMezclaService.findByProyectoAndVersion(codCia, codPyto, nroVersion));
-    }
-
-    @GetMapping("/proyecto/{codCia}/{codPyto}/version/{nroVersion}/partida/{ingEgr}/{codPartida}")
-    public ResponseEntity<List<ProyPartidaMezcla>> getByProyectoAndPartida(
-            @PathVariable Long codCia,
-            @PathVariable Long codPyto,
-            @PathVariable Integer nroVersion,
-            @PathVariable String ingEgr,
-            @PathVariable Long codPartida) {
-        return ResponseEntity
-                .ok(proyPartidaMezclaService.findByProyectoAndPartida(codCia, codPyto, nroVersion, ingEgr, codPartida));
+    @GetMapping
+    public ResponseEntity<List<ProyPartidaMezcla>> getAll() {
+        return ResponseEntity.ok(proyPartidaMezclaService.findAll());
     }
 
     @PostMapping

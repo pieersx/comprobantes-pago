@@ -11,7 +11,7 @@ export const proyectosService = {
    */
   getAll: async (codCia: number): Promise<Proyecto[]> => {
     try {
-      const response = await apiClient.get(`/proyectos/cia/${codCia}`);
+      const response = await apiClient.get(`/proyectos?codCia=${codCia}`);
       return Array.isArray(response.data) ? response.data : response.data?.data || [];
     } catch (error) {
       throw new Error(handleApiError(error));

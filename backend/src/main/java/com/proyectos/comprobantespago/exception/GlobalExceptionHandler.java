@@ -224,12 +224,28 @@ public class GlobalExceptionHandler {
                         Exception ex, WebRequest request) {
                 log.error("Error interno del servidor: ", ex);
 
+                Map<String, String> details = new HashMap<>();
+                details.put("exception", ex.getClass().getName());
+                details.put("message", ex.getMessage() != null ? ex.getMessage() : "No message");
+
+                // Dig deeper for wrapped exceptions
+                Throwable cause = ex.getCause();
+                int depth = 1;
+                while (cause != null && depth <= 3) {
+                        details.put("cause_" + depth, cause.getClass().getName() + ": " +
+                                        (cause.getMessage() != null ? cause.getMessage() : "No message"));
+                        cause = cause.getCause();
+                        depth++;
+                }
+
                 ErrorResponse errorResponse = ErrorResponse.builder()
                                 .timestamp(LocalDateTime.now())
                                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                                 .error("Internal Server Error")
-                                .message("Ha ocurrido un error interno en el servidor")
+                                .message(ex.getMessage() != null ? ex.getMessage()
+                                                : "Ha ocurrido un error interno en el servidor")
                                 .path(request.getDescription(false).replace("uri=", ""))
+                                .validationErrors(details)
                                 .build();
 
                 return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);

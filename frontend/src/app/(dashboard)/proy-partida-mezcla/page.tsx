@@ -109,7 +109,25 @@ export default function ProyPartidaMezclaPage() {
 
   // Mutación para crear
   const createMutation = useMutation({
-    mutationFn: proyPartidaMezclaService.create,
+    mutationFn: (data: ProyPartidaMezclaForm) => {
+      console.log('=== DATOS ENVIADOS (PROY PARTIDA MEZCLA) ===');
+      console.log('codCia:', data.codCia);
+      console.log('codPyto:', data.codPyto);
+      console.log('ingEgr:', data.ingEgr);
+      console.log('nroVersion:', data.nroVersion);
+      console.log('codPartida:', data.codPartida);
+      console.log('corr:', data.corr);
+      console.log('padCodPartida:', data.padCodPartida);
+      console.log('tUniMed:', data.tUniMed);
+      console.log('eUniMed:', data.eUniMed);
+      console.log('nivel:', data.nivel);
+      console.log('orden:', data.orden);
+      console.log('costoUnit:', data.costoUnit);
+      console.log('cant:', data.cant);
+      console.log('costoTot:', data.costoTot);
+      console.log('========================================');
+      return proyPartidaMezclaService.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proy-partida-mezcla'] });
       toast.success('Partida mezcla de proyecto creada exitosamente');
@@ -203,6 +221,32 @@ export default function ProyPartidaMezclaPage() {
   };
 
   const handleSubmit = () => {
+    // Validaciones
+    if (!formData.codPyto || formData.codPyto === 0) {
+      toast.error('Debes seleccionar un proyecto');
+      return;
+    }
+    if (!formData.codPartida || formData.codPartida === 0) {
+      toast.error('Debes seleccionar una partida');
+      return;
+    }
+    if (!formData.corr || formData.corr === 0) {
+      toast.error('El correlativo es obligatorio');
+      return;
+    }
+    if (!formData.padCodPartida || formData.padCodPartida === 0) {
+      toast.error('Debes seleccionar una partida padre');
+      return;
+    }
+    if (!formData.tUniMed || formData.tUniMed.trim() === '') {
+      toast.error('La tabla de unidad de medida es obligatoria');
+      return;
+    }
+    if (!formData.eUniMed || formData.eUniMed.trim() === '') {
+      toast.error('El estado de unidad de medida es obligatorio');
+      return;
+    }
+
     // Calcular costo total
     const data = {
       ...formData,
@@ -256,7 +300,7 @@ export default function ProyPartidaMezclaPage() {
             Gestión de composición específica de partidas por proyecto
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
+        <Button onClick={handleOpenCreate} disabled={partidas.length === 0}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva Partida Mezcla
         </Button>
@@ -307,6 +351,33 @@ export default function ProyPartidaMezclaPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Advertencia si no hay partidas */}
+      {partidas.length === 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <ListTree className="h-5 w-5 text-orange-600" />
+              <div>
+                <p className="font-medium text-orange-900">
+                  No hay partidas disponibles
+                </p>
+                <p className="text-sm text-orange-700">
+                  Necesitas crear partidas antes de crear partidas mezcla de proyecto.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => (window.location.href = '/partidas')}
+              >
+                Ir a Partidas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filtros */}
       <div className="flex items-center gap-4">
@@ -471,10 +542,10 @@ export default function ProyPartidaMezclaPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Tipo</Label>
+                <Label>Tipo *</Label>
                 <Select
                   value={formData.ingEgr}
-                  onValueChange={(value) => setFormData({ ...formData, ingEgr: value })}
+                  onValueChange={(value) => setFormData({ ...formData, ingEgr: value, codPartida: 0, padCodPartida: 0 })}
                   disabled={isEditing}
                 >
                   <SelectTrigger>
@@ -487,32 +558,58 @@ export default function ProyPartidaMezclaPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Cód. Partida</Label>
-                <Input
-                  type="number"
-                  value={formData.codPartida}
-                  onChange={(e) => setFormData({ ...formData, codPartida: Number(e.target.value) })}
-                  disabled={isEditing}
-                />
+                <Label>Partida *</Label>
+                <Select
+                  value={String(formData.codPartida)}
+                  onValueChange={(value) => setFormData({ ...formData, codPartida: Number(value) })}
+                  disabled={isEditing || partidas.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona partida" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partidas
+                      .filter((p: any) => p.ingEgr === formData.ingEgr)
+                      .map((p: any) => (
+                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                          {p.codPartida} - {p.desPartida}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
-                <Label>Correlativo</Label>
+                <Label>Correlativo *</Label>
                 <Input
                   type="number"
                   value={formData.corr}
                   onChange={(e) => setFormData({ ...formData, corr: Number(e.target.value) })}
                   disabled={isEditing}
+                  min={1}
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Partida Padre</Label>
-                <Input
-                  type="number"
-                  value={formData.padCodPartida}
-                  onChange={(e) => setFormData({ ...formData, padCodPartida: Number(e.target.value) })}
-                />
+                <Label>Partida Padre *</Label>
+                <Select
+                  value={String(formData.padCodPartida)}
+                  onValueChange={(value) => setFormData({ ...formData, padCodPartida: Number(value) })}
+                  disabled={partidas.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona partida padre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partidas
+                      .filter((p: any) => p.ingEgr === formData.ingEgr && p.codPartida !== formData.codPartida)
+                      .map((p: any) => (
+                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                          {p.codPartida} - {p.desPartida}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Nivel</Label>

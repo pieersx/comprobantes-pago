@@ -61,12 +61,12 @@ const initialFormState: PartidaMezclaForm = {
   codCia: 1,
   ingEgr: 'E',
   codPartida: 0,
-  corr: 0,
+  corr: 1,
   padCodPartida: 0,
   tUniMed: '012',
   eUniMed: '001',
   costoUnit: 0,
-  nivel: 1,
+  nivel: 3,
   orden: 1,
   vigente: '1',
 };
@@ -94,7 +94,22 @@ export default function PartidaMezclaPage() {
 
   // Mutación para crear
   const createMutation = useMutation({
-    mutationFn: partidaMezclaService.create,
+    mutationFn: (data: PartidaMezclaForm) => {
+      console.log('=== DATOS ENVIADOS (PARTIDA MEZCLA) ===');
+      console.log('codCia:', data.codCia);
+      console.log('ingEgr:', data.ingEgr);
+      console.log('codPartida:', data.codPartida);
+      console.log('corr:', data.corr);
+      console.log('padCodPartida:', data.padCodPartida);
+      console.log('tUniMed:', data.tUniMed, '(tipo:', typeof data.tUniMed + ')');
+      console.log('eUniMed:', data.eUniMed, '(tipo:', typeof data.eUniMed + ')');
+      console.log('costoUnit:', data.costoUnit);
+      console.log('nivel:', data.nivel);
+      console.log('orden:', data.orden);
+      console.log('vigente:', data.vigente);
+      console.log('=== FIN DATOS ===');
+      return partidaMezclaService.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partida-mezcla'] });
       toast.success('Partida mezcla creada exitosamente');
@@ -102,7 +117,9 @@ export default function PartidaMezclaPage() {
       resetForm();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error al crear partida mezcla');
+      console.error('Error al crear partida mezcla:', error);
+      const errorMessage = error.message || 'Error al crear partida mezcla';
+      toast.error(errorMessage);
     },
   });
 
@@ -176,6 +193,32 @@ export default function PartidaMezclaPage() {
   };
 
   const handleSubmit = () => {
+    // Validar campos obligatorios
+    if (!formData.ingEgr || formData.ingEgr.trim() === '') {
+      toast.error('El tipo (Ingreso/Egreso) es obligatorio');
+      return;
+    }
+    if (formData.codPartida === null || formData.codPartida === 0) {
+      toast.error('El código de partida es obligatorio');
+      return;
+    }
+    if (formData.corr === null || formData.corr === 0) {
+      toast.error('El correlativo es obligatorio');
+      return;
+    }
+    if (formData.padCodPartida === null || formData.padCodPartida === 0) {
+      toast.error('La partida padre es obligatoria');
+      return;
+    }
+    if (!formData.tUniMed || formData.tUniMed.trim() === '') {
+      toast.error('La unidad de medida técnica es obligatoria');
+      return;
+    }
+    if (!formData.eUniMed || formData.eUniMed.trim() === '') {
+      toast.error('La unidad de medida económica es obligatoria');
+      return;
+    }
+
     if (isEditing) {
       updateMutation.mutate(formData);
     } else {
@@ -212,11 +255,43 @@ export default function PartidaMezclaPage() {
             Gestión de composición general de partidas presupuestales
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
+        <Button onClick={handleOpenCreate} disabled={partidas.length === 0}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva Partida Mezcla
         </Button>
       </div>
+
+      {/* Alerta si no hay partidas */}
+      {partidas.length === 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <span className="text-xl">⚠️</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-900 mb-2">
+                  No hay partidas disponibles
+                </h3>
+                <p className="text-sm text-yellow-800 mb-4">
+                  Para crear partidas mezcla, primero necesitas crear partidas en el módulo de
+                  Partidas. Las partidas mezcla requieren partidas existentes como referencia.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => (window.location.href = '/partidas')}
+                  className="border-yellow-300 hover:bg-yellow-100"
+                >
+                  Ir a Partidas
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Estadísticas */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -342,9 +417,17 @@ export default function PartidaMezclaPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Advertencia si no hay partidas */}
+            {partidas.length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                <strong>⚠️ Advertencia:</strong> No hay partidas registradas. Primero debes crear
+                partidas en el módulo de <strong>Partidas</strong> antes de crear partidas mezcla.
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Tipo</Label>
+                <Label>Tipo *</Label>
                 <Select
                   value={formData.ingEgr}
                   onValueChange={(value) => setFormData({ ...formData, ingEgr: value })}
@@ -360,32 +443,58 @@ export default function PartidaMezclaPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Cód. Partida</Label>
-                <Input
-                  type="number"
-                  value={formData.codPartida}
-                  onChange={(e) => setFormData({ ...formData, codPartida: Number(e.target.value) })}
-                  disabled={isEditing}
-                />
+                <Label>Partida *</Label>
+                <Select
+                  value={String(formData.codPartida)}
+                  onValueChange={(value) => setFormData({ ...formData, codPartida: Number(value) })}
+                  disabled={isEditing || partidas.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona partida" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partidas
+                      .filter((p: any) => p.ingEgr === formData.ingEgr)
+                      .map((p: any) => (
+                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                          {p.codPartida} - {p.desPartida}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Correlativo</Label>
+                <Label>Correlativo *</Label>
                 <Input
                   type="number"
                   value={formData.corr}
                   onChange={(e) => setFormData({ ...formData, corr: Number(e.target.value) })}
                   disabled={isEditing}
+                  placeholder="1"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Partida Padre</Label>
-                <Input
-                  type="number"
-                  value={formData.padCodPartida}
-                  onChange={(e) => setFormData({ ...formData, padCodPartida: Number(e.target.value) })}
-                />
+                <Label>Partida Padre *</Label>
+                <Select
+                  value={String(formData.padCodPartida)}
+                  onValueChange={(value) => setFormData({ ...formData, padCodPartida: Number(value) })}
+                  disabled={partidas.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona padre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partidas
+                      .filter((p: any) => p.ingEgr === formData.ingEgr)
+                      .map((p: any) => (
+                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                          {p.codPartida} - {p.desPartida}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
