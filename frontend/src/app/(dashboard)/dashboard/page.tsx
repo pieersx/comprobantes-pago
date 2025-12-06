@@ -221,7 +221,6 @@ export default function DashboardPage() {
         <TabsList>
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="analytics">Análisis</TabsTrigger>
-          <TabsTrigger value="reports">Reportes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -332,21 +331,7 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reportes Disponibles</CardTitle>
-              <CardDescription>
-                Genera reportes personalizados del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Funcionalidad de reportes en desarrollo...
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        
       </Tabs>
     </div>
   );

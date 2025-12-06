@@ -257,12 +257,7 @@ export default function DetalleEmpresaPage() {
               Ver Todos los Proyectos
             </Button>
           </Link>
-          <Link href={`/reportes?empresa=${empresaId}`}>
-            <Button variant="outline">
-              <FileText className="mr-2 h-4 w-4" />
-              Ver Reportes
-            </Button>
-          </Link>
+          
         </CardContent>
       </Card>
     </div>

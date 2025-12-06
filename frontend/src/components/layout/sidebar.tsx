@@ -8,23 +8,17 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import {
-    BarChart3,
-    Building2,
     ChevronDown,
     ChevronLeft,
     ChevronRight,
     FileText,
-    FolderKanban,
     Layers,
     LayoutDashboard,
     ListTree,
     Package,
-    Settings,
     Shuffle,
     TrendingDown,
     TrendingUp,
-    Users,
-    Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -41,11 +35,6 @@ const navigation = [
   { name: 'Comprobantes', href: '/comprobantes', icon: FileText },
   { name: 'Ingresos', href: '/ingresos', icon: TrendingUp },
   { name: 'Egresos', href: '/egresos', icon: TrendingDown },
-  { name: 'Flujo de Caja', href: '/flujo-caja', icon: Wallet },
-  { name: 'Proyectos', href: '/proyectos', icon: FolderKanban },
-  { name: 'Clientes', href: '/clientes', icon: Users },
-  { name: 'Proveedores', href: '/proveedores', icon: Building2 },
-  { name: 'Empleados', href: '/empleados', icon: Users },
 ];
 
 // Submenú de Partidas
@@ -54,12 +43,6 @@ const partidasSubmenu = [
   { name: 'Partida Mezcla', href: '/partida-mezcla', icon: Shuffle },
   { name: 'Proy. Partida', href: '/proy-partida', icon: Layers },
   { name: 'Proy. Partida Mezcla', href: '/proy-partida-mezcla', icon: ListTree },
-];
-
-// Navegación secundaria
-const secondaryNavigation = [
-  { name: 'Reportes', href: '/reportes', icon: BarChart3 },
-  { name: 'Configuración', href: '/configuracion', icon: Settings },
 ];
 
 export function Sidebar({ open, setOpen }: SidebarProps) {
@@ -197,28 +180,6 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
               <Package className="h-5 w-5 flex-shrink-0" />
             </Link>
           )}
-
-          {/* Navegación secundaria */}
-          {secondaryNavigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  !open && 'justify-center'
-                )}
-                title={!open ? item.name : undefined}
-              >
-                <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive && 'text-primary-foreground')} />
-                {open && <span>{item.name}</span>}
-              </Link>
-            );
-          })}
         </nav>
 
         {/* Footer */}
