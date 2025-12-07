@@ -4,43 +4,43 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { partidasService, proyPartidaMezclaService } from '@/services/partidas.service';
 import { proyectosService } from '@/services/proyectos.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Edit,
-    FolderKanban,
-    ListTree,
-    Loader2,
-    Plus,
-    Search,
-    Trash2,
-    TrendingDown,
-    TrendingUp,
+  Edit,
+  FolderKanban,
+  ListTree,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -273,27 +273,23 @@ export default function ProyPartidaMezclaPage() {
 
   // Obtener partidas válidas como padre
   const getValidParentPartidas = () => {
-    // Las partidas válidas como padre son aquellas que:
-    // 1. Para nivel 1: cualquier partida del mismo tipo (raíz)
-    // 2. Para nivel > 1: partidas que existen como padre en partida_mezcla del mismo tipo
-
+    // Nivel 1: la partida se referencia a sí misma (auto-referencia)
     if (formData.nivel === 1) {
-      // Nivel 1: pueden ser padre CUALQUIER partida del mismo tipo
-      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr);
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
     }
 
-    // Nivel > 1: solo partidas que ya existen como padre
-    const allParentCodes = new Set(
-      proyPartidasMezcla.map((item: any) => item.padCodPartida)
-    );
+    // Nivel 2: puede tener como padre partidas de nivel 1
+    if (formData.nivel === 2) {
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
+    }
 
-    return partidas.filter((p: any) => {
-      return (
-        allParentCodes.has(p.codPartida) &&
-        p.ingEgr === formData.ingEgr &&
-        p.codPartida !== formData.codPartida
-      );
-    });
+    // Nivel 3: puede tener como padre partidas de nivel 2
+    if (formData.nivel === 3) {
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 2);
+    }
+
+    // Nivel > 3: partidas del nivel anterior
+    return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === formData.nivel - 1);
   };
 
   const filteredData = proyPartidasMezcla
@@ -656,34 +652,44 @@ export default function ProyPartidaMezclaPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label>Nivel *</Label>
+                <Select
+                  value={String(formData.nivel)}
+                  onValueChange={(value) => setFormData({ ...formData, nivel: Number(value), padCodPartida: 0 })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Nivel 1 (Raíz)</SelectItem>
+                    <SelectItem value="2">Nivel 2</SelectItem>
+                    <SelectItem value="3">Nivel 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Partida Padre *</Label>
                 <Select
-                  value={String(formData.padCodPartida)}
+                  value={formData.padCodPartida > 0 ? String(formData.padCodPartida) : ''}
                   onValueChange={(value) => setFormData({ ...formData, padCodPartida: Number(value) })}
                   disabled={partidas.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona partida padre" />
+                    <SelectValue placeholder="Selecciona padre" />
                   </SelectTrigger>
                   <SelectContent>
                     {getValidParentPartidas().map((p: any) => (
-                      <SelectItem key={p.codPartida} value={String(p.codPartida)}>
-                        {p.codPartida} - {p.desPartida}
+                      <SelectItem key={`${p.ingEgr}-${p.codPartida}`} value={String(p.codPartida)}>
+                        {p.codPartida} - {p.desPartida} (Nivel {p.nivel})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Solo se muestran partidas válidas como padre (que existen en Partida Mezcla)
+                  {formData.nivel === 1
+                    ? 'Nivel 1: Selecciona partida de nivel 1'
+                    : `Nivel ${formData.nivel}: Selecciona partida de nivel ${formData.nivel - 1}`}
                 </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Nivel</Label>
-                <Input
-                  type="number"
-                  value={formData.nivel}
-                  onChange={(e) => setFormData({ ...formData, nivel: Number(e.target.value) })}
-                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
