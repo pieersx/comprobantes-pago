@@ -74,6 +74,8 @@ const initialFormState: PartidaMezclaForm = {
 export default function PartidaMezclaPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipo, setFilterTipo] = useState<string>('all');
+  const [filterNivel, setFilterNivel] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -226,11 +228,20 @@ export default function PartidaMezclaPage() {
     }
   };
 
-  const filteredData = partidasMezcla.filter(
-    (item: any) =>
+  const filteredData = partidasMezcla
+    .filter((item: any) =>
       String(item.codPartida).includes(searchTerm) ||
       String(item.padCodPartida).includes(searchTerm)
-  );
+    )
+    .filter((item: any) => (filterTipo === 'all' ? true : item.ingEgr === filterTipo))
+    .filter((item: any) => (filterNivel === 'all' ? true : String(item.nivel) === filterNivel))
+    .sort((a: any, b: any) => {
+      // Orden jerárquico: padre -> nivel -> orden -> hijo
+      if (a.padCodPartida !== b.padCodPartida) return a.padCodPartida - b.padCodPartida;
+      if (a.nivel !== b.nivel) return a.nivel - b.nivel;
+      if (a.orden !== b.orden) return a.orden - b.orden;
+      return a.codPartida - b.codPartida;
+    });
 
   const getPartidaNombre = (codPartida: number) => {
     const partida = partidas.find((p: any) => p.codPartida === codPartida);
@@ -352,16 +363,38 @@ export default function PartidaMezclaPage() {
       </div>
 
       {/* Búsqueda */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por código de partida..."
+            placeholder="Buscar por código o padre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
+        <Select value={filterTipo} onValueChange={setFilterTipo}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="I">Ingresos</SelectItem>
+            <SelectItem value="E">Egresos</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterNivel} onValueChange={setFilterNivel}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Nivel" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="1">Nivel 1</SelectItem>
+            <SelectItem value="2">Nivel 2</SelectItem>
+            <SelectItem value="3">Nivel 3</SelectItem>
+            <SelectItem value="4">Nivel 4</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Tabla */}
@@ -370,13 +403,12 @@ export default function PartidaMezclaPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Partida Padre</TableHead>
-                <TableHead>Partida Hijo</TableHead>
-                <TableHead>Nivel</TableHead>
-                <TableHead>Orden</TableHead>
+                <TableHead>Partida</TableHead>
+                <TableHead>Padre</TableHead>
                 <TableHead>Tipo</TableHead>
-                <TableHead>Corr</TableHead>
-                <TableHead>Costo Unit.</TableHead>
+                <TableHead className="text-center">Nivel</TableHead>
+                <TableHead className="text-center">Orden</TableHead>
+                <TableHead className="text-right">Costo Unit.</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -384,7 +416,7 @@ export default function PartidaMezclaPage() {
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No hay partidas mezcla registradas
                   </TableCell>
                 </TableRow>
@@ -404,29 +436,30 @@ export default function PartidaMezclaPage() {
                     <TableRow key={`${item.codCia}-${item.ingEgr}-${item.codPartida}-${item.corr}`}>
                       <TableCell>
                         <div>
-                          <span className="font-mono font-semibold">{item.padCodPartida}</span>
-                          <span className="text-muted-foreground ml-2 text-sm">
-                            {getPartidaNombre(item.padCodPartida)}
-                          </span>
+                          <span className="font-mono text-sm font-semibold">{item.codPartida}</span>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {getPartidaNombre(item.codPartida)}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <span className="font-mono font-semibold">{item.codPartida}</span>
-                          <span className="text-muted-foreground ml-2 text-sm">
-                            {getPartidaNombre(item.codPartida)}
-                          </span>
+                          <span className="font-mono text-sm text-muted-foreground">{item.padCodPartida}</span>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {getPartidaNombre(item.padCodPartida)}
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-bold">{item.nivel}</TableCell>
-                      <TableCell className="text-center font-bold">{item.orden}</TableCell>
                       <TableCell>
                         <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                          {item.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
+                          {item.ingEgr === 'I' ? 'I' : 'E'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.corr}</TableCell>
-                      <TableCell>S/ {item.costoUnit?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell className="text-center">{item.nivel}</TableCell>
+                      <TableCell className="text-center">{item.orden}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        S/ {item.costoUnit?.toFixed(2) || '0.00'}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
                           {item.vigente === '1' || item.vigente === 'S' ? 'Activo' : 'Inactivo'}

@@ -83,6 +83,8 @@ export default function ProyPartidaMezclaPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProyecto, setFilterProyecto] = useState<string>('all');
+  const [filterTipo, setFilterTipo] = useState<string>('all');
+  const [filterNivel, setFilterNivel] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -292,15 +294,23 @@ export default function ProyPartidaMezclaPage() {
         p.codPartida !== formData.codPartida
       );
     });
-  };  const filteredData = proyPartidasMezcla.filter((item: any) => {
-    const matchesSearch =
+  };
+
+  const filteredData = proyPartidasMezcla
+    .filter((item: any) =>
       String(item.codPartida).includes(searchTerm) ||
-      getProyectoNombre(item.codPyto).toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesProyecto = filterProyecto === 'all' || String(item.codPyto) === filterProyecto;
-
-    return matchesSearch && matchesProyecto;
-  });
+      getProyectoNombre(item.codPyto).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((item: any) => (filterProyecto === 'all' ? true : String(item.codPyto) === filterProyecto))
+    .filter((item: any) => (filterTipo === 'all' ? true : item.ingEgr === filterTipo))
+    .filter((item: any) => (filterNivel === 'all' ? true : String(item.nivel) === filterNivel))
+    .sort((a: any, b: any) => {
+      if (a.codPyto !== b.codPyto) return a.codPyto - b.codPyto;
+      if (a.padCodPartida !== b.padCodPartida) return a.padCodPartida - b.padCodPartida;
+      if (a.nivel !== b.nivel) return a.nivel - b.nivel;
+      if (a.orden !== b.orden) return a.orden - b.orden;
+      return a.codPartida - b.codPartida;
+    });
 
   // Calcular totales
   const totalCosto = filteredData.reduce((sum: number, item: any) => sum + (item.costoTot || 0), 0);
@@ -403,7 +413,7 @@ export default function ProyPartidaMezclaPage() {
       )}
 
       {/* Filtros */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -415,15 +425,37 @@ export default function ProyPartidaMezclaPage() {
         </div>
         <Select value={filterProyecto} onValueChange={setFilterProyecto}>
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filtrar por proyecto" />
+            <SelectValue placeholder="Proyecto" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los proyectos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             {proyectos.map((p: any) => (
               <SelectItem key={p.codPyto} value={String(p.codPyto)}>
                 {p.nombPyto}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterTipo} onValueChange={setFilterTipo}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="I">Ingresos</SelectItem>
+            <SelectItem value="E">Egresos</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterNivel} onValueChange={setFilterNivel}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Nivel" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="1">Nivel 1</SelectItem>
+            <SelectItem value="2">Nivel 2</SelectItem>
+            <SelectItem value="3">Nivel 3</SelectItem>
+            <SelectItem value="4">Nivel 4</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -435,12 +467,13 @@ export default function ProyPartidaMezclaPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Proyecto</TableHead>
-                <TableHead>Ver.</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Partida</TableHead>
-                <TableHead>Corr</TableHead>
+                <TableHead>Versión</TableHead>
                 <TableHead>Padre</TableHead>
+                <TableHead>Partida</TableHead>
                 <TableHead>Nivel</TableHead>
+                <TableHead>Orden</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Corr</TableHead>
                 <TableHead className="text-right">Costo U.</TableHead>
                 <TableHead className="text-right">Cant.</TableHead>
                 <TableHead className="text-right">Costo Total</TableHead>
@@ -465,6 +498,24 @@ export default function ProyPartidaMezclaPage() {
                       </TableCell>
                       <TableCell>{item.nroVersion}</TableCell>
                       <TableCell>
+                        <div>
+                          <span className="font-mono text-sm font-semibold">{item.padCodPartida}</span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            {getPartidaNombre(item.padCodPartida)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <span className="font-mono text-sm font-semibold">{item.codPartida}</span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            {getPartidaNombre(item.codPartida)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-bold">{item.nivel}</TableCell>
+                      <TableCell className="text-center font-bold">{item.orden}</TableCell>
+                      <TableCell>
                         <Badge
                           className={
                             item.ingEgr === 'I'
@@ -472,17 +523,10 @@ export default function ProyPartidaMezclaPage() {
                               : 'bg-red-100 text-red-700'
                           }
                         >
-                          {item.ingEgr === 'I' ? 'I' : 'E'}
+                          {item.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm">{item.codPartida}</span>
-                      </TableCell>
                       <TableCell>{item.corr}</TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm">{item.padCodPartida}</span>
-                      </TableCell>
-                      <TableCell>{item.nivel}</TableCell>
                       <TableCell className="text-right font-mono">
                         S/ {item.costoUnit?.toFixed(2) || '0.00'}
                       </TableCell>
