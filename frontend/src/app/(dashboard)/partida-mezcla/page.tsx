@@ -4,41 +4,41 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { partidaMezclaService, partidasService } from '@/services/partidas.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Edit,
-    Loader2,
-    Plus,
-    Search,
-    Shuffle,
-    Trash2,
-    TrendingDown,
-    TrendingUp,
+  Edit,
+  Loader2,
+  Plus,
+  Search,
+  Shuffle,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -250,27 +250,24 @@ export default function PartidaMezclaPage() {
 
   // Obtener partidas válidas como padre
   const getValidParentPartidas = () => {
-    // Las partidas válidas como padre son aquellas que:
-    // 1. Para nivel 1: cualquier partida del mismo tipo (raíz)
-    // 2. Para nivel > 1: partidas que existen como padre en partida_mezcla del mismo tipo
-
+    // Nivel 1: la partida se referencia a sí misma (auto-referencia)
     if (formData.nivel === 1) {
-      // Nivel 1: pueden ser padre CUALQUIER partida del mismo tipo
-      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr);
+      // Solo mostrar partidas de nivel 1 del mismo tipo
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
     }
 
-    // Nivel > 1: solo partidas que ya existen como padre
-    const allParentCodes = new Set(
-      partidasMezcla.map((item: any) => item.padCodPartida)
-    );
+    // Nivel 2: puede tener como padre partidas de nivel 1
+    if (formData.nivel === 2) {
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
+    }
 
-    return partidas.filter((p: any) => {
-      return (
-        allParentCodes.has(p.codPartida) &&
-        p.ingEgr === formData.ingEgr &&
-        p.codPartida !== formData.codPartida
-      );
-    });
+    // Nivel 3: puede tener como padre partidas de nivel 2
+    if (formData.nivel === 3) {
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 2);
+    }
+
+    // Nivel > 3: partidas del nivel anterior
+    return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === formData.nivel - 1);
   };  if (isLoading) {
     return (
       <div className="flex h-[450px] items-center justify-center">
@@ -586,12 +583,20 @@ export default function PartidaMezclaPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Nivel</Label>
-                <Input
-                  type="number"
-                  value={formData.nivel}
-                  onChange={(e) => setFormData({ ...formData, nivel: Number(e.target.value) })}
-                />
+                <Label>Nivel *</Label>
+                <Select
+                  value={String(formData.nivel)}
+                  onValueChange={(value) => setFormData({ ...formData, nivel: Number(value), padCodPartida: 0 })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Nivel 1 (Raíz)</SelectItem>
+                    <SelectItem value="2">Nivel 2</SelectItem>
+                    <SelectItem value="3">Nivel 3</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
