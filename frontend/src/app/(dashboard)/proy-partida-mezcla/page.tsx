@@ -460,101 +460,99 @@ export default function ProyPartidaMezclaPage() {
         </Select>
       </div>
 
-      {/* Tabla */}
+      {/* Tabla - TABLA PROY_PARTIDA_MEZCLA */}
       <Card>
+        <CardHeader className="py-3 bg-purple-50 border-b">
+          <CardTitle className="text-sm font-medium">
+            TABLA: PROY_PARTIDA_MEZCLA (Composición y Costos por Proyecto)
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Proyecto</TableHead>
-                <TableHead>Versión</TableHead>
-                <TableHead>Padre</TableHead>
-                <TableHead>Partida</TableHead>
-                <TableHead>Nivel</TableHead>
-                <TableHead>Orden</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Corr</TableHead>
-                <TableHead className="text-right">Costo U.</TableHead>
-                <TableHead className="text-right">Cant.</TableHead>
-                <TableHead className="text-right">Costo Total</TableHead>
+              <TableRow className="bg-purple-100/50">
+                <TableHead className="font-bold">CODCIA</TableHead>
+                <TableHead className="font-bold">CODPYTO</TableHead>
+                <TableHead className="font-bold">INGEGR</TableHead>
+                <TableHead className="font-bold">NROVERSION</TableHead>
+                <TableHead className="font-bold">CODPARTIDA</TableHead>
+                <TableHead className="font-bold">CORR</TableHead>
+                <TableHead className="font-bold">PADCODPARTIDA</TableHead>
+                <TableHead className="font-bold text-center">NIVEL</TableHead>
+                <TableHead className="font-bold text-center">ORDEN</TableHead>
+                <TableHead className="font-bold text-right">COSTUNIT</TableHead>
+                <TableHead className="font-bold text-right">CANT</TableHead>
+                <TableHead className="font-bold text-right">COSTOTOT</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                     No hay partidas mezcla de proyecto registradas
                   </TableCell>
                 </TableRow>
               ) : (
                 <>
-                  {filteredData.map((item: any) => (
-                    <TableRow
-                      key={`${item.codCia}-${item.codPyto}-${item.ingEgr}-${item.nroVersion}-${item.codPartida}-${item.corr}`}
-                    >
-                      <TableCell>
-                        <div className="font-medium text-sm">{getProyectoNombre(item.codPyto)}</div>
-                      </TableCell>
-                      <TableCell>{item.nroVersion}</TableCell>
-                      <TableCell>
-                        <div>
-                          <span className="font-mono text-sm font-semibold">{item.padCodPartida}</span>
-                          <span className="text-muted-foreground ml-2 text-xs">
-                            {getPartidaNombre(item.padCodPartida)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <span className="font-mono text-sm font-semibold">{item.codPartida}</span>
-                          <span className="text-muted-foreground ml-2 text-xs">
-                            {getPartidaNombre(item.codPartida)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center font-bold">{item.nivel}</TableCell>
-                      <TableCell className="text-center font-bold">{item.orden}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            item.ingEgr === 'I'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
-                          }
-                        >
-                          {item.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{item.corr}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        S/ {item.costoUnit?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.cant?.toFixed(3) || '0.000'}
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-medium">
-                        S/ {item.costoTot?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredData.map((item: any) => {
+                    const nivelColor = item.nivel === 1 ? 'bg-yellow-50' : item.nivel === 2 ? 'bg-orange-50' : item.nivel === 3 ? 'bg-green-50' : 'bg-blue-50';
+                    return (
+                      <TableRow
+                        key={`${item.codCia}-${item.codPyto}-${item.ingEgr}-${item.nroVersion}-${item.codPartida}-${item.corr}`}
+                        className={nivelColor}
+                      >
+                        <TableCell className="font-mono">{item.codCia}</TableCell>
+                        <TableCell className="font-mono font-bold">{item.codPyto}</TableCell>
+                        <TableCell>
+                          <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                            {item.ingEgr}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono">{item.nroVersion}</TableCell>
+                        <TableCell className="font-mono font-bold">{item.codPartida}</TableCell>
+                        <TableCell className="font-mono">{item.corr}</TableCell>
+                        <TableCell className="font-mono font-bold text-blue-600">{item.padCodPartida}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={
+                            item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
+                            item.nivel === 2 ? 'bg-orange-200 text-orange-800' :
+                            item.nivel === 3 ? 'bg-green-200 text-green-800' :
+                            'bg-blue-200 text-blue-800'
+                          }>
+                            {item.nivel}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center font-mono">{item.orden}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.costoUnit?.toFixed(2) || '0.00'}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.cant?.toFixed(3) || '0.000'}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold">
+                          {item.costoTot?.toFixed(2) || '0.00'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {/* Fila de totales */}
                   <TableRow className="bg-muted/50 font-medium">
-                    <TableCell colSpan={9} className="text-right">
-                      Total:
+                    <TableCell colSpan={11} className="text-right font-bold">
+                      TOTAL:
                     </TableCell>
                     <TableCell className="text-right font-mono font-bold">
-                      S/ {totalCosto.toFixed(2)}
+                      {totalCosto.toFixed(2)}
                     </TableCell>
                     <TableCell />
                   </TableRow>

@@ -397,86 +397,87 @@ export default function PartidaMezclaPage() {
         </Select>
       </div>
 
-      {/* Tabla */}
+      {/* Tabla - TABLA PARTIDA_MEZCLA */}
       <Card>
+        <CardHeader className="py-3 bg-orange-50 border-b">
+          <CardTitle className="text-sm font-medium">
+            TABLA: PARTIDA_MEZCLA (Composición Jerárquica General)
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Partida</TableHead>
-                <TableHead>Padre</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-center">Nivel</TableHead>
-                <TableHead className="text-center">Orden</TableHead>
-                <TableHead className="text-right">Costo Unit.</TableHead>
-                <TableHead>Estado</TableHead>
+              <TableRow className="bg-orange-100/50">
+                <TableHead className="font-bold">CODCIA</TableHead>
+                <TableHead className="font-bold">INGEGR</TableHead>
+                <TableHead className="font-bold">CODPARTIDA</TableHead>
+                <TableHead className="font-bold">CORR</TableHead>
+                <TableHead className="font-bold">PADCODPARTIDA</TableHead>
+                <TableHead className="font-bold text-center">NIVEL</TableHead>
+                <TableHead className="font-bold text-center">ORDEN</TableHead>
+                <TableHead className="font-bold">VIGENTE</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No hay partidas mezcla registradas
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredData
                   .sort((a: any, b: any) => {
-                    // Ordenar por: padCodPartida -> nivel -> orden
-                    if (a.padCodPartida !== b.padCodPartida) {
-                      return a.padCodPartida - b.padCodPartida;
-                    }
-                    if (a.nivel !== b.nivel) {
-                      return a.nivel - b.nivel;
-                    }
+                    if (a.ingEgr !== b.ingEgr) return a.ingEgr.localeCompare(b.ingEgr);
+                    if (a.padCodPartida !== b.padCodPartida) return a.padCodPartida - b.padCodPartida;
+                    if (a.nivel !== b.nivel) return a.nivel - b.nivel;
                     return a.orden - b.orden;
                   })
-                  .map((item: any) => (
-                    <TableRow key={`${item.codCia}-${item.ingEgr}-${item.codPartida}-${item.corr}`}>
-                      <TableCell>
-                        <div>
-                          <span className="font-mono text-sm font-semibold">{item.codPartida}</span>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {getPartidaNombre(item.codPartida)}
+                  .map((item: any) => {
+                    const nivelColor = item.nivel === 1 ? 'bg-yellow-50' : item.nivel === 2 ? 'bg-orange-50' : 'bg-green-50';
+                    return (
+                      <TableRow
+                        key={`${item.codCia}-${item.ingEgr}-${item.codPartida}-${item.corr}`}
+                        className={nivelColor}
+                      >
+                        <TableCell className="font-mono">{item.codCia}</TableCell>
+                        <TableCell>
+                          <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                            {item.ingEgr}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold">{item.codPartida}</TableCell>
+                        <TableCell className="font-mono">{item.corr}</TableCell>
+                        <TableCell className="font-mono font-bold text-blue-600">{item.padCodPartida}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={
+                            item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
+                            item.nivel === 2 ? 'bg-orange-200 text-orange-800' :
+                            'bg-green-200 text-green-800'
+                          }>
+                            {item.nivel}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center font-mono">{item.orden}</TableCell>
+                        <TableCell>
+                          <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
+                            {item.vigente}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <span className="font-mono text-sm text-muted-foreground">{item.padCodPartida}</span>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {getPartidaNombre(item.padCodPartida)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                          {item.ingEgr === 'I' ? 'I' : 'E'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">{item.nivel}</TableCell>
-                      <TableCell className="text-center">{item.orden}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        S/ {item.costoUnit?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
-                          {item.vigente === '1' || item.vigente === 'S' ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
               )}
             </TableBody>
           </Table>

@@ -350,8 +350,13 @@ export default function PartidasPage() {
         </Select>
       </div>
 
-      {/* Tabla de Partidas */}
+      {/* Tabla de Partidas - TABLA PARTIDA */}
       <Card>
+        <CardHeader className="py-3 bg-yellow-50 border-b">
+          <CardTitle className="text-sm font-medium">
+            TABLA: PARTIDA (Catálogo Base de Partidas Presupuestales)
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           {partidas.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -362,53 +367,69 @@ export default function PartidasPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Código Partida</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Unidad Medida</TableHead>
-                  <TableHead>Nivel</TableHead>
-                  <TableHead>Estado</TableHead>
+                <TableRow className="bg-yellow-100/50">
+                  <TableHead className="font-bold">CODCIA</TableHead>
+                  <TableHead className="font-bold">INGEGR</TableHead>
+                  <TableHead className="font-bold">CODPARTIDA</TableHead>
+                  <TableHead className="font-bold">CODPARTIDAS</TableHead>
+                  <TableHead className="font-bold">DESPARTIDA</TableHead>
+                  <TableHead className="font-bold text-center">NIVEL</TableHead>
+                  <TableHead className="font-bold">VIGENTE</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPartidas.map((partida: Partida) => {
-                  const TipoIcon = getTipoIcon(partida.ingEgr);
-                  return (
-                    <TableRow key={`${partida.codCia}-${partida.ingEgr}-${partida.codPartida}`}>
-                      <TableCell>
-                        <Badge className={getTipoColor(partida.ingEgr)}>
-                          <TipoIcon className="h-3 w-3 mr-1" />
-                          {partida.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono font-medium">{partida.codPartida}</TableCell>
-                      <TableCell className="font-mono text-sm">{partida.codPartidas}</TableCell>
-                      <TableCell className="font-medium">{partida.desPartida}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{partida.euniMed || partida.tuniMed}</Badge>
-                      </TableCell>
-                      <TableCell>{partida.nivel}</TableCell>
-                      <TableCell>
-                        <Badge variant={partida.vigente === 'S' || partida.vigente === '1' ? 'default' : 'secondary'}>
-                          {partida.vigente === 'S' || partida.vigente === '1' ? 'Activa' : 'Inactiva'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(partida)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(partida)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {filteredPartidas
+                  .sort((a, b) => {
+                    if (a.ingEgr !== b.ingEgr) return a.ingEgr.localeCompare(b.ingEgr);
+                    if (a.nivel !== b.nivel) return a.nivel - b.nivel;
+                    return a.codPartida - b.codPartida;
+                  })
+                  .map((partida: Partida) => {
+                    const nivelColor = partida.nivel === 1 ? 'bg-yellow-100' : partida.nivel === 2 ? 'bg-orange-100' : 'bg-green-100';
+                    return (
+                      <TableRow
+                        key={`${partida.codCia}-${partida.ingEgr}-${partida.codPartida}`}
+                        className={nivelColor}
+                      >
+                        <TableCell className="font-mono">{partida.codCia}</TableCell>
+                        <TableCell>
+                          <Badge className={partida.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                            {partida.ingEgr}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold">{partida.codPartida}</TableCell>
+                        <TableCell className="font-mono text-sm">{partida.codPartidas}</TableCell>
+                        <TableCell className="max-w-[250px]" title={partida.desPartida}>
+                          {partida.desPartida}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={
+                            partida.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
+                            partida.nivel === 2 ? 'bg-orange-200 text-orange-800' :
+                            'bg-green-200 text-green-800'
+                          }>
+                            {partida.nivel}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={partida.vigente === 'S' || partida.vigente === '1' ? 'default' : 'secondary'}>
+                            {partida.vigente}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(partida)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(partida)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           )}

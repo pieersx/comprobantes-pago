@@ -4,43 +4,43 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { partidasService, proyPartidaService } from '@/services/partidas.service';
 import { proyectosService } from '@/services/proyectos.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Edit,
-    FolderKanban,
-    Layers,
-    Loader2,
-    Plus,
-    Search,
-    Trash2,
-    TrendingDown,
-    TrendingUp,
+  Edit,
+  FolderKanban,
+  Layers,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -69,20 +69,20 @@ const initialFormState: ProyPartidaForm = {
   codPartidas: '',
   flgCC: 'N',
   nivel: 1,
-  uniMed: '012',
+  uniMed: 'UND',
   tabEstado: '014',
-  codEstado: '001',
+  codEstado: 'REG',
   vigente: '1',
 };
 
 export default function ProyPartidaPage() {
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterProyecto, setFilterProyecto] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<ProyPartidaForm>(initialFormState);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterProyecto, setFilterProyecto] = useState('all');
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
   // Obtener proyectos
@@ -389,20 +389,25 @@ export default function ProyPartidaPage() {
         </Select>
       </div>
 
-      {/* Tabla */}
+      {/* Tabla - TABLA PROY_PARTIDA */}
       <Card>
+        <CardHeader className="py-3 bg-green-50 border-b">
+          <CardTitle className="text-sm font-medium">
+            TABLA: PROY_PARTIDA (Partidas Asignadas a Proyectos)
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Proyecto</TableHead>
-                <TableHead>Versión</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Cód. Partida</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Nivel</TableHead>
-                <TableHead>Unidad</TableHead>
-                <TableHead>Estado</TableHead>
+              <TableRow className="bg-green-100/50">
+                <TableHead className="font-bold">CODCIA</TableHead>
+                <TableHead className="font-bold">CODPYTO</TableHead>
+                <TableHead className="font-bold">NROVERSION</TableHead>
+                <TableHead className="font-bold">INGEGR</TableHead>
+                <TableHead className="font-bold">CODPARTIDA</TableHead>
+                <TableHead className="font-bold">CODPARTIDAS</TableHead>
+                <TableHead className="font-bold text-center">NIVEL</TableHead>
+                <TableHead className="font-bold">VIGENTE</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -414,52 +419,58 @@ export default function ProyPartidaPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredData.map((item: any) => (
-                  <TableRow
-                    key={`${item.codCia}-${item.codPyto}-${item.nroVersion}-${item.ingEgr}-${item.codPartida}`}
-                  >
-                    <TableCell>
-                      <div className="font-medium">{getProyectoNombre(item.codPyto)}</div>
-                      <div className="text-xs text-muted-foreground">Cód: {item.codPyto}</div>
-                    </TableCell>
-                    <TableCell>{item.nroVersion}</TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }
+                filteredData
+                  .sort((a: any, b: any) => {
+                    if (a.codPyto !== b.codPyto) return a.codPyto - b.codPyto;
+                    if (a.nroVersion !== b.nroVersion) return a.nroVersion - b.nroVersion;
+                    if (a.ingEgr !== b.ingEgr) return a.ingEgr.localeCompare(b.ingEgr);
+                    if (a.nivel !== b.nivel) return a.nivel - b.nivel;
+                    return a.codPartida - b.codPartida;
+                  })
+                  .map((item: any) => {
+                    const nivelColor = item.nivel === 1 ? 'bg-yellow-50' : item.nivel === 2 ? 'bg-orange-50' : 'bg-green-50';
+                    return (
+                      <TableRow
+                        key={`${item.codCia}-${item.codPyto}-${item.nroVersion}-${item.ingEgr}-${item.codPartida}`}
+                        className={nivelColor}
                       >
-                        {item.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono">{item.codPartida}</span>
-                      <div className="text-xs text-muted-foreground">
-                        {getPartidaNombre(item.codPartida)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{item.codPartidas}</TableCell>
-                    <TableCell>{item.nivel}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{item.uniMed}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
-                        {item.vigente === '1' || item.vigente === 'S' ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                        <TableCell className="font-mono">{item.codCia}</TableCell>
+                        <TableCell className="font-mono font-bold">{item.codPyto}</TableCell>
+                        <TableCell className="font-mono">{item.nroVersion}</TableCell>
+                        <TableCell>
+                          <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                            {item.ingEgr}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold">{item.codPartida}</TableCell>
+                        <TableCell className="font-mono text-sm">{item.codPartidas}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={
+                            item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
+                            item.nivel === 2 ? 'bg-orange-200 text-orange-800' :
+                            'bg-green-200 text-green-800'
+                          }>
+                            {item.nivel}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
+                            {item.vigente}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
               )}
             </TableBody>
           </Table>
