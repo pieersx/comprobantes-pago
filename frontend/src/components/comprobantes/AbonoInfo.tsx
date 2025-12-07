@@ -43,6 +43,7 @@ interface AbonoInfoProps {
   codEmpleado?: number;
   nroCP: string;
   estado: 'REG' | 'PEN' | 'PAG' | 'ANU';
+  totalComprobante?: number;
   onEstadoChange?: () => void;
 }
 
@@ -53,6 +54,7 @@ export function AbonoInfo({
   codEmpleado,
   nroCP,
   estado,
+  totalComprobante,
   onEstadoChange,
 }: AbonoInfoProps) {
   const [abono, setAbono] = useState<AbonoData | null>(null);
@@ -228,6 +230,7 @@ export function AbonoInfo({
         codProveedor={codProveedor}
         codEmpleado={codEmpleado}
         nroCP={nroCP}
+        totalComprobante={totalComprobante}
         onSuccess={handleSuccess}
       />
 

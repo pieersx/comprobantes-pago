@@ -21,7 +21,7 @@ import {
 import { apiClient } from '@/lib/api';
 import { abonosService, type AbonoData } from '@/services/abonos.service';
 import { FileImage, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface RegistrarPagoModalProps {
@@ -32,6 +32,7 @@ interface RegistrarPagoModalProps {
   codProveedor?: number;
   codEmpleado?: number;
   nroCP: string;
+  totalComprobante?: number;
   onSuccess?: () => void;
 }
 
@@ -53,6 +54,7 @@ export function RegistrarPagoModal({
   codProveedor,
   codEmpleado,
   nroCP,
+  totalComprobante,
   onSuccess,
 }: RegistrarPagoModalProps) {
   // Obtener fecha local en formato YYYY-MM-DD
@@ -64,10 +66,20 @@ export function RegistrarPagoModal({
   const [formData, setFormData] = useState<AbonoData>({
     fechaAbono: obtenerFechaLocal(),
     descripcionMedioPago: '',
-    montoAbono: undefined,
+    montoAbono: totalComprobante,
     fotoAbono: '',
   });
   const [loading, setLoading] = useState(false);
+
+  // Actualizar el monto cuando se abre el modal o cambia el total
+  useEffect(() => {
+    if (open && totalComprobante !== undefined) {
+      setFormData(prev => ({
+        ...prev,
+        montoAbono: totalComprobante,
+      }));
+    }
+  }, [open, totalComprobante]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -158,6 +170,7 @@ export function RegistrarPagoModal({
     setFormData({
       fechaAbono: obtenerFechaLocal(),
       descripcionMedioPago: '',
+      montoAbono: totalComprobante,
       fotoAbono: '',
     });
     setSelectedFile(null);

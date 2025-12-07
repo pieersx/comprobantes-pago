@@ -822,6 +822,7 @@ export default function DetalleComprobantePage() {
         codEmpleado={tipo === 'egreso-empleado' ? comprobante.codEmpleado : undefined}
         nroCP={comprobante.nroCp}
         estado={mapEstadoToUI(comprobante.codEstado || 'REG')}
+        totalComprobante={comprobante.impTotalMn || 0}
         onEstadoChange={async () => {
           // Recargar comprobante para actualizar el estado
           if (tipo === 'egreso') {

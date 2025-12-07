@@ -408,8 +408,8 @@ export default function PartidaMezclaPage() {
                 <TableHead className="font-bold">CODCIA</TableHead>
                 <TableHead className="font-bold">INGEGR</TableHead>
                 <TableHead className="font-bold">CODPARTIDA</TableHead>
-                <TableHead className="font-bold">CORR</TableHead>
                 <TableHead className="font-bold">PADCODPARTIDA</TableHead>
+                <TableHead className="font-bold">CORR</TableHead>
                 <TableHead className="font-bold text-center">NIVEL</TableHead>
                 <TableHead className="font-bold text-center">ORDEN</TableHead>
                 <TableHead className="font-bold">VIGENTE</TableHead>
@@ -444,9 +444,15 @@ export default function PartidaMezclaPage() {
                             {item.ingEgr}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono font-bold">{item.codPartida}</TableCell>
+                        <TableCell>
+                          <div className="font-mono font-bold">{item.codPartida}</div>
+                          <div className="text-xs text-muted-foreground">{getPartidaNombre(item.codPartida)}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-mono font-bold text-blue-600">{item.padCodPartida}</div>
+                          <div className="text-xs text-muted-foreground">{getPartidaNombre(item.padCodPartida)}</div>
+                        </TableCell>
                         <TableCell className="font-mono">{item.corr}</TableCell>
-                        <TableCell className="font-mono font-bold text-blue-600">{item.padCodPartida}</TableCell>
                         <TableCell className="text-center">
                           <Badge className={
                             item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
