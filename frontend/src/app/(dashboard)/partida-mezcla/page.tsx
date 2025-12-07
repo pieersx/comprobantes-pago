@@ -237,7 +237,30 @@ export default function PartidaMezclaPage() {
     return partida?.desPartida || `Partida ${codPartida}`;
   };
 
-  if (isLoading) {
+  // Obtener partidas válidas como padre
+  const getValidParentPartidas = () => {
+    // Las partidas válidas como padre son aquellas que:
+    // 1. Para nivel 1: cualquier partida del mismo tipo (raíz)
+    // 2. Para nivel > 1: partidas que existen como padre en partida_mezcla del mismo tipo
+
+    if (formData.nivel === 1) {
+      // Nivel 1: pueden ser padre CUALQUIER partida del mismo tipo
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr);
+    }
+
+    // Nivel > 1: solo partidas que ya existen como padre
+    const allParentCodes = new Set(
+      partidasMezcla.map((item: any) => item.padCodPartida)
+    );
+
+    return partidas.filter((p: any) => {
+      return (
+        allParentCodes.has(p.codPartida) &&
+        p.ingEgr === formData.ingEgr &&
+        p.codPartida !== formData.codPartida
+      );
+    });
+  };  if (isLoading) {
     return (
       <div className="flex h-[450px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -347,13 +370,13 @@ export default function PartidaMezclaPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Cód. Partida</TableHead>
-                <TableHead>Corr</TableHead>
                 <TableHead>Partida Padre</TableHead>
-                <TableHead>Costo Unit.</TableHead>
+                <TableHead>Partida Hijo</TableHead>
                 <TableHead>Nivel</TableHead>
                 <TableHead>Orden</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Corr</TableHead>
+                <TableHead>Costo Unit.</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -366,41 +389,61 @@ export default function PartidaMezclaPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredData.map((item: any) => (
-                  <TableRow key={`${item.codCia}-${item.ingEgr}-${item.codPartida}-${item.corr}`}>
-                    <TableCell>
-                      <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                        {item.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono">{item.codPartida}</TableCell>
-                    <TableCell>{item.corr}</TableCell>
-                    <TableCell>
-                      <span className="font-mono">{item.padCodPartida}</span>
-                      <span className="text-muted-foreground ml-2 text-sm">
-                        {getPartidaNombre(item.padCodPartida)}
-                      </span>
-                    </TableCell>
-                    <TableCell>S/ {item.costoUnit?.toFixed(2) || '0.00'}</TableCell>
-                    <TableCell>{item.nivel}</TableCell>
-                    <TableCell>{item.orden}</TableCell>
-                    <TableCell>
-                      <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
-                        {item.vigente === '1' || item.vigente === 'S' ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredData
+                  .sort((a: any, b: any) => {
+                    // Ordenar por: padCodPartida -> nivel -> orden
+                    if (a.padCodPartida !== b.padCodPartida) {
+                      return a.padCodPartida - b.padCodPartida;
+                    }
+                    if (a.nivel !== b.nivel) {
+                      return a.nivel - b.nivel;
+                    }
+                    return a.orden - b.orden;
+                  })
+                  .map((item: any) => (
+                    <TableRow key={`${item.codCia}-${item.ingEgr}-${item.codPartida}-${item.corr}`}>
+                      <TableCell>
+                        <div>
+                          <span className="font-mono font-semibold">{item.padCodPartida}</span>
+                          <span className="text-muted-foreground ml-2 text-sm">
+                            {getPartidaNombre(item.padCodPartida)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <span className="font-mono font-semibold">{item.codPartida}</span>
+                          <span className="text-muted-foreground ml-2 text-sm">
+                            {getPartidaNombre(item.codPartida)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-bold">{item.nivel}</TableCell>
+                      <TableCell className="text-center font-bold">{item.orden}</TableCell>
+                      <TableCell>
+                        <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                          {item.ingEgr === 'I' ? 'Ingreso' : 'Egreso'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.corr}</TableCell>
+                      <TableCell>S/ {item.costoUnit?.toFixed(2) || '0.00'}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
+                          {item.vigente === '1' || item.vigente === 'S' ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
               )}
             </TableBody>
           </Table>
@@ -486,15 +529,16 @@ export default function PartidaMezclaPage() {
                     <SelectValue placeholder="Selecciona padre" />
                   </SelectTrigger>
                   <SelectContent>
-                    {partidas
-                      .filter((p: any) => p.ingEgr === formData.ingEgr)
-                      .map((p: any) => (
-                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
-                          {p.codPartida} - {p.desPartida}
-                        </SelectItem>
-                      ))}
+                    {getValidParentPartidas().map((p: any) => (
+                      <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                        {p.codPartida} - {p.desPartida}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Solo partidas válidas como padre
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

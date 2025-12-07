@@ -1,0 +1,411 @@
+TRUNCATE TABLE DPROY_PARTIDA_MEZCLA;
+TRUNCATE TABLE PROY_PARTIDA_MEZCLA;
+TRUNCATE TABLE PROY_PARTIDA;
+TRUNCATE TABLE PARTIDA_MEZCLA;
+TRUNCATE TABLE VTACOMP_PAGODET;
+TRUNCATE TABLE VTACOMP_PAGOCAB;
+
+TRUNCATE TABLE COMP_PAGODET;
+TRUNCATE TABLE COMP_PAGOCAB;
+TRUNCATE TABLE COMP_PAGOEMPLEADO_DET;
+
+TRUNCATE TABLE FLUJOCAJA_DET;
+TRUNCATE TABLE FLUJOCAJA;
+TRUNCATE TABLE PARTIDA;
+
+-- ============================================================================
+-- PARTIDAS DE INGRESO (I) - ESTRUCTURA JERÁRQUICA
+-- ============================================================================
+
+-- NIVEL 1: INGRESOS (Categoría principal - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'I', 1000, 'ING-000', 'INGRESOS REALES', 'N', 1, '012', '001', 1000, 1);
+
+-- NIVEL 2: INGRESOS POR VENTA (Subcategoría - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'I', 1100, 'ING-100', 'INGRESOS POR VENTA', 'N', 2, '012', '001', 1100, 1);
+
+-- NIVEL 3: Detalles de INGRESOS POR VENTA (USAR EN COMPROBANTES)
+INSERT INTO PARTIDA VALUES (1, 'I', 1101, 'ING-101', 'VENTA DE ENERGIA', 'N', 3, '012', '001', 1101, 1);
+INSERT INTO PARTIDA VALUES (1, 'I', 1102, 'ING-102', 'SERVICIOS TECNICOS', 'N', 3, '012', '001', 1102, 1);
+INSERT INTO PARTIDA VALUES (1, 'I', 1103, 'ING-103', 'CONSULTORIA', 'N', 3, '012', '001', 1103, 1);
+
+-- NIVEL 2: INGRESOS POR PRESTAMOS (Subcategoría - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'I', 1200, 'ING-200', 'INGRESOS POR PRESTAMOS', 'N', 2, '012', '001', 1200, 1);
+
+-- NIVEL 3: Detalles de INGRESOS POR PRESTAMOS (USAR EN COMPROBANTES)
+INSERT INTO PARTIDA VALUES (1, 'I', 1201, 'ING-201', 'PRESTAMOS BANCARIOS', 'N', 3, '012', '001', 1201, 1);
+INSERT INTO PARTIDA VALUES (1, 'I', 1202, 'ING-202', 'PRESTAMOS PRIVADOS', 'N', 3, '012', '001', 1202, 1);
+
+-- NIVEL 2: OTROS INGRESOS (Subcategoría - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'I', 1300, 'ING-300', 'OTROS INGRESOS', 'N', 2, '012', '001', 1300, 1);
+
+-- NIVEL 3: Detalles de OTROS INGRESOS (USAR EN COMPROBANTES)
+INSERT INTO PARTIDA VALUES (1, 'I', 1301, 'ING-301', 'INTERESES GANADOS', 'N', 3, '012', '001', 1301, 1);
+INSERT INTO PARTIDA VALUES (1, 'I', 1302, 'ING-302', 'ALQUILERES', 'N', 3, '012', '001', 1302, 1);
+
+-- ============================================================================
+-- PARTIDAS DE EGRESO (E) - ESTRUCTURA JERÁRQUICA
+-- ============================================================================
+
+-- NIVEL 1: EGRESOS (Categoría principal - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'E', 2000, 'EGR-000', 'EGRESOS REALES', 'N', 1, '012', '001', 2000, 1);
+
+-- NIVEL 2: COSTOS DIRECTOS (Subcategoría - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'E', 2100, 'EGR-100', 'COSTOS DIRECTOS', 'N', 2, '012', '001', 2100, 1);
+
+-- NIVEL 3: Detalles de COSTOS DIRECTOS (USAR EN COMPROBANTES)
+INSERT INTO PARTIDA VALUES (1, 'E', 2101, 'EGR-101', 'MATERIALES DE CONSTRUCCION', 'N', 3, '012', '001', 2101, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2102, 'EGR-102', 'MANO DE OBRA', 'N', 3, '012', '001', 2102, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2103, 'EGR-103', 'EQUIPOS Y MAQUINARIA', 'N', 3, '012', '001', 2103, 1);
+--PARA EMPLEADO
+INSERT INTO PARTIDA VALUES (
+    1,              -- CodCIA
+    'E',            -- IngEgr
+    2104,           -- CodPartida
+    'EGR-104',      -- CodPartidas
+    'HONORARIOS',
+    'N',            -- UsableCompr (igual que tus otros nivel 3)
+    3,              -- Nivel
+    '012',          -- CodUnidad
+    '001',          -- Unidad
+    2104,           -- Semilla (igual que CodPartida)
+    1               -- Vigente
+);
+
+-- NIVEL 2: GASTOS ADMINISTRATIVOS (Subcategoría - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'E', 2200, 'EGR-200', 'GASTOS ADMINISTRATIVOS', 'N', 2, '012', '001', 2200, 1);
+
+-- NIVEL 3: Detalles de GASTOS ADMINISTRATIVOS (USAR EN COMPROBANTES)
+INSERT INTO PARTIDA VALUES (1, 'E', 2201, 'EGR-201', 'SUELDOS ADMINISTRATIVOS', 'N', 3, '012', '001', 2201, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2202, 'EGR-202', 'SERVICIOS PROFESIONALES', 'N', 3, '012', '001', 2202, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2203, 'EGR-203', 'ALQUILER DE OFICINA', 'N', 3, '012', '001', 2203, 1);
+
+-- NIVEL 2: SERVICIOS TECNICOS (Subcategoría - NO usar en comprobantes)
+INSERT INTO PARTIDA VALUES (1, 'E', 2300, 'EGR-300', 'SERVICIOS TECNICOS', 'N', 2, '012', '001', 2300, 1);
+
+-- NIVEL 3: Detalles de SERVICIOS TECNICOS (USAR EN COMPROBANTES)
+INSERT INTO PARTIDA VALUES (1, 'E', 2301, 'EGR-301', 'INGENIERIA ELECTRICA', 'N', 3, '012', '001', 2301, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2302, 'EGR-302', 'INGENIERIA CIVIL', 'N', 3, '012', '001', 2302, 1);
+INSERT INTO PARTIDA VALUES (1, 'E', 2303, 'EGR-303', 'SUPERVISION DE OBRA', 'N', 3, '012', '001', 2303, 1);
+
+
+-- ============================================================
+-- TABLA: PARTIDA_MEZCLA
+-- CAMPOS:
+-- (CODCIA, INGEGR, CODPARTIDA, CORR, PADCODPARTIDA,
+--  TUNIMED, EUNIMED, COSTOUNIT, NIVEL, ORDEN, VIGENTE)
+-- ============================================================
+
+-- =======================
+-- INGRESOS (I)
+-- =======================
+
+INSERT INTO PARTIDA_MEZCLA
+(CODCIA, INGEGR, CODPARTIDA, CORR, PADCODPARTIDA,
+ TUNIMED, EUNIMED, COSTOUNIT, NIVEL, ORDEN, VIGENTE)
+VALUES
+(1, 'I', 1000, 1, 1000, '012', '001', 0, 1, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1100, 1, 1000, '012', '001', 0, 2, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1101, 1, 1100, '012', '001', 0, 3, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1102, 1, 1100, '012', '001', 0, 3, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1103, 1, 1100, '012', '001', 0, 3, 3, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1200, 1, 1000, '012', '001', 0, 2, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1201, 1, 1200, '012', '001', 0, 3, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1202, 1, 1200, '012', '001', 0, 3, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1300, 1, 1000, '012', '001', 0, 2, 3, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1301, 1, 1300, '012', '001', 0, 3, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'I', 1302, 1, 1300, '012', '001', 0, 3, 2, 1);
+
+
+-- =======================
+-- EGRESOS (E)
+-- =======================
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2000, 1, 2000, '012', '001', 0, 1, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2100, 1, 2000, '012', '001', 0, 2, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2101, 1, 2100, '012', '001', 0, 3, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2102, 1, 2100, '012', '001', 0, 3, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2103, 1, 2100, '012', '001', 0, 3, 3, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2104, 1, 2100, '012', '001', 0, 3, 4, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2200, 1, 2000, '012', '001', 0, 2, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2201, 1, 2200, '012', '001', 0, 3, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2202, 1, 2200, '012', '001', 0, 3, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2203, 1, 2200, '012', '001', 0, 3, 3, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2300, 1, 2000, '012', '001', 0, 2, 3, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2301, 1, 2300, '012', '001', 0, 3, 1, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2302, 1, 2300, '012', '001', 0, 3, 2, 1);
+
+INSERT INTO PARTIDA_MEZCLA VALUES
+(1, 'E', 2303, 1, 2300, '012', '001', 0, 3, 3, 1);
+
+-- ============================================================
+-- PROYECTO: CodCia=1, CodPyto=3, NroVersion=1
+-- PARTIDAS SEGÚN LA IMAGEN
+-- ============================================================
+
+-- ========================
+-- INGRESOS
+-- ========================
+
+-- Nivel 1
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'I', 1000, 'ING-000', 'N', 1, 'UND', '014', 'REG', 1);
+
+-- Nivel 2
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'I', 1100, 'ING-100', 'N', 2, 'UND', '014', 'REG', 1);
+
+-- Nivel 3
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'I', 1101, 'ING-101', 'N', 3, 'UND', '014', 'REG', 1);
+
+
+
+-- ========================
+-- EGRESOS
+-- ========================
+
+-- Nivel 1
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'E', 2000, 'EGR-000', 'N', 1, 'UND', '014', 'REG', 1);
+
+-- Nivel 2
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'E', 2100, 'EGR-100', 'N', 2, 'UND', '014', 'REG', 1);
+
+-- Nivel 3
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'E', 2101, 'EGR-101', 'N', 3, 'UND', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'E', 2102, 'EGR-102', 'N', 3, 'UND', '014', 'REG', 1);
+
+-- Segundo Nivel 2 de EGRESOS
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'E', 2200, 'EGR-200', 'N', 2, 'UND', '014', 'REG', 1);
+
+-- Nivel 3 bajo EGR-200
+INSERT INTO PROY_PARTIDA VALUES 
+(1, 3, 1, 'E', 2201, 'EGR-201', 'N', 3, 'UND', '014', 'REG', 1);
+SELECT * FROM PROY_PARTIDA;
+
+
+-- ============================================================
+-- TABLA: PROY_PARTIDA_MEZCLA
+-- Proyecto: CodCia = 1, CodPyto = 3, NroVersion = 1
+-- ============================================================
+
+-- =======================
+-- INGRESOS (I)
+-- =======================
+
+INSERT INTO PROY_PARTIDA_MEZCLA
+(CODCIA, CODPYTO, INGEGR, NROVERSION, CODPARTIDA,
+ CORR, PADCODPARTIDA, TUNIMED, EUNIMED,
+ NIVEL, ORDEN, COSTOUNIT, CANT, COSTOTOT)
+VALUES
+(1, 3, 'I', 1, 1000,
+ 1, 1000, '012', '001',
+ 1, 1, 1200, 400, 480000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'I', 1, 1100,
+ 1, 1000, '012', '001',
+ 2, 1, 1200, 400, 480000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'I', 1, 1101,
+ 1, 1100, '012', '001',
+ 3, 1, 1200, 400, 480000);
+
+
+-- =======================
+-- EGRESOS (E)
+-- =======================
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'E', 1, 2000,
+ 1, 2000, '012', '001',
+ 1, 1, 1250, 850, 452500);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'E', 1, 2100,
+ 1, 2000, '012', '001',
+ 2, 1, 850, 850, 372500);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'E', 1, 2101,
+ 1, 2100, '012', '001',
+ 3, 1, 500, 500, 250000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'E', 1, 2102,
+ 2, 2100, '012', '001',
+ 3, 2, 350, 350, 122500);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'E', 1, 2200,
+ 1, 2000, '012', '001',
+ 2, 2, 400, 200, 80000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 3, 'E', 1, 2201,
+ 1, 2200, '012', '001',
+ 3, 1, 400, 200, 80000);
+
+-- ============================================================
+-- PROY_PARTIDA (CODCIA = 1, CODPYTO = 1, NROVERSION = 1)
+-- UNIMED='001', TABESTADO='014', CODESTADO='REG'
+-- ============================================================
+
+-- =======================
+-- INGRESOS (I)
+-- =======================
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'I', 1000, 'ING-000', 'N', 1, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'I', 1100, 'ING-100', 'N', 2, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'I', 1101, 'ING-101', 'N', 3, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'I', 1102, 'ING-102', 'N', 3, '001', '014', 'REG', 1);
+
+
+
+-- =======================
+-- EGRESOS (E)
+-- =======================
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2000, 'EGR-000', 'N', 1, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2100, 'EGR-100', 'N', 2, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2101, 'EGR-101', 'N', 3, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2102, 'EGR-102', 'N', 3, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2104, 'EGR-104', 'N', 3, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2300, 'EGR-300', 'N', 2, '001', '014', 'REG', 1);
+
+INSERT INTO PROY_PARTIDA VALUES
+(1, 1, 1, 'E', 2301, 'EGR-301', 'N', 3, '001', '014', 'REG', 1);
+
+
+
+-- ============================================================
+-- PROY_PARTIDA_MEZCLA (PROYECTO 1)
+-- ============================================================
+
+-- ========================
+-- INGRESOS
+-- ========================
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'I', 1, 1000, 1, 1000, '012', '001',
+ 1, 1, 2500, 800, 950000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'I', 1, 1100, 1, 1000, '012', '001',
+ 2, 1, 2500, 800, 950000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'I', 1, 1101, 1, 1100, '012', '001',
+ 3, 1, 1000, 500, 500000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'I', 1, 1102, 2, 1100, '012', '001',
+ 3, 2, 1500, 300, 450000);
+
+
+
+-- ========================
+-- EGRESOS
+-- ========================
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2000, 1, 2000, '012', '001',
+ 1, 1, 2650, 1252, 622100);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2100, 2, 2000, '012', '001',
+ 2, 2, 1850, 1002, 422100);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2101, 1, 2100, '012', '001',
+ 3, 1, 500, 600, 300000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2102, 2, 2100, '012', '001',
+ 3, 2, 300, 400, 120000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2104, 3, 2100, '012', '001',
+ 3, 3, 1050, 2, 2100);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2300, 2, 2000, '012', '001',
+ 2, 2, 800, 250, 200000);
+
+INSERT INTO PROY_PARTIDA_MEZCLA VALUES
+(1, 1, 'E', 1, 2301, 1, 2300, '012', '001',
+ 3, 1, 800, 250, 200000);
+
+COMMIT;
+
+COMMIT;
+

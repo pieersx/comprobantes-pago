@@ -269,7 +269,30 @@ export default function ProyPartidaMezclaPage() {
     return partida?.desPartida || `Partida ${codPartida}`;
   };
 
-  const filteredData = proyPartidasMezcla.filter((item: any) => {
+  // Obtener partidas válidas como padre
+  const getValidParentPartidas = () => {
+    // Las partidas válidas como padre son aquellas que:
+    // 1. Para nivel 1: cualquier partida del mismo tipo (raíz)
+    // 2. Para nivel > 1: partidas que existen como padre en partida_mezcla del mismo tipo
+
+    if (formData.nivel === 1) {
+      // Nivel 1: pueden ser padre CUALQUIER partida del mismo tipo
+      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr);
+    }
+
+    // Nivel > 1: solo partidas que ya existen como padre
+    const allParentCodes = new Set(
+      proyPartidasMezcla.map((item: any) => item.padCodPartida)
+    );
+
+    return partidas.filter((p: any) => {
+      return (
+        allParentCodes.has(p.codPartida) &&
+        p.ingEgr === formData.ingEgr &&
+        p.codPartida !== formData.codPartida
+      );
+    });
+  };  const filteredData = proyPartidasMezcla.filter((item: any) => {
     const matchesSearch =
       String(item.codPartida).includes(searchTerm) ||
       getProyectoNombre(item.codPyto).toLowerCase().includes(searchTerm.toLowerCase());
@@ -601,15 +624,16 @@ export default function ProyPartidaMezclaPage() {
                     <SelectValue placeholder="Selecciona partida padre" />
                   </SelectTrigger>
                   <SelectContent>
-                    {partidas
-                      .filter((p: any) => p.ingEgr === formData.ingEgr && p.codPartida !== formData.codPartida)
-                      .map((p: any) => (
-                        <SelectItem key={p.codPartida} value={String(p.codPartida)}>
-                          {p.codPartida} - {p.desPartida}
-                        </SelectItem>
-                      ))}
+                    {getValidParentPartidas().map((p: any) => (
+                      <SelectItem key={p.codPartida} value={String(p.codPartida)}>
+                        {p.codPartida} - {p.desPartida}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Solo se muestran partidas válidas como padre (que existen en Partida Mezcla)
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Nivel</Label>
