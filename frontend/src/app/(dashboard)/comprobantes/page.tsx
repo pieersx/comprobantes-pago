@@ -21,6 +21,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
     Table,
     TableBody,
     TableCell,
@@ -29,11 +36,12 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { comprobantesUnifiedService } from '@/services/comprobantes-unified.service';
+import { comprobantesUnifiedService, ComprobanteUnificado } from '@/services/comprobantes-unified.service';
 import {
     comprobantesEgresoService,
     comprobantesIngresoService,
 } from '@/services/comprobantes.service';
+import { proyectosService } from '@/services/proyectos.service';
 import { useAppStore } from '@/store/useAppStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -47,15 +55,14 @@ import {
     type ColumnFiltersState,
     type SortingState,
 } from '@tanstack/react-table';
-import { ArrowUpDown, Download, Edit, Eye, FileX, Filter, MoreHorizontal, Plus, Search } from 'lucide-react';
+import { ArrowUpDown, Download, Edit, Eye, FileX, MoreHorizontal, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Comprobante {
   nroCP: string;
   codProveedor: number;
-  codEmpleado?: number; // Feature: empleados-comprobantes-blob
+  codEmpleado?: number;
   proveedor: string;
   codPyto: number;
   proyecto: string;
@@ -63,6 +70,7 @@ interface Comprobante {
   impTotalMn: number;
   estado: string;
   tipo: string;
+  fecAbono?: string;
 }
 
 export default function ComprobantesPage() {
@@ -73,16 +81,71 @@ export default function ComprobantesPage() {
   const [comprobanteToAnular, setComprobanteToAnular] = useState<Comprobante | null>(null);
   const [anulando, setAnulando] = useState(false);
 
-  const companiaActual = useAppStore((state) => state.companiaActual);
+  // Filtros por proyecto y proveedor/cliente
+  const [proyectoFilter, setProyectoFilter] = useState<string>('all');
+  const [proveedorFilter, setProveedorFilter] = useState<string>('all');
+
+  const companiaActual = useAppStore((state: any) => state.companiaActual);
   const codCia = companiaActual?.codCia ? Number(companiaActual.codCia) : 1;
-  const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: comprobantes = [], isLoading } = useQuery({
+  const { data: comprobantesRaw = [], isLoading } = useQuery({
     queryKey: ['comprobantes', codCia],
     queryFn: () => comprobantesUnifiedService.getAll(codCia),
   });
+
+  // Cargar proyectos para el filtro
+  const { data: proyectos = [] } = useQuery({
+    queryKey: ['proyectos', codCia],
+    queryFn: () => proyectosService.getAll(codCia),
+  });
+
+  // Extraer proveedores/clientes únicos de los comprobantes
+  const proveedoresClientes = useMemo(() => {
+    const seen = new Map<string, { label: string; tipo: string }>();
+    for (const c of comprobantesRaw as ComprobanteUnificado[]) {
+      const key = c.tipo === 'EGRESO_EMPLEADO'
+        ? `emp-${c.codEmpleado}`
+        : `prov-${c.codProveedor}`;
+      if (!seen.has(key)) {
+        const tipo = c.tipo === 'INGRESO' ? 'Cliente' :
+                     c.tipo === 'EGRESO_EMPLEADO' ? 'Empleado' : 'Proveedor';
+        seen.set(key, { label: c.proveedor, tipo });
+      }
+    }
+    return Array.from(seen.entries())
+      .map(([key, { label, tipo }]) => ({
+        value: key.split('-')[1],
+        label: `${label} (${tipo})`,
+        tipo
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [comprobantesRaw]);
+
+  // Aplicar filtros
+  const comprobantes = useMemo(() => {
+    let filtered = comprobantesRaw as ComprobanteUnificado[];
+
+    // Filtro por proyecto
+    if (proyectoFilter !== 'all') {
+      const codPytoNum = parseInt(proyectoFilter, 10);
+      filtered = filtered.filter(c => c.codPyto === codPytoNum);
+    }
+
+    // Filtro por proveedor/cliente
+    if (proveedorFilter !== 'all') {
+      const codNum = parseInt(proveedorFilter, 10);
+      filtered = filtered.filter(c => {
+        if (c.tipo === 'EGRESO_EMPLEADO') {
+          return c.codEmpleado === codNum;
+        }
+        return c.codProveedor === codNum;
+      });
+    }
+
+    return filtered;
+  }, [comprobantesRaw, proyectoFilter, proveedorFilter]);
 
   // Leer parámetro de búsqueda de la URL
   useEffect(() => {
@@ -262,6 +325,28 @@ export default function ComprobantesPage() {
       },
     },
     {
+      accessorKey: 'fecAbono',
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Fecha Pago
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const fecAbono = row.getValue('fecAbono') as string | undefined;
+        if (!fecAbono) {
+          return <span className="text-muted-foreground">Sin pago</span>;
+        }
+        const date = new Date(fecAbono);
+        return <div>{date.toLocaleDateString('es-PE')}</div>;
+      },
+    },
+    {
       id: 'actions',
       header: 'Acciones',
       cell: ({ row }) => {
@@ -376,8 +461,8 @@ export default function ComprobantesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar comprobantes..."
@@ -386,10 +471,61 @@ export default function ComprobantesPage() {
                 className="pl-8"
               />
             </div>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtros
-            </Button>
+
+            {/* Filtro por proyecto */}
+            <div className="flex items-center gap-2">
+              <Select value={proyectoFilter} onValueChange={setProyectoFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Todos los proyectos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los proyectos</SelectItem>
+                  {proyectos.map((proyecto: any) => (
+                    <SelectItem key={proyecto.codPyto} value={String(proyecto.codPyto)}>
+                      {proyecto.nombPyto}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {proyectoFilter !== 'all' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setProyectoFilter('all')}
+                  title="Limpiar filtro"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Filtro por proveedor/cliente */}
+            <div className="flex items-center gap-2">
+              <Select value={proveedorFilter} onValueChange={setProveedorFilter}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Todos proveedores/clientes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos proveedores/clientes</SelectItem>
+                  {proveedoresClientes.map((item) => (
+                    <SelectItem key={`${item.tipo}-${item.value}`} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {proveedorFilter !== 'all' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setProveedorFilter('all')}
+                  title="Limpiar filtro"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
             <Button variant="outline">
               <Download className="mr-2 h-4 w-4" />
               Exportar

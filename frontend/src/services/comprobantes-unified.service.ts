@@ -21,6 +21,7 @@ export interface ComprobanteUnificado {
   tCompPago?: string; // Tipo de comprobante: FAC, BOL, REC, OTR
   fotoCp?: string; // Ruta del archivo del comprobante
   fotoAbono?: string; // Ruta del archivo del abono
+  fecAbono?: string; // Fecha de pago del abono
 }
 
 /**
@@ -81,6 +82,16 @@ class ComprobantesUnifiedService {
       const proyectosMap = new Map(proyectos.map(p => [p.codPyto, p.nombPyto || `Proyecto ${p.codPyto}`]));
       const proveedoresMap = new Map(proveedores.map(p => [p.codProveedor, p.desPersona || p.desCorta || `Proveedor ${p.codProveedor}`]));
 
+      // Helper: Solo mostrar fecAbono si el estado es Pagado (002 o PAG)
+      const getFecAbonoSiPagado = (fecAbono: string | undefined, codEstado: string | undefined): string | undefined => {
+        const estadoNorm = normalizarEstado(codEstado);
+        // Solo mostrar fecha de abono si está pagado (002)
+        if (estadoNorm === '002' && fecAbono) {
+          return fecAbono;
+        }
+        return undefined;
+      };
+
       const ingresosUnificados: ComprobanteUnificado[] = ingresos.map((ing) => ({
         nroCP: ing.nroCp || '',
         codProveedor: ing.codCliente || 0,
@@ -94,6 +105,7 @@ class ComprobantesUnifiedService {
         tCompPago: ing.tCompPago,
         fotoCp: ing.fotoCp,
         fotoAbono: ing.fotoAbono,
+        fecAbono: getFecAbonoSiPagado(ing.fecAbono, ing.codEstado),
       }));
 
       const egresosUnificados: ComprobanteUnificado[] = egresos.map((egr) => ({
@@ -109,6 +121,7 @@ class ComprobantesUnifiedService {
         tCompPago: egr.tCompPago,
         fotoCp: egr.fotoCp,
         fotoAbono: egr.fotoAbono,
+        fecAbono: getFecAbonoSiPagado(egr.fecAbono, egr.codEstado),
       }));
 
       // Feature: empleados-comprobantes-blob - Mapear comprobantes de empleados
@@ -124,6 +137,7 @@ class ComprobantesUnifiedService {
         estado: normalizarEstado(emp.codEstado),
         tipo: 'EGRESO_EMPLEADO' as const,
         tCompPago: emp.eCompPago,
+        fecAbono: getFecAbonoSiPagado(emp.fecAbono, emp.codEstado),
       }));
 
       return [...ingresosUnificados, ...egresosUnificados, ...egresosEmpleadoUnificados].sort(
