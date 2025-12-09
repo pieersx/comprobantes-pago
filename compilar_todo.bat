@@ -51,10 +51,10 @@ echo Compilacion completada exitosamente
 echo ===================================================
 echo.
 
-REM Abrir aplicación en el navegador por defecto
-echo Abriendo aplicación en el navegador...
+REM Abrir Google en el navegador por defecto
+echo Abriendo Google en el navegador...
 timeout /t 3 /nobreak
-start http://localhost:4584
+start https://www.google.com
 
 REM Iniciar servidor de desarrollo del Frontend
 echo.
