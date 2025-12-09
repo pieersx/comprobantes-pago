@@ -146,11 +146,9 @@ public class PartidaController {
             log.info("✓ Partida guardada: codCia={}, ingEgr={}, codPartida={}",
                     partidaGuardada.getCodCia(), partidaGuardada.getIngEgr(), partidaGuardada.getCodPartida());
 
-            // Crear/actualizar relación en PARTIDA_MEZCLA para mantener jerarquía y orden
-            PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, partidaGuardada);
-            partidaMezclaRepository.save(mezcla);
-            log.info("✓ PartidaMezcla creada: codCia={}, ingEgr={}, codPartida={}, corr={}",
-                    mezcla.getCodCia(), mezcla.getIngEgr(), mezcla.getCodPartida(), mezcla.getCorr());
+            // NOTA: Ya NO se crea automáticamente en PARTIDA_MEZCLA
+            // El usuario debe crear manualmente los registros en PARTIDA_MEZCLA desde su página
+            // Esto evita crear registros no deseados automáticamente
 
             log.info("=== PARTIDA CREADA EXITOSAMENTE ===");
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -205,11 +203,8 @@ public class PartidaController {
             Partida actualizada = partidaRepository.save(partidaExistente);
             log.info("Partida actualizada: codCia={}, ingEgr={}, codPartida={}", codCia, ingEgr, codPartida);
 
-            // Sincronizar PARTIDA_MEZCLA (crea si no existe, actualiza si existe)
-            PartidaMezcla mezcla = construirMezclaDesdeDTO(partidaDTO, actualizada);
-            partidaMezclaRepository.save(mezcla);
-            log.info("PartidaMezcla sincronizada: codCia={}, ingEgr={}, codPartida={}, corr={}",
-                    mezcla.getCodCia(), mezcla.getIngEgr(), mezcla.getCodPartida(), mezcla.getCorr());
+            // NOTA: Ya NO se sincroniza automáticamente con PARTIDA_MEZCLA
+            // El usuario debe gestionar PARTIDA_MEZCLA manualmente desde su página
 
             return ResponseEntity.ok(convertirADTO(actualizada));
         } catch (Exception e) {

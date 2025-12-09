@@ -525,8 +525,8 @@ export default function ProyPartidaPage() {
                           key={`${item.codCia}-${item.codPyto}-${item.nroVersion}-${item.ingEgr}-${item.codPartida}`}
                           className={nivelColor}
                         >
-                          <TableCell className={`font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.codCia}</TableCell>
-                          <TableCell className={`font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.codPyto}</TableCell>
+                          <TableCell className={`font-mono ${isNivel1 ? 'font-bold text-black' : ''}`}>{item.codCia}</TableCell>
+                          <TableCell className={`font-mono ${isNivel1 ? 'font-bold text-black' : ''}`}>{item.codPyto}</TableCell>
                           <TableCell>
                             <Badge className={item.ingEgr === 'I' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
                               {item.ingEgr === 'I' ? 'INGRESO' : 'EGRESO'}
@@ -534,11 +534,11 @@ export default function ProyPartidaPage() {
                           </TableCell>
                           <TableCell className={`${indent}`}>
                             <div className="flex items-center gap-3">
-                              <span className={`font-bold text-lg ${isNivel1 ? 'text-white' : item.ingEgr === 'I' ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className={`font-bold text-lg ${isNivel1 ? 'text-black' : item.ingEgr === 'I' ? 'text-green-600' : 'text-red-600'}`}>
                                 {connector}
                               </span>
                               <div className="flex-1">
-                                <div className={`font-mono ${isNivel1 ? 'font-bold text-lg' : 'font-semibold'}`}>
+                                <div className={`font-mono ${isNivel1 ? 'font-bold text-lg text-black' : 'font-semibold'}`}>
                                   {item.codPartida} - {item.desPartida?.toUpperCase()}
                                 </div>
                               </div>
@@ -548,16 +548,25 @@ export default function ProyPartidaPage() {
                             {(() => {
                               const padre = getPartidaPadre(item.codPartida);
                               return (
-                                <div className={`font-mono ${isNivel1 ? 'font-bold text-white' : 'font-semibold text-blue-600'}`}>
+                                <div className={`font-mono ${isNivel1 ? 'font-bold text-black' : 'font-semibold text-blue-600'}`}>
                                   {padre.codPadre} - {padre.nombrePadre.toUpperCase()}
                                 </div>
                               );
                             })()}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge className={badgeColor}>
-                              NIVEL {item.nivel}
-                            </Badge>
+                            {isNivel1 ? (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${badgeColor}`}
+                                style={{ color: 'black' }}
+                              >
+                                NIVEL {item.nivel}
+                              </span>
+                            ) : (
+                              <Badge className={badgeColor}>
+                                NIVEL {item.nivel}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
@@ -567,10 +576,10 @@ export default function ProyPartidaPage() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                                <Edit className={`h-4 w-4 ${isNivel1 ? 'text-white' : ''}`} />
+                                <Edit className="h-4 w-4" />
                               </Button>
                               <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                                <Trash2 className={`h-4 w-4 ${isNivel1 ? 'text-white' : 'text-red-500'}`} />
+                                <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
                           </TableCell>

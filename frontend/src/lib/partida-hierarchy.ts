@@ -61,51 +61,62 @@ export function buildFullPath(
 /**
  * Ordena partidas jerárquicamente: padres antes que hijos
  * Agrupa las partidas hijas debajo de sus padres correspondientes
+ * Los hijos aparecen inmediatamente después de su padre
  *
  * @param partidas - Lista de partidas a ordenar
  * @returns Lista ordenada jerárquicamente
  */
 export function sortHierarchically<T extends PartidaBase>(partidas: T[]): T[] {
-  // Crear mapa para acceso rápido
-  const partidaMap = new Map<number, T>();
-  partidas.forEach(p => partidaMap.set(p.codPartida, p));
+  const result: T[] = [];
+  const processed = new Set<number>();
 
-  // Función recursiva para obtener el orden de una partida
-  // Retorna un array de códigos desde la raíz hasta la partida
-  function getHierarchyPath(partida: T): number[] {
-    const path: number[] = [];
-    let current: T | undefined = partida;
+  // Función recursiva para agregar un item y sus hijos
+  const addItemAndChildren = (item: T) => {
+    if (processed.has(item.codPartida)) return;
+    processed.add(item.codPartida);
+    result.push(item);
 
-    while (current) {
-      path.unshift(current.codPartida);
-      current = current.padCodPartida ? partidaMap.get(current.padCodPartida) : undefined;
-    }
+    // Encontrar y agregar hijos inmediatos ordenados
+    const children = partidas
+      .filter(child =>
+        child.padCodPartida === item.codPartida &&
+        child.codPartida !== item.codPartida &&
+        !processed.has(child.codPartida)
+      )
+      .sort((a, b) => a.codPartida - b.codPartida);
 
-    return path;
-  }
+    // Recursivamente agregar cada hijo y sus descendientes
+    children.forEach(child => addItemAndChildren(child));
+  };
 
-  // Ordenar comparando las rutas jerárquicas
-  return [...partidas].sort((a, b) => {
-    // Primero por tipo (I/E)
-    if (a.ingEgr !== b.ingEgr) {
-      return a.ingEgr.localeCompare(b.ingEgr);
-    }
+  // Agrupar por tipo (I/E)
+  const byType = partidas.reduce((acc: any, item: T) => {
+    acc[item.ingEgr] = acc[item.ingEgr] || [];
+    acc[item.ingEgr].push(item);
+    return acc;
+  }, {} as Record<string, T[]>);
 
-    // Obtener rutas jerárquicas
-    const pathA = getHierarchyPath(a);
-    const pathB = getHierarchyPath(b);
+  // Procesar cada tipo en orden (E primero, luego I)
+  ['E', 'I'].forEach(tipo => {
+    if (!byType[tipo]) return;
 
-    // Comparar elemento por elemento
-    const minLength = Math.min(pathA.length, pathB.length);
-    for (let i = 0; i < minLength; i++) {
-      if (pathA[i] !== pathB[i]) {
-        return pathA[i] - pathB[i];
+    // Encontrar raíces (nivel 1) de este tipo
+    const roots = byType[tipo]
+      .filter(item => item.nivel === 1 || item.padCodPartida === item.codPartida)
+      .sort((a, b) => a.codPartida - b.codPartida);
+
+    // Procesar cada raíz y sus descendientes
+    roots.forEach(root => addItemAndChildren(root));
+
+    // Agregar items huérfanos de este tipo
+    byType[tipo].forEach(item => {
+      if (!processed.has(item.codPartida)) {
+        addItemAndChildren(item);
       }
-    }
-
-    // Si una ruta es prefijo de la otra, la más corta va primero (padre antes que hijo)
-    return pathA.length - pathB.length;
+    });
   });
+
+  return result;
 }
 
 /**
@@ -223,16 +234,16 @@ export function getNivelBadgeColor(nivel: number | undefined, ingEgr?: string): 
   switch (nivel) {
     case 1:
       return isIngreso
-        ? 'bg-green-600 text-white'
-        : 'bg-red-600 text-white';
+        ? 'bg-green-600 text-white hover:bg-green-700 font-semibold'
+        : 'bg-red-600 text-white hover:bg-red-700 font-semibold';
     case 2:
       return isIngreso
-        ? 'bg-green-400 text-green-900'
-        : 'bg-red-400 text-red-900';
+        ? 'bg-green-400 text-green-900 font-semibold'
+        : 'bg-red-400 text-red-900 font-semibold';
     case 3:
       return isIngreso
-        ? 'bg-green-200 text-green-800'
-        : 'bg-red-200 text-red-800';
+        ? 'bg-green-200 text-green-800 font-semibold'
+        : 'bg-red-200 text-red-800 font-semibold';
     default:
       return 'bg-gray-200 text-gray-800';
   }

@@ -72,7 +72,7 @@ public class ProyPartidaMezclaService {
     }
 
     /**
-     * Actualizar mezcla de proyecto
+     * Actualizar mezcla de proyecto - permite editar TODOS los campos
      */
     public ProyPartidaMezcla update(Long codCia, Long codPyto, String ingEgr, Integer nroVersion, Long codPartida,
             Long corr, ProyPartidaMezcla actualizada) {
@@ -80,14 +80,31 @@ public class ProyPartidaMezclaService {
                 nroVersion, codPartida, corr);
         return proyPartidaMezclaRepository.findById(id)
                 .map(mezcla -> {
-                    mezcla.setPadCodPartida(actualizada.getPadCodPartida());
-                    mezcla.setTUniMed(actualizada.getTUniMed());
-                    mezcla.setEUniMed(actualizada.getEUniMed());
-                    mezcla.setNivel(actualizada.getNivel());
-                    mezcla.setOrden(actualizada.getOrden());
-                    mezcla.setCostoUnit(actualizada.getCostoUnit());
-                    mezcla.setCant(actualizada.getCant());
-                    mezcla.setCostoTot(actualizada.getCostoTot());
+                    // Actualizar todos los campos editables
+                    if (actualizada.getPadCodPartida() != null) {
+                        mezcla.setPadCodPartida(actualizada.getPadCodPartida());
+                    }
+                    if (actualizada.getTUniMed() != null) {
+                        mezcla.setTUniMed(actualizada.getTUniMed());
+                    }
+                    if (actualizada.getEUniMed() != null) {
+                        mezcla.setEUniMed(actualizada.getEUniMed());
+                    }
+                    if (actualizada.getNivel() != null) {
+                        mezcla.setNivel(actualizada.getNivel());
+                    }
+                    if (actualizada.getOrden() != null) {
+                        mezcla.setOrden(actualizada.getOrden());
+                    }
+                    if (actualizada.getCostoUnit() != null) {
+                        mezcla.setCostoUnit(actualizada.getCostoUnit());
+                    }
+                    if (actualizada.getCant() != null) {
+                        mezcla.setCant(actualizada.getCant());
+                    }
+                    if (actualizada.getCostoTot() != null) {
+                        mezcla.setCostoTot(actualizada.getCostoTot());
+                    }
                     return proyPartidaMezclaRepository.save(mezcla);
                 })
                 .orElseThrow(() -> new RuntimeException("Mezcla de Proyecto no encontrada"));
