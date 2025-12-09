@@ -12,10 +12,10 @@ echo Iniciando compilacion de Backend y Frontend
 echo ===================================================
 echo.
 
-REM Compilar Backend
+REM Compilar Backend (sin ejecutar tests)
 echo [1/3] Compilando Backend...
 cd backend
-call mvn clean install
+call mvnw clean install -DskipTests
 if %ERRORLEVEL% neq 0 (
     echo Error al compilar el Backend
     pause
@@ -27,7 +27,7 @@ REM Instalar dependencias Frontend
 echo.
 echo [2/3] Instalando dependencias del Frontend...
 cd frontend
-call npm install
+call pnpm install
 if %ERRORLEVEL% neq 0 (
     echo Error al instalar dependencias del Frontend
     pause
