@@ -88,6 +88,7 @@ export default function ProyPartidaPage() {
   const [formData, setFormData] = useState<ProyPartidaForm>(initialFormState);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProyecto, setFilterProyecto] = useState('all');
+  const [filterTipo, setFilterTipo] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
   // Obtener proyectos
@@ -278,8 +279,9 @@ export default function ProyPartidaPage() {
       getProyectoNombre(item.codPyto).toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesProyecto = filterProyecto === 'all' || String(item.codPyto) === filterProyecto;
+    const matchesTipo = filterTipo === 'all' || item.ingEgr === filterTipo;
 
-    return matchesSearch && matchesProyecto;
+    return matchesSearch && matchesProyecto && matchesTipo;
   });
 
   if (isLoading) {
@@ -444,6 +446,16 @@ export default function ProyPartidaPage() {
                 {p.nombPyto}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterTipo} onValueChange={setFilterTipo}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="I">Ingresos</SelectItem>
+            <SelectItem value="E">Egresos</SelectItem>
           </SelectContent>
         </Select>
       </div>
