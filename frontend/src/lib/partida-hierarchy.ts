@@ -102,14 +102,14 @@ export function sortHierarchically<T extends PartidaBase>(partidas: T[]): T[] {
 
     // Encontrar raíces (nivel 1) de este tipo
     const roots = byType[tipo]
-      .filter(item => item.nivel === 1 || item.padCodPartida === item.codPartida)
-      .sort((a, b) => a.codPartida - b.codPartida);
+      .filter((item: PartidaConJerarquia) => item.nivel === 1 || item.padCodPartida === item.codPartida)
+      .sort((a: PartidaConJerarquia, b: PartidaConJerarquia) => a.codPartida - b.codPartida);
 
     // Procesar cada raíz y sus descendientes
     roots.forEach(root => addItemAndChildren(root));
 
     // Agregar items huérfanos de este tipo
-    byType[tipo].forEach(item => {
+    byType[tipo].forEach((item: PartidaConJerarquia) => {
       if (!processed.has(item.codPartida)) {
         addItemAndChildren(item);
       }
