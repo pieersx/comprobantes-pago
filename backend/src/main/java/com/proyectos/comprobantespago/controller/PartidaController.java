@@ -223,18 +223,37 @@ public class PartidaController {
      * Elimina una partida
      */
     @DeleteMapping("/{codCia}/{ingEgr}/{codPartida}")
-    public ResponseEntity<Void> eliminarPartida(
+    public ResponseEntity<?> eliminarPartida(
             @PathVariable Long codCia,
             @PathVariable String ingEgr,
             @PathVariable Long codPartida) {
 
         Partida.PartidaId id = new Partida.PartidaId(codCia, ingEgr, codPartida);
 
-        if (partidaRepository.existsById(id)) {
-            partidaRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
+        if (!partidaRepository.existsById(id)) {
+            log.warn("Intento de eliminar partida no existente: {}/{}/{}", codCia, ingEgr, codPartida);
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        // Verificar dependencias en PARTIDA_MEZCLA antes de eliminar
+        try {
+            var mezclas = partidaMezclaRepository.findByCodCiaAndIngEgrAndCodPartida(codCia, ingEgr, codPartida);
+            if (mezclas != null && !mezclas.isEmpty()) {
+                String msg = String.format(
+                        "No se puede eliminar la partida %d: existen %d registros en PARTIDA_MEZCLA que la referencian",
+                        codPartida, mezclas.size());
+                log.warn(msg);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", msg));
+            }
+        } catch (Exception ex) {
+            log.error("Error verificando dependencias en PARTIDA_MEZCLA", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error verificando dependencias"));
+        }
+
+        // Si no hay dependencias, proceder a eliminar
+        partidaRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

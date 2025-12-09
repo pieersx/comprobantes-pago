@@ -4,43 +4,50 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
+import {
+    buildPartidaHierarchy,
+    getNivelBadgeColor,
+    getNivelColor,
+    getNivelConnector,
+    getNivelIndent
+} from '@/lib/partida-hierarchy';
 import { partidasService, proyPartidaService } from '@/services/partidas.service';
 import { proyectosService } from '@/services/proyectos.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Edit,
-  FolderKanban,
-  Layers,
-  Loader2,
-  Plus,
-  Search,
-  Trash2,
-  TrendingDown,
-  TrendingUp,
+    Edit,
+    FolderKanban,
+    Layers,
+    Loader2,
+    Plus,
+    Search,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -255,6 +262,17 @@ export default function ProyPartidaPage() {
     return partida?.desPartida || `Partida ${codPartida}`;
   };
 
+  const getPartidaPadre = (codPartida: number) => {
+    const partida = partidas.find((p: any) => p.codPartida === codPartida);
+    if (!partida || !partida.padCodPartida) {
+      return { codPadre: codPartida, nombrePadre: getPartidaNombre(codPartida) };
+    }
+    return {
+      codPadre: partida.padCodPartida,
+      nombrePadre: getPartidaNombre(partida.padCodPartida)
+    };
+  };
+
   const filteredData = proyPartidas.filter((item: any) => {
     const matchesSearch =
       String(item.codPartida).includes(searchTerm) ||
@@ -363,6 +381,49 @@ export default function ProyPartidaPage() {
         </Card>
       )}
 
+      {/* Leyenda de Jerarquía */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Jerarquía Visual de Partidas
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded bg-green-700 flex items-center justify-center text-white font-bold text-xl">
+                    ▶
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">NIVEL 1</div>
+                    <div className="text-xs text-muted-foreground">Categoría Principal</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded bg-green-200 flex items-center justify-center text-green-700 font-bold text-xl">
+                    ├─
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">NIVEL 2</div>
+                    <div className="text-xs text-muted-foreground">Subcategoría</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded bg-green-50 flex items-center justify-center text-green-600 font-bold text-xl">
+                    └──
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">NIVEL 3</div>
+                    <div className="text-xs text-muted-foreground">Detalle Específico</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filtros */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
@@ -402,10 +463,9 @@ export default function ProyPartidaPage() {
               <TableRow className="bg-green-100/50">
                 <TableHead className="font-bold">CODCIA</TableHead>
                 <TableHead className="font-bold">CODPYTO</TableHead>
-                <TableHead className="font-bold">NROVERSION</TableHead>
                 <TableHead className="font-bold">INGEGR</TableHead>
                 <TableHead className="font-bold">CODPARTIDA</TableHead>
-                <TableHead className="font-bold">CODPARTIDAS</TableHead>
+                <TableHead className="font-bold">PADCODPARTIDA</TableHead>
                 <TableHead className="font-bold text-center">NIVEL</TableHead>
                 <TableHead className="font-bold">VIGENTE</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -414,62 +474,111 @@ export default function ProyPartidaPage() {
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No hay partidas de proyecto registradas
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredData
+                // Agrupar por proyecto+versión y renderizar jerarquía por grupo
+                Object.entries(
+                  filteredData.reduce((acc: any, itm: any) => {
+                    const key = `${itm.codPyto}-${itm.nroVersion}`;
+                    acc[key] = acc[key] || [];
+                    acc[key].push(itm);
+                    return acc;
+                  }, {})
+                )
                   .sort((a: any, b: any) => {
-                    if (a.codPyto !== b.codPyto) return a.codPyto - b.codPyto;
-                    if (a.nroVersion !== b.nroVersion) return a.nroVersion - b.nroVersion;
-                    if (a.ingEgr !== b.ingEgr) return a.ingEgr.localeCompare(b.ingEgr);
-                    if (a.nivel !== b.nivel) return a.nivel - b.nivel;
-                    return a.codPartida - b.codPartida;
+                    const [pytoA, verA] = a[0].split('-').map(Number);
+                    const [pytoB, verB] = b[0].split('-').map(Number);
+                    if (pytoA !== pytoB) return pytoA - pytoB;
+                    return verA - verB;
                   })
-                  .map((item: any) => {
-                    const nivelColor = item.nivel === 1 ? 'bg-yellow-50' : item.nivel === 2 ? 'bg-orange-50' : 'bg-green-50';
-                    return (
-                      <TableRow
-                        key={`${item.codCia}-${item.codPyto}-${item.nroVersion}-${item.ingEgr}-${item.codPartida}`}
-                        className={nivelColor}
-                      >
-                        <TableCell className="font-mono">{item.codCia}</TableCell>
-                        <TableCell className="font-mono font-bold">{item.codPyto}</TableCell>
-                        <TableCell className="font-mono">{item.nroVersion}</TableCell>
-                        <TableCell>
-                          <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                            {item.ingEgr}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono font-bold">{item.codPartida}</TableCell>
-                        <TableCell className="font-mono text-sm">{item.codPartidas}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge className={
-                            item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
-                            item.nivel === 2 ? 'bg-orange-200 text-orange-800' :
-                            'bg-green-200 text-green-800'
-                          }>
-                            {item.nivel}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
-                            {item.vigente}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
+                  .flatMap(([key, items]: any) => {
+                    const [codPyto, nroVersion] = key.split('-');
+                    const headerRow = (
+                      <TableRow key={`header-${key}`} className="bg-muted/10">
+                        <TableCell colSpan={8} className="font-medium text-sm py-2">
+                          Proyecto: <strong>{getProyectoNombre(Number(codPyto))}</strong> — Versión: <strong>{nroVersion}</strong>
                         </TableCell>
                       </TableRow>
                     );
+
+                    // Enriquecer items con nombres de partidas
+                    const enrichedItems = items.map((item: any) => {
+                      const partidaInfo = partidas.find((p: any) => p.codPartida === item.codPartida);
+                      return {
+                        ...item,
+                        desPartida: partidaInfo?.desPartida || `Partida ${item.codPartida}`,
+                      };
+                    });
+
+                    const hierarchyRows = buildPartidaHierarchy(enrichedItems, partidas).map((item: any) => {
+                      const nivelColor = getNivelColor(item.nivel, item.ingEgr);
+                      const indent = getNivelIndent(item.nivel);
+                      const connector = getNivelConnector(item.nivel);
+                      const badgeColor = getNivelBadgeColor(item.nivel, item.ingEgr);
+                      const isNivel1 = item.nivel === 1;
+
+                      return (
+                        <TableRow
+                          key={`${item.codCia}-${item.codPyto}-${item.nroVersion}-${item.ingEgr}-${item.codPartida}`}
+                          className={nivelColor}
+                        >
+                          <TableCell className={`font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.codCia}</TableCell>
+                          <TableCell className={`font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.codPyto}</TableCell>
+                          <TableCell>
+                            <Badge className={item.ingEgr === 'I' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
+                              {item.ingEgr === 'I' ? 'INGRESO' : 'EGRESO'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={`${indent}`}>
+                            <div className="flex items-center gap-3">
+                              <span className={`font-bold text-lg ${isNivel1 ? 'text-white' : item.ingEgr === 'I' ? 'text-green-600' : 'text-red-600'}`}>
+                                {connector}
+                              </span>
+                              <div className="flex-1">
+                                <div className={`font-mono ${isNivel1 ? 'font-bold text-lg' : 'font-semibold'}`}>
+                                  {item.codPartida} - {item.desPartida?.toUpperCase()}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const padre = getPartidaPadre(item.codPartida);
+                              return (
+                                <div className={`font-mono ${isNivel1 ? 'font-bold text-white' : 'font-semibold text-blue-600'}`}>
+                                  {padre.codPadre} - {padre.nombrePadre.toUpperCase()}
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={badgeColor}>
+                              NIVEL {item.nivel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={item.vigente === '1' || item.vigente === 'S' ? 'default' : 'secondary'}>
+                              {item.vigente}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
+                                <Edit className={`h-4 w-4 ${isNivel1 ? 'text-white' : ''}`} />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
+                                <Trash2 className={`h-4 w-4 ${isNivel1 ? 'text-white' : 'text-red-500'}`} />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+
+                    return [headerRow, ...hierarchyRows];
                   })
               )}
             </TableBody>

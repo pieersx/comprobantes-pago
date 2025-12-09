@@ -4,43 +4,49 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
+import {
+    getNivelBadgeColor,
+    getNivelColor,
+    getNivelConnector,
+    getNivelIndent
+} from '@/lib/partida-hierarchy';
 import { partidasService, proyPartidaMezclaService } from '@/services/partidas.service';
 import { proyectosService } from '@/services/proyectos.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Edit,
-  FolderKanban,
-  ListTree,
-  Loader2,
-  Plus,
-  Search,
-  Trash2,
-  TrendingDown,
-  TrendingUp,
+    Edit,
+    FolderKanban,
+    ListTree,
+    Loader2,
+    Plus,
+    Search,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -408,6 +414,49 @@ export default function ProyPartidaMezclaPage() {
         </Card>
       )}
 
+      {/* Leyenda de Jerarquía */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <ListTree className="h-5 w-5" />
+                Jerarquía Visual de Partidas
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded bg-green-700 flex items-center justify-center text-white font-bold text-xl">
+                    ▶
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">NIVEL 1</div>
+                    <div className="text-xs text-muted-foreground">Categoría Principal</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded bg-green-200 flex items-center justify-center text-green-700 font-bold text-xl">
+                    ├─
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">NIVEL 2</div>
+                    <div className="text-xs text-muted-foreground">Subcategoría</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded bg-green-50 flex items-center justify-center text-green-600 font-bold text-xl">
+                    └──
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">NIVEL 3</div>
+                    <div className="text-xs text-muted-foreground">Detalle Específico</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filtros */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
@@ -470,9 +519,7 @@ export default function ProyPartidaMezclaPage() {
                 <TableHead className="font-bold">CODCIA</TableHead>
                 <TableHead className="font-bold">CODPYTO</TableHead>
                 <TableHead className="font-bold">INGEGR</TableHead>
-                <TableHead className="font-bold">NROVERSION</TableHead>
                 <TableHead className="font-bold">CODPARTIDA</TableHead>
-                <TableHead className="font-bold">CORR</TableHead>
                 <TableHead className="font-bold">PADCODPARTIDA</TableHead>
                 <TableHead className="font-bold text-center">NIVEL</TableHead>
                 <TableHead className="font-bold text-center">ORDEN</TableHead>
@@ -485,57 +532,73 @@ export default function ProyPartidaMezclaPage() {
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     No hay partidas mezcla de proyecto registradas
                   </TableCell>
                 </TableRow>
               ) : (
                 <>
                   {filteredData.map((item: any) => {
-                    const nivelColor = item.nivel === 1 ? 'bg-yellow-50' : item.nivel === 2 ? 'bg-orange-50' : item.nivel === 3 ? 'bg-green-50' : 'bg-blue-50';
+                    const nivelColor = getNivelColor(item.nivel === 4 ? 3 : item.nivel, item.ingEgr);
+                    const indent = getNivelIndent(item.nivel);
+                    const connector = getNivelConnector(item.nivel);
+                    const badgeColor = getNivelBadgeColor(item.nivel === 4 ? 3 : item.nivel, item.ingEgr);
+                    const isNivel1 = item.nivel === 1;
+
                     return (
                       <TableRow
                         key={`${item.codCia}-${item.codPyto}-${item.ingEgr}-${item.nroVersion}-${item.codPartida}-${item.corr}`}
                         className={nivelColor}
                       >
-                        <TableCell className="font-mono">{item.codCia}</TableCell>
-                        <TableCell className="font-mono font-bold">{item.codPyto}</TableCell>
+                        <TableCell className={`font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.codCia}</TableCell>
+                        <TableCell className={`font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.codPyto}</TableCell>
                         <TableCell>
-                          <Badge className={item.ingEgr === 'I' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                            {item.ingEgr}
+                          <Badge className={item.ingEgr === 'I' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}>
+                            {item.ingEgr === 'I' ? 'INGRESO' : 'EGRESO'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono">{item.nroVersion}</TableCell>
-                        <TableCell className="font-mono font-bold">{item.codPartida}</TableCell>
-                        <TableCell className="font-mono">{item.corr}</TableCell>
-                        <TableCell className="font-mono font-bold text-blue-600">{item.padCodPartida}</TableCell>
+                        <TableCell className={`${indent}`}>
+                          <div className="flex items-center gap-3">
+                            <span className={`font-bold text-lg ${isNivel1 ? 'text-white' : item.ingEgr === 'I' ? 'text-green-600' : 'text-red-600'}`}>
+                              {connector}
+                            </span>
+                            <div className="flex-1">
+                              <div className={`font-mono ${isNivel1 ? 'font-bold text-lg' : 'font-semibold'}`}>
+                                {item.codPartida} - {getPartidaNombre(item.codPartida)?.toUpperCase() || 'SIN NOMBRE'}
+                              </div>
+                              <div className={`text-xs ${isNivel1 ? 'opacity-90' : 'text-muted-foreground'}`}>
+                                {item.codPartidas || ''}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className={`font-mono ${isNivel1 ? 'font-bold text-white' : 'font-semibold text-blue-600'}`}>
+                            {item.padCodPartida} - {getPartidaNombre(item.padCodPartida)?.toUpperCase() || 'RAÍZ'}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-center">
-                          <Badge className={
-                            item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' :
-                            item.nivel === 2 ? 'bg-orange-200 text-orange-800' :
-                            item.nivel === 3 ? 'bg-green-200 text-green-800' :
-                            'bg-blue-200 text-blue-800'
-                          }>
-                            {item.nivel}
+                          <Badge className={badgeColor}>
+                            NIVEL {item.nivel}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center font-mono">{item.orden}</TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className={`text-center font-mono ${isNivel1 ? 'font-bold' : ''}`}>{item.orden}</TableCell>
+                        <TableCell className={`text-right font-mono ${isNivel1 ? 'font-bold' : ''}`}>
                           {item.costoUnit?.toFixed(2) || '0.00'}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className={`text-right font-mono ${isNivel1 ? 'font-bold' : ''}`}>
                           {item.cant?.toFixed(3) || '0.000'}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-bold">
+                        <TableCell className={`text-right font-mono ${isNivel1 ? 'font-bold text-lg' : 'font-bold'}`}>
                           {item.costoTot?.toFixed(2) || '0.00'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(item)}>
-                              <Edit className="h-4 w-4" />
+                              <Edit className={`h-4 w-4 ${isNivel1 ? 'text-white' : ''}`} />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(item)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className={`h-4 w-4 ${isNivel1 ? 'text-white' : 'text-red-500'}`} />
                             </Button>
                           </div>
                         </TableCell>
@@ -544,7 +607,7 @@ export default function ProyPartidaMezclaPage() {
                   })}
                   {/* Fila de totales */}
                   <TableRow className="bg-muted/50 font-medium">
-                    <TableCell colSpan={11} className="text-right font-bold">
+                    <TableCell colSpan={9} className="text-right font-bold">
                       TOTAL:
                     </TableCell>
                     <TableCell className="text-right font-mono font-bold">

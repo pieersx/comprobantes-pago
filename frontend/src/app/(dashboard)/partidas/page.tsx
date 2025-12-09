@@ -117,8 +117,8 @@ export default function PartidasPage() {
     },
     onError: (error: any) => {
       console.error('Error al crear partida:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Error al crear partida';
-      toast.error(errorMessage);
+      const message = extractErrorMessage(error);
+      toast.error(message || 'Error al crear partida');
     },
   });
 
@@ -147,7 +147,9 @@ export default function PartidasPage() {
       setSelectedItem(null);
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Error al eliminar partida');
+      console.error('Error al eliminar partida:', error);
+      const message = extractErrorMessage(error);
+      toast.error(message || 'Error al eliminar partida');
     },
   });
 
@@ -221,9 +223,47 @@ export default function PartidasPage() {
     if (isEditing) {
       updateMutation.mutate(formData);
     } else {
+      // Validar que no exista una partida con el mismo codPartida (numérico) o el mismo código compuesto (codPartidas)
+      const existeNumero = partidas.some(
+        (p: Partida) => Number(p.codPartida) === Number(formData.codPartida) && String(p.ingEgr) === String(formData.ingEgr)
+      );
+      const existeCodigoCompuesto = partidas.some((p: any) => {
+        if (!p.codPartidas || !formData.codPartidas) return false;
+        return String(p.codPartidas).trim().toLowerCase() === String(formData.codPartidas).trim().toLowerCase();
+      });
+
+      if (existeNumero || existeCodigoCompuesto) {
+        if (existeNumero && existeCodigoCompuesto) {
+          toast.error('Ya existe una partida con ese número y código compuesto. No se puede duplicar.');
+        } else if (existeNumero) {
+          toast.error('Ya existe una partida con ese código numérico y tipo. No se puede duplicar.');
+        } else {
+          toast.error('Ya existe una partida con ese código compuesto. No se puede duplicar.');
+        }
+        return;
+      }
       createMutation.mutate(formData);
     }
   };
+
+  // Extrae mensajes de error retornados por la API o por axios para mostrarlos al usuario
+  function extractErrorMessage(error: any): string {
+    if (!error) return '';
+    // Si ya es un string
+    if (typeof error === 'string') return error;
+    // Si es un Error estándar
+    if (error.message && typeof error.message === 'string') return error.message;
+    // axios error con response
+    if (error.response && error.response.data) {
+      const data = error.response.data;
+      if (typeof data === 'string') return data;
+      if (data.message) return data.message;
+      if (data.error) return data.error;
+      // fallback: stringify validation errors
+      if (data.validationErrors) return JSON.stringify(data.validationErrors);
+    }
+    return '';
+  }
 
   const filteredPartidas = partidas.filter((partida: Partida) => {
     const matchesSearch =

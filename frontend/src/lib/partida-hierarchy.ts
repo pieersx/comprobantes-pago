@@ -145,19 +145,28 @@ export function buildPartidaHierarchy<T extends PartidaBase>(
 
 /**
  * Obtiene el color de fondo según el nivel de la partida
- * Nivel 1: Amarillo, Nivel 2: Naranja, Nivel 3: Verde
+ * Nivel 1: Verde oscuro, Nivel 2: Verde medio, Nivel 3: Verde claro
  *
  * @param nivel - Nivel de la partida (1, 2 o 3)
+ * @param ingEgr - Tipo de partida (I para ingresos, E para egresos)
  * @returns Clase CSS de Tailwind para el color de fondo
  */
-export function getNivelColor(nivel: number | undefined): string {
+export function getNivelColor(nivel: number | undefined, ingEgr?: string): string {
+  const isIngreso = ingEgr === 'I';
+
   switch (nivel) {
     case 1:
-      return 'bg-yellow-50 hover:bg-yellow-100';
+      return isIngreso
+        ? 'bg-green-700 text-white hover:bg-green-800'
+        : 'bg-red-700 text-white hover:bg-red-800';
     case 2:
-      return 'bg-orange-50 hover:bg-orange-100';
+      return isIngreso
+        ? 'bg-green-200 hover:bg-green-300'
+        : 'bg-red-200 hover:bg-red-300';
     case 3:
-      return 'bg-green-50 hover:bg-green-100';
+      return isIngreso
+        ? 'bg-green-50 hover:bg-green-100'
+        : 'bg-red-50 hover:bg-red-100';
     default:
       return 'hover:bg-gray-50';
   }
@@ -172,13 +181,13 @@ export function getNivelColor(nivel: number | undefined): string {
 export function getNivelIndent(nivel: number | undefined): string {
   switch (nivel) {
     case 1:
-      return 'pl-2';
+      return 'pl-4';
     case 2:
-      return 'pl-6';
+      return 'pl-12';
     case 3:
-      return 'pl-10';
+      return 'pl-20';
     default:
-      return 'pl-2';
+      return 'pl-4';
   }
 }
 
@@ -191,12 +200,40 @@ export function getNivelIndent(nivel: number | undefined): string {
 export function getNivelConnector(nivel: number | undefined): string {
   switch (nivel) {
     case 1:
-      return '●';
+      return '▶';
     case 2:
       return '├─';
     case 3:
       return '└──';
     default:
       return '';
+  }
+}
+
+/**
+ * Obtiene el badge de nivel con estilo visual
+ *
+ * @param nivel - Nivel de la partida
+ * @param ingEgr - Tipo de partida (I para ingresos, E para egresos)
+ * @returns Clase CSS de Tailwind para el badge
+ */
+export function getNivelBadgeColor(nivel: number | undefined, ingEgr?: string): string {
+  const isIngreso = ingEgr === 'I';
+
+  switch (nivel) {
+    case 1:
+      return isIngreso
+        ? 'bg-green-600 text-white'
+        : 'bg-red-600 text-white';
+    case 2:
+      return isIngreso
+        ? 'bg-green-400 text-green-900'
+        : 'bg-red-400 text-red-900';
+    case 3:
+      return isIngreso
+        ? 'bg-green-200 text-green-800'
+        : 'bg-red-200 text-red-800';
+    default:
+      return 'bg-gray-200 text-gray-800';
   }
 }
