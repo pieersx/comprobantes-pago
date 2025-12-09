@@ -29,8 +29,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import {
-    getNivelBadgeColor,
-    getNivelColor,
     getNivelConnector,
     getNivelIndent
 } from '@/lib/partida-hierarchy';
@@ -603,10 +601,10 @@ export default function ProyPartidaMezclaPage() {
               ) : (
                 <>
                   {filteredData.map((item: any) => {
-                    const nivelColor = getNivelColor(item.nivel === 4 ? 3 : item.nivel, item.ingEgr);
+                    const nivelColor = item.nivel === 1 ? 'bg-yellow-100' : item.nivel === 2 ? 'bg-orange-100' : 'bg-green-100';
                     const indent = getNivelIndent(item.nivel);
                     const connector = getNivelConnector(item.nivel);
-                    const badgeColor = getNivelBadgeColor(item.nivel === 4 ? 3 : item.nivel, item.ingEgr);
+                    const badgeColor = item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' : item.nivel === 2 ? 'bg-orange-200 text-orange-800' : 'bg-green-200 text-green-800';
                     const isNivel1 = item.nivel === 1;
 
                     return (

@@ -29,8 +29,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import {
-    getNivelBadgeColor,
-    getNivelColor,
     getNivelConnector,
     getNivelIndent
 } from '@/lib/partida-hierarchy';
@@ -310,23 +308,51 @@ export default function PartidaMezclaPage() {
   // Obtener partidas válidas como padre
   const getValidParentPartidas = () => {
     // Nivel 1: la partida se referencia a sí misma (auto-referencia)
+    // Buscar en la tabla PARTIDA base
     if (formData.nivel === 1) {
-      // Solo mostrar partidas de nivel 1 del mismo tipo
       return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
     }
 
     // Nivel 2: puede tener como padre partidas de nivel 1
+    // Buscar primero en PARTIDA_MEZCLA, si no hay, buscar en PARTIDA
     if (formData.nivel === 2) {
+      const nivel1EnMezcla = partidasMezcla.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
+      if (nivel1EnMezcla.length > 0) {
+        // Obtener nombres de partidas base
+        return nivel1EnMezcla.map((pm: any) => {
+          const partidaBase = partidas.find((pb: any) => pb.codPartida === pm.codPartida);
+          return {
+            ...pm,
+            desPartida: partidaBase?.desPartida || `Partida ${pm.codPartida}`
+          };
+        });
+      }
       return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 1);
     }
 
     // Nivel 3: puede tener como padre partidas de nivel 2
+    // Buscar en PARTIDA_MEZCLA
     if (formData.nivel === 3) {
-      return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 2);
+      const nivel2EnMezcla = partidasMezcla.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === 2);
+      // Obtener nombres de partidas base
+      return nivel2EnMezcla.map((pm: any) => {
+        const partidaBase = partidas.find((pb: any) => pb.codPartida === pm.codPartida);
+        return {
+          ...pm,
+          desPartida: partidaBase?.desPartida || `Partida ${pm.codPartida}`
+        };
+      });
     }
 
-    // Nivel > 3: partidas del nivel anterior
-    return partidas.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === formData.nivel - 1);
+    // Nivel > 3: partidas del nivel anterior en PARTIDA_MEZCLA
+    const nivelAnterior = partidasMezcla.filter((p: any) => p.ingEgr === formData.ingEgr && p.nivel === formData.nivel - 1);
+    return nivelAnterior.map((pm: any) => {
+      const partidaBase = partidas.find((pb: any) => pb.codPartida === pm.codPartida);
+      return {
+        ...pm,
+        desPartida: partidaBase?.desPartida || `Partida ${pm.codPartida}`
+      };
+    });
   };  if (isLoading) {
     return (
       <div className="flex h-[450px] items-center justify-center">
@@ -484,8 +510,8 @@ export default function PartidaMezclaPage() {
               ) : (
                 filteredData
                   .map((item: any) => {
-                    const nivelColor = getNivelColor(item.nivel, item.ingEgr);
-                    const badgeColor = getNivelBadgeColor(item.nivel, item.ingEgr);
+                    const nivelColor = item.nivel === 1 ? 'bg-yellow-100' : item.nivel === 2 ? 'bg-orange-100' : 'bg-green-100';
+                    const badgeColor = item.nivel === 1 ? 'bg-yellow-200 text-yellow-800' : item.nivel === 2 ? 'bg-orange-200 text-orange-800' : 'bg-green-200 text-green-800';
                     const indent = getNivelIndent(item.nivel);
                     const connector = getNivelConnector(item.nivel);
                     const isNivel1 = item.nivel === 1;
